@@ -32,7 +32,8 @@ Não há agendador externo (sem Vercel Cron, Redis, fila ou cache). A limpeza do
 | `verification` (confirmação) | A003 | **24 h**, uso único | `expiresAt` vencido ou uso | HARD_DELETE | Na hora (uso) e limpeza interna |
 | `verification` (redefinição) | A003 | **30 min**, uso único | `expiresAt` vencido ou uso | HARD_DELETE | Na hora (uso) e limpeza interna |
 | `rateLimit` (`rate_limit`) | A006 | Janela de contagem de **15 min a 1 h**; registro apagado **1 dia** após a última requisição (`lastRequest`, conforme `prisma/schema.prisma`) | `lastRequest` + 1 dia | HARD_DELETE | Limpeza interna |
-| `throttle` | A006 | Janela de **1 h** (por e-mail, só HMAC) ou **24 h** (contador total de e-mails) | `expiresAt` vencido | HARD_DELETE | Limpeza interna |
+| `throttle` | A006 | Janela de **1 h** (por e-mail ou aparelho, só HMAC; por conta na troca de senha) ou **24 h** (contador total de e-mails); os de entrada são zerados ao trocar a senha pelo link | `expiresAt` vencido | HARD_DELETE | Limpeza interna |
+| Cookie `midas.device` | A006 | **1 ano** no navegador, renovado a cada entrada | `maxAge` vencido ou a pessoa limpa os cookies | Expira no navegador | Navegador |
 | `securityEvent` | A007 | **Proposta: 6 meses** | `createdAt` + 6 meses; exclusão da conta | HARD_DELETE | Limpeza interna / cascata |
 | Resposta do HIBP | A005 | Nenhum (memória) | Fim da requisição | Descartada | — |
 | Logs do app e da plataforma | A008 | Conforme plano da Vercel (**a verificar**) | Automático no operador | Expiração no operador | Vercel |

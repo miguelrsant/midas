@@ -2,7 +2,7 @@ import "server-only";
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 
@@ -19,13 +19,14 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { checkNickname } from "@/lib/validation";
 import { errorCode, log } from "@/lib/log";
 import { maybePurgeExpiredData } from "@/lib/maintenance";
-import { consume, emailKey } from "@/lib/throttle";
+import { consume, emailKey, refund, reset } from "@/lib/throttle";
 
 import { deviceLabel } from "./auth/device";
 import { hashPassword, verifyPassword } from "./auth/password";
 import { checkPasswordLocally, isPasswordBreached } from "./auth/password-policy";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./auth/password-rules";
 import { recordSecurityEvent } from "./auth/security-events";
+import { knownDevice, rememberDevice } from "./auth/trusted-device";
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
@@ -33,10 +34,17 @@ const DAY = 24 * HOUR;
 
 /**
  * Tentativas de entrada por conta, somando todos os IPs. O limite por IP (abaixo) não
- * segura um ataque distribuído contra um e-mail só. Conta toda tentativa, certa ou
- * errada, exista a conta ou não: assim a resposta não revela quem tem conta.
+ * segura um ataque distribuído contra um e-mail só. Só erros de senha contam, exista a
+ * conta ou não (assim a resposta não revela quem tem conta); um acerto devolve a
+ * tentativa, e trocar a senha pelo link zera o contador. O aparelho em que a pessoa já
+ * entrou conta à parte (./auth/trusted-device.ts): um ataque de fora não o tranca.
  */
 const SIGN_IN_PER_ACCOUNT = { windowMs: HOUR * 1000, max: 10 };
+/**
+ * Senha atual errada ao trocar a senha, por conta. Quem acha uma sessão aberta (um
+ * computador compartilhado) não consegue ficar testando palpites de vários IPs.
+ */
+const PASSWORD_CHECK_PER_ACCOUNT = { windowMs: HOUR * 1000, max: 10 };
 const EMAIL_MAX_LENGTH = 254;
 
 /** Rotas em que uma senha nova é escolhida, e o campo que a carrega. */
@@ -45,6 +53,55 @@ const NEW_PASSWORD_FIELDS: Record<string, "password" | "newPassword"> = {
   "/change-password": "newPassword",
   "/reset-password": "newPassword",
 };
+
+/** Campos que o formulário de cadastro manda; qualquer outro é recusado. */
+const SIGN_UP_FIELDS = new Set(["email", "password", "name", "termsVersion", "callbackURL"]);
+
+/**
+ * Rotas do Better Auth que o Midas não usa. Desligadas no HTTP (404); chamadas de
+ * servidor com `auth.api` continuam valendo.
+ */
+const DISABLED_PATHS = [
+  // Confere a senha sem limite por conta; o Midas não usa.
+  "/verify-password",
+  "/update-session",
+  "/change-email",
+  "/delete-user",
+  "/delete-user/callback",
+  "/list-accounts",
+  "/account-info",
+  "/sign-in/social",
+  "/link-social",
+  "/unlink-account",
+  "/get-access-token",
+  "/refresh-token",
+];
+
+/** Contador de entrada: o da conta, ou o do aparelho conhecido dessa conta. */
+async function signInKey(ctx: Parameters<typeof knownDevice>[0], email: string) {
+  const account = emailKey("signin", email);
+  const device = await knownDevice(ctx, email);
+  return device ? `${account}.${device}` : account;
+}
+
+function failedWith(returned: unknown, code: string): boolean {
+  return returned instanceof APIError && returned.body?.code === code;
+}
+
+function tooManyAttempts(): APIError {
+  return new APIError("TOO_MANY_REQUESTS", {
+    message: "Too many requests",
+    code: "TOO_MANY_ATTEMPTS",
+  });
+}
+
+/** Links de nova senha ainda válidos deixam de valer depois que a senha muda. */
+async function discardPasswordResetLinks(userId: string) {
+  // Só os links de nova senha guardam o id da conta em `value` (os de confirmação de
+  // e-mail são JWT e não passam por esta tabela; apagar conta e trocar e-mail estão
+  // desligados).
+  await db.verification.deleteMany({ where: { value: userId } });
+}
 
 /**
  * Roda depois que a resposta sai (e-mails, registros). Na Vercel, o `after` do Next
@@ -69,6 +126,7 @@ export const auth = betterAuth({
   // Só o próprio app pode chamar a API de autenticação.
   trustedOrigins: [env.APP_URL],
   telemetry: { enabled: false },
+  disabledPaths: DISABLED_PATHS,
 
   emailAndPassword: {
     enabled: true,
@@ -85,6 +143,9 @@ export const auth = betterAuth({
     },
     onPasswordReset: async ({ user }) => {
       await recordSecurityEvent(user.id, "PASSWORD_RESET");
+      // Quem recuperou a senha pelo e-mail provou ser a dona da conta: a entrada destrava.
+      await reset(emailKey("signin", user.email));
+      await discardPasswordResetLinks(user.id);
       runInBackground(
         sendEmail(
           passwordChangedMessage(user.email, `${env.APP_URL}/recuperar-senha`),
@@ -177,15 +238,31 @@ export const auth = betterAuth({
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // Corpo que não é objeto (`null`, lista, texto) vira 400, não um erro 500 adiante.
+      if (
+        ctx.body !== undefined &&
+        (typeof ctx.body !== "object" || ctx.body === null || Array.isArray(ctx.body))
+      ) {
+        throw new APIError("BAD_REQUEST", { message: "Invalid body", code: "INVALID_BODY" });
+      }
+
       if (ctx.path === "/sign-in/email") {
         const email = (ctx.body as { email?: unknown } | undefined)?.email;
         if (
           typeof email === "string" &&
-          !(await consume(emailKey("signin", email), SIGN_IN_PER_ACCOUNT))
+          !(await consume(await signInKey(ctx, email), SIGN_IN_PER_ACCOUNT))
         ) {
-          throw new APIError("TOO_MANY_REQUESTS", {
-            message: "Too many requests",
-            code: "TOO_MANY_ATTEMPTS",
+          throw tooManyAttempts();
+        }
+      }
+
+      if (ctx.path === "/change-password") {
+        const body = ctx.body as { revokeOtherSessions?: unknown } | undefined;
+        // Senha nova sempre desconecta os outros aparelhos, como o e-mail de aviso diz.
+        if (body?.revokeOtherSessions !== true) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Other sessions must be revoked",
+            code: "MUST_REVOKE_OTHER_SESSIONS",
           });
         }
       }
@@ -195,8 +272,15 @@ export const auth = betterAuth({
           email?: unknown;
           name?: unknown;
           termsVersion?: unknown;
-          image?: unknown;
         };
+        // Campo a mais (`image`, por exemplo) seria ecoado na resposta de um e-mail que
+        // já tem conta e diferenciaria as duas respostas.
+        if (Object.keys(body).some((key) => !SIGN_UP_FIELDS.has(key))) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Unexpected fields",
+            code: "INVALID_FIELDS",
+          });
+        }
         // O banco guarda até 254 (RFC 5321); maior que isso seria um erro 500.
         if (typeof body.email === "string" && body.email.length > EMAIL_MAX_LENGTH) {
           throw new APIError("BAD_REQUEST", { message: "Invalid email", code: "INVALID_EMAIL" });
@@ -233,9 +317,8 @@ export const auth = betterAuth({
       }
 
       const field = NEW_PASSWORD_FIELDS[ctx.path];
-      if (field) {
-        const password = (ctx.body as Record<string, unknown> | undefined)?.[field];
-        if (typeof password !== "string") return;
+      const password = field && (ctx.body as Record<string, unknown> | undefined)?.[field];
+      if (typeof password === "string") {
         const problem = checkPasswordLocally(password);
         if (problem === "common") {
           throw new APIError("BAD_REQUEST", {
@@ -250,6 +333,14 @@ export const auth = betterAuth({
           });
         }
       }
+
+      // Por último: só chega aqui uma troca que vai de fato conferir a senha atual.
+      if (ctx.path === "/change-password") {
+        const session = await getSessionFromCtx(ctx);
+        if (session && !(await consume(`pwcheck:${session.user.id}`, PASSWORD_CHECK_PER_ACCOUNT))) {
+          throw tooManyAttempts();
+        }
+      }
     }),
 
     after: createAuthMiddleware(async (ctx) => {
@@ -257,11 +348,33 @@ export const auth = betterAuth({
         runInBackground(maybePurgeExpiredData());
       }
       const returned = ctx.context.returned;
+
+      if (ctx.path === "/sign-in/email") {
+        const email = (ctx.body as { email?: unknown } | undefined)?.email;
+        if (typeof email === "string" && !failedWith(returned, "INVALID_EMAIL_OR_PASSWORD")) {
+          await refund(await signInKey(ctx, email));
+          if (!(returned instanceof Error)) await rememberDevice(ctx, email);
+        }
+      }
+      if (ctx.path === "/change-password") {
+        const userId = ctx.context.session?.user.id;
+        if (userId && !failedWith(returned, "INVALID_PASSWORD")) {
+          await refund(`pwcheck:${userId}`);
+        }
+      }
+
       if (returned instanceof Error) return;
+
+      // Resposta do cadastro sempre igual, exista o e-mail ou não. A do Better Auth traz
+      // os dados da conta, e a de um e-mail já cadastrado é montada à parte (sem os
+      // hooks do banco), então as duas diferem em valores como `termsAcceptedAt`.
+      if (ctx.path === "/sign-up/email") return ctx.json({ status: true });
+
       const userId = ctx.context.session?.user.id;
       if (!userId) return;
       if (ctx.path === "/change-password") {
         await recordSecurityEvent(userId, "PASSWORD_CHANGED");
+        await discardPasswordResetLinks(userId);
         runInBackground(
           sendEmail(
             passwordChangedMessage(

@@ -46,3 +46,15 @@ export async function consume(
     RETURNING "count"`;
   return (rows[0]?.count ?? Infinity) <= max;
 }
+
+/** Devolve uma tentativa contada por `consume` que não deveria contar (por exemplo, um acerto). */
+export async function refund(key: string): Promise<void> {
+  await db.$executeRaw`
+    UPDATE "throttle" SET "count" = GREATEST("count" - 1, 0)
+    WHERE "key" = ${key} AND "expiresAt" > ${new Date()}`;
+}
+
+/** Zera um contador e os que derivam dele (`chave.algo`). */
+export async function reset(key: string): Promise<void> {
+  await db.$executeRaw`DELETE FROM "throttle" WHERE "key" = ${key} OR starts_with("key", ${`${key}.`})`;
+}

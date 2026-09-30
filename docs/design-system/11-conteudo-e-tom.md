@@ -172,7 +172,7 @@ Todo erro diz **o que fazer**, na linguagem da pessoa, sem culpa ("Você digitou
 | Valor acima do teto | "Esse valor parece alto demais. Confira os números." |
 | E-mail inválido | "Confira o e-mail: falta o @ ou o domínio (por exemplo, nome@exemplo.com)." |
 | Login falhou | "E-mail ou senha incorretos." (não diz qual dos dois) |
-| Muitas tentativas | "Muitas tentativas. Espere 15 minutos e tente de novo." |
+| Muitas tentativas | "Muitas tentativas. Espere 1 hora e tente de novo." |
 | Senha curta no cadastro | "A senha precisa ter pelo menos 8 caracteres. Faltam 3." |
 | Senha comum ou vazada | "Essa senha aparece em listas de senhas vazadas. Escolha outra." |
 | Sem internet | "Sem conexão agora. O que você digitou continua aqui; tente salvar de novo." |

@@ -56,7 +56,7 @@ Todas usam os mesmos tokens: `marmore`, `superficie`, `superficie-funda`, `borda
 | Senha visível | Texto em claro; botão "Ocultar" com `eye-off`; o leitor de tela ouve "Senha visível". | `ouro-texto` | |
 | Erro de campo | Borda 2px `gasto`, mensagem abaixo com `triangle-alert`, `aria-invalid="true"`. | `gasto` | Só para campo vazio ou mal formado, e para as regras de senha do cadastro. |
 | Erro de credenciais | [Notice](notice.md) `is-alerta` acima do botão: "E-mail ou senha incorretos." | `alerta` | Nenhum campo marcado: não diga qual está errado. |
-| Muitas tentativas | Notice `is-alerta`: "Muitas tentativas. Espere 15 minutos e tente de novo." | `alerta` | Mesma resposta exista ou não a conta. |
+| Muitas tentativas | Notice `is-alerta`: "Muitas tentativas. Espere 1 hora e tente de novo." | `alerta` | Mesma resposta exista ou não a conta. |
 | Enviando | Botão com "Entrando…" (ou "Criando conta…", "Enviando…"), `aria-disabled="true"`, sem novo envio. | `primario` | O foco fica no botão. |
 | Erro de rede | Notice `is-alerta`: "Não foi possível conectar. Confira a internet e tente de novo." | `alerta` | Os campos mantêm o que foi digitado. |
 | Recuperação enviada | O formulário dá lugar a um Notice com a resposta única. | `ouro-texto` | Veja Conteúdo. |
@@ -110,7 +110,7 @@ Todas usam os mesmos tokens: `marmore`, `superficie`, `superficie-funda`, `borda
 | Situação | Mensagem |
 | --- | --- |
 | E-mail ou senha errados, ou conta inexistente | E-mail ou senha incorretos. |
-| Muitas tentativas | Muitas tentativas. Espere 15 minutos e tente de novo. |
+| Muitas tentativas | Muitas tentativas. Espere 1 hora e tente de novo. |
 | Recuperação enviada (sempre, exista ou não a conta) | Se esse e-mail tiver conta no Midas, você vai receber um link em alguns minutos. |
 | Senha curta | A senha precisa ter pelo menos 8 caracteres. Faltam 3. |
 | Senha comum | Essa senha é muito usada e fácil de adivinhar. Tente uma frase só sua. |
@@ -130,7 +130,7 @@ No cadastro, um e-mail já cadastrado não gera mensagem na tela: a pessoa vê "
 | E-mail ou senha incorretos. | Não encontramos uma conta com esse e-mail. |
 | Se esse e-mail tiver conta no Midas, você vai receber um link em alguns minutos. | E-mail enviado para miguel@exemplo.com.br! |
 | Use 8 caracteres ou mais. | A senha deve conter maiúscula, número e caractere especial. |
-| Muitas tentativas. Espere 15 minutos e tente de novo. | Conta bloqueada. |
+| Muitas tentativas. Espere 1 hora e tente de novo. | Conta bloqueada. |
 
 ## Acessibilidade
 

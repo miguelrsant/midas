@@ -121,7 +121,7 @@ O Midas trata dados pessoais e precisa seguir a **LGPD (Lei 13.709/2018)** desde
 - **Finalidade:** os dados servem para mostrar as finanças da própria pessoa. Nunca para perfilar, pontuar, vender ou anunciar.
 - **Dado sensível:** lançamentos podem revelar saúde (categoria Saúde, descrições como "farmácia"). Trate **todo lançamento como confidencial**: só a dona ou o dono vê, fora de logs e de e-mails.
 - **Direitos do titular (art. 18)** na própria interface: acessar, corrigir, baixar (JSON e CSV) e apagar a conta. Veja [Privacidade na interface](docs/design-system/16-privacidade-na-interface.md).
-- **Sem rastreadores:** só o cookie de sessão; sem analytics de terceiros, pixels ou fontes de outros domínios. Se um dia entrar um cookie não essencial, só com consentimento.
+- **Sem rastreadores:** só cookies estritamente necessários (o de sessão e o de aparelho, que protege a entrada contra bloqueio por terceiros); sem analytics de terceiros, pixels ou fontes de outros domínios. Se um dia entrar um cookie não essencial, só com consentimento.
 - **Transparência:** política de privacidade em linguagem simples, com versão e data, e contato do encarregado.
 - **Operadores** (hospedagem, envio de e-mail) listados em "Seus dados" e na política, com contrato adequado e atenção a transferência internacional.
 - **Incidentes** seguem um plano escrito; a comunicação à ANPD e aos titulares tem prazo (Resolução CD/ANPD nº 15/2024).

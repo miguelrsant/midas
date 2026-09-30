@@ -57,7 +57,7 @@ Sem Redis, fila, cache ou cron: a limpeza de dados vencidos roda dentro do próp
 
 ## Segurança e privacidade, em resumo
 
-- Só e-mail e senha. Sem CPF, sem acesso a banco, sem rastreadores, sem analytics. O único cookie é o de sessão.
+- Só e-mail e senha. Sem CPF, sem acesso a banco, sem rastreadores, sem analytics. Só dois cookies, os dois necessários: o de sessão e o de aparelho (evita que alguém tranque a sua entrada errando a sua senha).
 - Senhas com Argon2id, com no mínimo 8 caracteres, recusando senhas comuns e vazadas (Have I Been Pwned por k-anonimato).
 - Confirmação de e-mail obrigatória, e o link não faz entrar na conta. Login, cadastro e recuperação não revelam quem tem conta. Limite de tentativas no servidor, por IP e por conta, e limite de e-mails por destinatário e por dia.
 - Sessões sem IP e sem User-Agent completo. "Sair de todos os aparelhos" em "Seus dados".

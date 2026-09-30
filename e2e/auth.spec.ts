@@ -181,7 +181,7 @@ test("muitas tentativas de entrada são bloqueadas", async ({ page }) => {
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
   }
   await signIn(page, email, "mais uma tentativa errada");
-  await expect(page.getByText("Muitas tentativas. Espere 15 minutos")).toBeVisible();
+  await expect(page.getByText("Muitas tentativas. Espere 1 hora")).toBeVisible();
 });
 
 for (const path of ["/entrar", "/criar-conta", "/recuperar-senha", "/privacidade"]) {

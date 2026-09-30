@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/lib/db";
-import { consume, emailKey } from "@/lib/throttle";
+import { consume, emailKey, refund, reset } from "@/lib/throttle";
 
 beforeEach(async () => {
   await db.throttle.deleteMany();
@@ -34,6 +34,25 @@ describe("consume", () => {
     const rule = { windowMs: 60_000, max: 10 };
     const results = await Promise.all(Array.from({ length: 25 }, () => consume("teste:c", rule)));
     expect(results.filter(Boolean)).toHaveLength(10);
+  });
+});
+
+describe("refund e reset", () => {
+  it("refund devolve uma tentativa, sem passar de zero", async () => {
+    const rule = { windowMs: 60_000, max: 1 };
+    expect(await consume("teste:d", rule)).toBe(true);
+    await refund("teste:d");
+    await refund("teste:d");
+    expect(await consume("teste:d", rule)).toBe(true);
+    expect(await consume("teste:d", rule)).toBe(false);
+  });
+
+  it("reset apaga o contador e os derivados dele, e só eles", async () => {
+    const rule = { windowMs: 60_000, max: 1 };
+    for (const key of ["teste:e", "teste:e.aparelho", "teste:ex"]) await consume(key, rule);
+    await reset("teste:e");
+    const keys = (await db.throttle.findMany()).map((row) => row.key);
+    expect(keys).toEqual(["teste:ex"]);
   });
 });
 
