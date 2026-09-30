@@ -96,3 +96,15 @@ export function passwordChangedMessage(to: string, resetUrl: string) {
     },
   ]);
 }
+
+/** Confirmação de conta apagada: enviada depois da exclusão, sem nenhum dado financeiro. */
+export function accountDeletedMessage(to: string) {
+  return render(to, "Sua conta do Midas foi apagada", "Sua conta foi apagada", [
+    { kind: "p", text: "Como você pediu, apagamos sua conta e todos os seus dados do Midas." },
+    {
+      kind: "p",
+      text: "As cópias de segurança do banco somem em até 7 dias. Depois disso, não sobra nada.",
+    },
+    { kind: "p", text: "Obrigado por ter usado o Midas." },
+  ]);
+}

@@ -6,7 +6,11 @@ import type { ReactNode } from "react";
 import { Notice } from "@/components/ui/notice";
 import { auth } from "@/lib/auth";
 import { requireSession } from "@/lib/auth/dal";
-import { formatShortDate } from "@/lib/dates";
+import { accountSummary } from "@/lib/data/account";
+import { formatShortDate, fromDbDate, MONTH_NAMES } from "@/lib/dates";
+import { countOf } from "@/lib/plural";
+
+import { DeleteAccount, ExportData } from "./data-actions";
 
 import { SignOutEverywhere } from "./sign-out-everywhere";
 
@@ -25,13 +29,21 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 export default async function YourDataPage() {
   const { user, session } = await requireSession();
   const sessions = await auth.api.listSessions({ headers: await headers() });
+  const summary = await accountSummary(user.id);
+  const since = summary.firstEntry
+    ? (() => {
+        const d = fromDbDate(summary.firstEntry);
+        return ` desde ${MONTH_NAMES[Number(d.slice(5, 7)) - 1]} de ${d.slice(0, 4)}`;
+      })()
+    : "";
+  const entriesText = countOf(summary.entries, "lançamento", "lançamentos");
 
   return (
     <div className="mx-auto flex max-w-120 flex-col gap-6 pt-4">
       <h1 className="font-display text-display-lg text-tinta">Seus dados</h1>
       <Notice tone="privacidade" role="note">
         <strong>Seus dados são só seus.</strong> O Midas não pede CPF nem acessa seu banco. Você
-        pode ver e corrigir o que guardamos quando quiser.
+        pode baixar ou apagar tudo quando quiser.
       </Notice>
 
       <Section title="O que o Midas guarda">
@@ -48,14 +60,37 @@ export default async function YourDataPage() {
             Os aparelhos conectados: o navegador e a data do último uso. Sem localização e sem IP.
           </li>
           <li>Conta criada em {formatShortDate(user.createdAt)}.</li>
+          <li>
+            {entriesText}
+            {since}: valor, tipo, categoria, data e descrição (a descrição fica cifrada).
+          </li>
+          <li>
+            {countOf(summary.recurrings, "fixo", "fixos")},{" "}
+            {countOf(summary.limits, "limite", "limites")} e{" "}
+            {countOf(summary.categories, "categoria própria", "categorias próprias")}.
+          </li>
+          <li>
+            {countOf(summary.calculations, "conta de calculadora", "contas de calculadora")} que
+            você adicionou ao planejamento e{" "}
+            {countOf(summary.expected, "renda prevista", "rendas previstas")}.
+          </li>
+          <li>O tema e &ldquo;Ocultar valores&rdquo; ficam só neste aparelho.</li>
         </ul>
         <p className="text-caption text-tinta-suave">
-          O nome pode ser corrigido em{" "}
+          Todo lançamento se corrige tocando nele. O apelido e as categorias se corrigem em{" "}
           <Link href="/configuracoes" className="md-link">
             Configurações
           </Link>
           .
         </p>
+      </Section>
+
+      <Section title="Baixar meus dados">
+        <p>
+          Um arquivo com tudo (JSON) e uma planilha dos lançamentos (CSV, abre no Excel e no
+          LibreOffice). Gerado agora, só para você; nada fica guardado.
+        </p>
+        <ExportData />
       </Section>
 
       <Section title="Aparelhos conectados">
@@ -84,9 +119,14 @@ export default async function YourDataPage() {
           para saber como tratamos seus dados, quais serviços ajudam o Midas a funcionar e como
           falar com a pessoa encarregada.
         </p>
-        <p className="text-caption text-tinta-suave">
-          Baixar e apagar todos os seus dados chegam junto com os lançamentos, na próxima versão.
+      </Section>
+
+      <Section title="Apagar minha conta">
+        <p>
+          Apaga a conta e todos os dados, na hora. As cópias de segurança do banco somem em até 7
+          dias.
         </p>
+        <DeleteAccount entries={entriesText} />
       </Section>
     </div>
   );

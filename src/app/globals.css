@@ -11,6 +11,8 @@
  * bloqueia style="" vindo do servidor, então cada largura é uma classe pronta.
  */
 @source inline("w-[{0..100}%]");
+@source inline("bottom-[{0..100}%]");
+@source inline("grid-cols-{1..12}");
 
 /* O tema escuro é o atributo data-theme="dark" no <html> (next-themes com attribute="data-theme"). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

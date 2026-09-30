@@ -2,7 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 
+import { GoldenTouchProvider } from "@/components/midas/golden-touch";
+import { DiscreetModeScript } from "@/components/midas/discreet-mode";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { NonceProvider } from "@/components/ui/nonce-provider";
 
 import { atkinson, atkinsonMono, cormorant } from "./fonts";
 import "./globals.css";
@@ -53,7 +56,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         >
           Pular para o conteúdo
         </a>
-        <ThemeProvider nonce={nonce}>{children}</ThemeProvider>
+        <DiscreetModeScript nonce={nonce} />
+        <NonceProvider nonce={nonce} />
+        <ThemeProvider nonce={nonce}>
+          <GoldenTouchProvider>{children}</GoldenTouchProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
