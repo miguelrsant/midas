@@ -40,7 +40,7 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
 1. **Neon:** crie um projeto na região **AWS São Paulo (`aws-sa-east-1`)**. Instale a integração Neon ↔ Vercel, para cada preview ganhar uma branch própria do banco e nunca tocar no banco de produção.
 2. **Vercel:** importe o repositório. O `vercel.json` já define a região `gru1` (São Paulo) e o comando de build, que roda `prisma migrate deploy` antes do `next build`.
 3. **Variáveis de ambiente** (Settings → Environment Variables); a validação fica em `src/lib/env.ts`:
-   - `DATABASE_URL` (com pooler) e `DIRECT_URL` (sem pooler), do Neon.
+   - `DATABASE_URL` (com pooler) e `DATABASE_URL_UNPOOLED` (sem pooler): a integração Neon ↔ Vercel cria as duas sozinha. Sem a integração, use `DIRECT_URL` no lugar da segunda.
    - `BETTER_AUTH_URL`: o endereço público, com `https://`. Nos previews pode ficar vazio.
    - `BETTER_AUTH_SECRET`: gere com `openssl rand -base64 32`. Um valor diferente por ambiente.
    - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER`, `SMTP_PASSWORD` e `EMAIL_FROM`.
