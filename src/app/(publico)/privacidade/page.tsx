@@ -25,9 +25,30 @@ export default function PrivacyPage() {
           localização.
         </li>
         <li>
-          Registros de segurança: quando a conta foi criada, quando houve entrada e troca de senha.
+          Registros de segurança: quando a conta foi criada, quando houve entrada, troca de senha e
+          quando você baixou seus dados.
+        </li>
+        <li>
+          Lançamentos: valor, tipo, categoria, data e uma descrição opcional. A descrição fica
+          cifrada no banco.
+        </li>
+        <li>
+          Rendas e gastos fixos, limites por categoria e as categorias que você criou (nome e ícone
+          cifrados).
+        </li>
+        <li>
+          Contas das calculadoras que você adicionou ao planejamento (respostas e resultado,
+          cifrados) e as rendas previstas que elas criaram. Contas que você só consulta não ficam
+          guardadas: o cálculo roda no seu aparelho.
         </li>
       </ul>
+      <p>
+        Alguns lançamentos podem revelar informações de saúde, como um gasto na categoria Saúde ou
+        uma descrição “farmácia”. A lei trata isso como dado sensível. Usamos esses dados só para
+        mostrar as suas finanças para você, porque é para isso que você usa o Midas (Lei
+        13.709/2018, art. 11, II, “d”): nada de perfil, anúncio, estatística ou venda, e nada disso
+        vai para registros de erro, e-mails ou endereços de página.
+      </p>
       <h2>O que nunca pedimos</h2>
       <p>CPF, RG, telefone, endereço, data de nascimento, dados de banco ou cartão, localização.</p>
       <h2>Cookies</h2>
@@ -46,13 +67,15 @@ export default function PrivacyPage() {
       </p>
       <h2>Por quanto tempo</h2>
       <p>
-        Enquanto a conta existir. Contas não confirmadas são apagadas em 7 dias. Sessões vencem em
-        30 dias sem uso.
+        Enquanto a conta existir, ou até você apagar o item. Contas não confirmadas são apagadas em
+        7 dias. Sessões vencem em 30 dias sem uso. Ao apagar a conta, tudo é apagado na hora; as
+        cópias de segurança do banco somem em até 7 dias.
       </p>
       <h2>Seus direitos</h2>
       <p>
-        Você pode ver, corrigir, baixar e apagar seus dados na tela “Seus dados”, como garante a Lei
-        Geral de Proteção de Dados (Lei 13.709/2018, art. 18).
+        Você pode ver, corrigir, baixar (arquivo completo em JSON e planilha em CSV) e apagar seus
+        dados na tela “Seus dados”, na hora e sem pedir a ninguém, como garante a Lei Geral de
+        Proteção de Dados (Lei 13.709/2018, art. 18).
       </p>
       <h2>Contato</h2>
       <p>O contato da pessoa encarregada pelo tratamento de dados será publicado aqui.</p>

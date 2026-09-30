@@ -24,7 +24,15 @@ export function MonthChartDetails({
   const cols = `grid-cols-${Math.min(12, Math.max(1, months.length))}`;
   return (
     <>
-      <div className={cn("absolute inset-x-0 top-0 grid h-[200px]", cols)}>
+      {/* Com 12 meses, as colunas ficam estreitas demais para tocar no celular (WCAG 2.5.8):
+          lá, a tabela "Ver em tabela" é o caminho; o balão aparece a partir de 640px. */}
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0 h-[200px]",
+          months.length > 6 ? "hidden sm:grid" : "grid",
+          cols,
+        )}
+      >
         {months.map((m, i) => (
           <div key={m.month} className="relative">
             <button

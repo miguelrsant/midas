@@ -3,11 +3,22 @@
 import { setNonce } from "get-nonce";
 
 /**
- * Entrega o nonce da CSP às bibliotecas que criam <style> no navegador
- * (react-remove-scroll, usado pelo Dialog do Radix). Sem isso a CSP bloqueia
- * o estilo e a página rola por baixo do diálogo.
+ * Nonce que vale na página aberta. Numa navegação sem recarga, o layout raiz é
+ * renderizado de novo com o nonce de outra requisição, mas a CSP que vale é a do
+ * documento: por isso, no navegador, lemos o nonce de um <script> da própria página.
+ */
+export function documentNonce(fallback?: string) {
+  if (typeof document === "undefined") return fallback;
+  const script = document.querySelector<HTMLScriptElement>("script[nonce]");
+  return script?.nonce || fallback;
+}
+
+/**
+ * Entrega o nonce às bibliotecas que criam <style> no navegador (react-remove-scroll,
+ * usado pelo Dialog do Radix). Sem isso a CSP bloqueia o estilo.
  */
 export function NonceProvider({ nonce }: { nonce?: string }) {
-  if (nonce && typeof window !== "undefined") setNonce(nonce);
+  const value = documentNonce(nonce);
+  if (value && typeof window !== "undefined") setNonce(value);
   return null;
 }

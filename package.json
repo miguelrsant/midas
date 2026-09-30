@@ -27,7 +27,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
-    "db:limpeza": "tsx --conditions=react-server scripts/limpeza.mts"
+    "db:limpeza": "tsx --conditions=react-server scripts/limpeza.mts",
+    "db:recifrar": "tsx --conditions=react-server scripts/recifrar.mts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",

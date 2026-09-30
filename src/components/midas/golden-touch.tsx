@@ -28,6 +28,8 @@ interface GoldenTouchContext {
 
 const Context = createContext<GoldenTouchContext | null>(null);
 
+const PENDING = "midas.aviso";
+
 export function useAnnounce() {
   const ctx = useContext(Context);
   if (!ctx) throw new Error("GoldenTouchProvider ausente");
@@ -39,11 +41,37 @@ export function GoldenTouchProvider({ children }: { children: ReactNode }) {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const announce = useCallback((text: string, opts?: { coin?: boolean }) => {
+  const show = useCallback((text: string, coin: boolean) => {
     if (timer.current) clearTimeout(timer.current);
-    setMessage({ text, coin: opts?.coin ?? false, key: Date.now() });
+    setMessage({ text, coin, key: Date.now() });
     timer.current = setTimeout(() => setMessage(null), 4000);
   }, []);
+
+  const announce = useCallback(
+    (text: string, opts?: { coin?: boolean }) => {
+      const coin = opts?.coin ?? false;
+      show(text, coin);
+      // Se a navegação seguinte recarregar a página, o aviso ainda aparece (por 3 s, só nesta aba).
+      try {
+        sessionStorage.setItem(PENDING, JSON.stringify({ text, coin, at: Date.now() }));
+      } catch {
+        // Sem armazenamento: o aviso vale só para a navegação sem recarga.
+      }
+    },
+    [show],
+  );
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING);
+      sessionStorage.removeItem(PENDING);
+      if (!raw) return;
+      const pending = JSON.parse(raw) as { text: string; coin: boolean; at: number };
+      if (Date.now() - pending.at < 3000) queueMicrotask(() => show(pending.text, pending.coin));
+    } catch {
+      // Ignora aviso guardado inválido.
+    }
+  }, [show]);
 
   const highlight = useCallback((id: string) => {
     setHighlightId(id);

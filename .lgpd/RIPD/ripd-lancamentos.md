@@ -176,8 +176,8 @@ Prazo do Art. 19, II (15 dias) atendido por autosserviço imediato.
 - [ ] Não prosseguir
 - [ ] Consultar ANPD previamente (Art. 38, parágrafo único)
 
-**Aprovado por**: ⏸ pendente — Miguel (controlador), no merge do PR que traz esta RIPD
-**Data**: —
+**Aprovado por**: Miguel (controlador), no merge do PR #8
+**Data**: 2026-09-30
 
 ## 13. Plano de revisão
 

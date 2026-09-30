@@ -148,8 +148,7 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
       announce(result.data.message);
       highlight(result.data.id);
     }
-    if (window.history.length > 1) router.back();
-    else router.push(backHref);
+    router.replace(backHref);
   }
 
   async function remove() {
@@ -162,7 +161,7 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
       return;
     }
     announce(result.data.message);
-    router.push(backHref);
+    router.replace(backHref);
   }
 
   return (

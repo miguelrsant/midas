@@ -26,3 +26,21 @@ export async function findSessionsByEmail(email: string) {
   );
   return result.rows as Array<{ ipAddress: string | null; userAgent: string | null }>;
 }
+
+/** Confirma o e-mail direto no banco (os fluxos do produto não precisam repetir a confirmação). */
+export async function verifyEmail(email: string) {
+  await query('UPDATE "user" SET "emailVerified" = true WHERE email = $1', [email]);
+}
+
+export async function countRows(table: string, email: string) {
+  const result = await query(
+    `SELECT count(*)::int AS n FROM "${table}" t JOIN "user" u ON u.id = t."userId" WHERE u.email = $1`,
+    [email],
+  );
+  return (result.rows[0] as { n: number }).n;
+}
+
+export async function userExists(email: string) {
+  const result = await query('SELECT 1 FROM "user" WHERE email = $1', [email]);
+  return result.rowCount === 1;
+}
