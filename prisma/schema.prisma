@@ -1,0 +1,122 @@
+// Banco do Midas.
+// As tabelas User, Session, Account, Verification e RateLimit seguem o schema do
+// Better Auth 1.7 (confira com `pnpm dlx auth@latest generate` ao atualizar a lib).
+// Mapa de dados e bases legais: .lgpd/data-map.md e .lgpd/legal-basis.md.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String    @id
+  /// Apelido opcional ("Como você quer que o Midas te chame?"). Vazio se a pessoa não informar.
+  name            String    @db.VarChar(40)
+  email           String    @unique @db.VarChar(254)
+  emailVerified   Boolean   @default(false)
+  /// Campo do Better Auth. O Midas não guarda foto: fica sempre nulo.
+  image           String?
+  /// Versão dos termos e da política aceitos no cadastro (src/lib/legal.ts).
+  termsVersion    String    @db.VarChar(20)
+  termsAcceptedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  securityEvents SecurityEvent[]
+
+  @@index([emailVerified, createdAt])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  /// Token da sessão. O cookie leva o token com uma assinatura HMAC (BETTER_AUTH_SECRET).
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  /// Sempre nulo: o Midas não guarda IP (hook em src/lib/auth.ts).
+  ipAddress String?
+  /// Só o rótulo do aparelho ("Chrome no Android"), nunca o User-Agent completo.
+  userAgent String?  @db.VarChar(60)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  /// Sempre "credential": só e-mail e senha.
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  /// Hash Argon2id da senha (formato PHC). A senha nunca é guardada.
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  /// Hash do token de confirmação de e-mail ou de nova senha.
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
+}
+
+model RateLimit {
+  id          String @id
+  /// IP + rota. Vida curta: apagado pela limpeza depois de 1 dia.
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@index([lastRequest])
+  @@map("rate_limit")
+}
+
+enum SecurityEventType {
+  SIGNUP
+  LOGIN
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  SESSIONS_REVOKED
+}
+
+/// Trilha mínima de responsabilização (LGPD, art. 6º, X). Sem IP, sem e-mail, sem conteúdo.
+model SecurityEvent {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      SecurityEventType
+  createdAt DateTime          @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("security_event")
+}
