@@ -175,4 +175,5 @@ O plugin tem um maestro, **`lgpd-audit`**, que escolhe o caminho (para o Midas, 
 1. Leia a página do design system e a seção de LGPD que tocam a tarefa antes de programar.
 2. Siga as convenções e as regras de segurança acima; na dúvida, escolha a opção que coleta menos e expõe menos.
 3. Rode lint, checagem de tipos e testes antes de abrir um PR.
+   Se o PR toca autenticação, dados pessoais, e-mail, configuração ou dependências, rode também o agente de revisão de segurança ([.claude/agents/security-reviewer.md](.claude/agents/security-reviewer.md)): ele pensa como quem ataca e só relata achados confirmados.
 4. Se uma decisão mudar o design system, atualize os docs no mesmo PR. Se mudar o tratamento de dados, atualize `.lgpd/` no mesmo PR.
