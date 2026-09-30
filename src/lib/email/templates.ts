@@ -36,7 +36,8 @@ function render(to: string, subject: string, title: string, blocks: Block[]): Em
       block.kind === "p"
         ? `<p style="margin:0 0 16px;font-size:17px;line-height:26px;color:#2b1f16">${escapeHtml(block.text)}</p>`
         : `<p style="margin:24px 0"><a href="${escapeHtml(block.url)}" style="display:inline-block;background:#5b3a24;color:#fbf7f0;padding:14px 24px;border-radius:10px;font-size:17px;font-weight:600;text-decoration:none">${escapeHtml(block.text)}</a></p>
-<p style="margin:0 0 16px;font-size:14px;line-height:20px;color:#65564a">Se o botão não abrir, copie este endereço no navegador:<br>${escapeHtml(block.url)}</p>`,
+<p style="margin:0 0 16px;font-size:14px;line-height:20px;color:#65564a">Se o botão não abrir, copie este endereço no navegador:</p>
+<p style="margin:0 0 16px;font-size:14px;line-height:20px;word-break:break-all;overflow-wrap:anywhere"><a href="${escapeHtml(block.url)}" style="color:#7e5b17;word-break:break-all">${escapeHtml(block.url)}</a></p>`,
     )
     .join("\n");
 
@@ -44,7 +45,7 @@ function render(to: string, subject: string, title: string, blocks: Block[]): Em
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:24px;background:#f5f2ec;font-family:Arial,Helvetica,sans-serif">
-<div style="max-width:480px;margin:0 auto;background:#fdfbf7;border-radius:16px;padding:32px">
+<div style="max-width:480px;margin:0 auto;background:#fdfbf7;border-radius:16px;padding:32px;overflow-wrap:anywhere;word-break:break-word">
 <p style="margin:0 0 24px;font-size:20px;letter-spacing:.04em;color:#5b3a24">MIDAS</p>
 <h1 style="margin:0 0 16px;font-size:24px;line-height:30px;font-weight:600;color:#2b1f16">${escapeHtml(title)}</h1>
 ${body}
