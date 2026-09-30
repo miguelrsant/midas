@@ -59,9 +59,9 @@ O projeto faz parte do portfólio de Miguel Angelo ([@miguelrsant](https://githu
 | Camada       | Escolha                                                                     |
 | ------------ | --------------------------------------------------------------------------- |
 | App          | Next.js (App Router) com TypeScript em modo `strict`                        |
-| Estilo       | Tailwind CSS v4 com os tokens do design system; componentes sobre shadcn/ui |
+| Estilo       | Tailwind CSS v4 com os tokens do design system; shadcn/ui onde não esbarra no design system (chips, rádios e o aviso "Anotado" são nativos) |
 | Ícones       | lucide-react                                                                |
-| Gráficos     | Recharts (meses); HTML e CSS para barras por categoria e progresso          |
+| Gráficos     | SVG próprio desenhado no servidor (meses), sem biblioteca; barras por categoria e progresso com o componente `Bar` |
 | Tema         | next-themes com `attribute="data-theme"` (Claro, Escuro, Automático)        |
 | Banco        | PostgreSQL com Prisma                                                       |
 | Autenticação | Better Auth (e-mail e senha), hash com Argon2id, sessão em cookie `HttpOnly` |
@@ -79,6 +79,12 @@ Mudanças de stack são decididas com o Miguel.
 - **Textos da interface** seguem [Conteúdo e tom](docs/design-system/11-conteudo-e-tom.md): "Entrou", "Saiu", "Sobrou"; frases curtas; sem jargão financeiro.
 - **Cálculos trabalhistas** (INSS, IRRF, FGTS, multa, avisos, prazos) ficam em módulos puros, com testes, e com as **tabelas versionadas por vigência** e a fonte oficial citada em comentário (lei, portaria ou tabela da Receita Federal e do INSS). Quando a tabela mudar, adicione a nova vigência; não sobrescreva a antiga. O resultado é sempre apresentado como estimativa.
 - **Testes:** toda regra de dinheiro, projeção e calculadora tem teste unitário com casos de borda (centavos, arredondamento, meses de 28 a 31 dias, anos bissextos).
+- **Datas sem hora** (data de lançamento, vencimentos) são texto `"AAAA-MM-DD"` (`DateOnly`) e meses são `"AAAA-MM"` (`MonthKey`). No banco, colunas `date`; a conversão acontece só na camada de dados (`toDbDate`/`fromDbDate`, sempre meia-noite UTC). "Hoje" vem de `todayInSaoPaulo()` e é passado como parâmetro às funções de domínio; nada de `new Date()` escondido nem `CURRENT_DATE` no SQL.
+- **Server Actions** passam por `authedAction` (`src/lib/actions/`): sessão conferida sem redirecionar (devolve `session_expired`, para não perder o que foi digitado), Zod `.strict()`, limite de escrita por pessoa, acesso a dados em `src/lib/data/*` sempre com o `userId` da sessão, `refresh()` depois de mudar dados. Nunca `upsert` por id vindo do cliente.
+- **Texto livre cifrado:** descrições, nomes de fixos, nome e ícone de categorias próprias e contas de calculadora são cifrados na aplicação (`src/lib/crypto/fields.ts`, AES-256-GCM com AAD por linha). Veja `.lgpd/encryption.md`.
+- **Nada de dado financeiro na URL** (valores, salários, respostas de calculadora, termos de busca): a URL leva só mês, ano, passo e ids aleatórios.
+- **Sem `style=""` vindo do servidor:** a CSP bloqueia. Larguras e alturas por classe pronta (`w-[37%]`, geradas no `globals.css`) ou atributo de SVG.
+- **Fixos sem cron (exceção registrada):** os lançamentos dos fixos são criados como "reparo na leitura", no carregamento dos dados das páginas (`ensureRecurringUpToDate`), de forma idempotente. É uma exceção consciente à orientação do Next.js de não escrever durante a renderização: nunca em layout, nunca em prefetch, e só com compare-and-set e chave única.
 - **Commits pequenos**, com mensagem que diz o porquê.
 
 ## Regras do design system

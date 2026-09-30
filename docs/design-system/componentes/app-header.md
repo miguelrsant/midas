@@ -52,8 +52,7 @@ O avatar com símbolo usa fundo neutro de propósito: a moeda do símbolo é sem
 | Botões de mês | Padrão | Fundo transparente, ícone `tinta`. | `tinta` | |
 | | Hover | Fundo `superficie-funda`. | `superficie-funda` | Transição em `duracao-rapida`. |
 | | Foco | Anel 2px `foco`, afastado 2px. | `foco` | |
-| | No limite | Opacidade 0,45, cursor `not-allowed`. | | "Próximo mês" a 12 meses do mês atual. Use `aria-disabled="true"`, não `disabled` (veja Acessibilidade). |
-| Nome do mês | Mês futuro | Igual, com "Projeção" abaixo em `caption` `tinta-suave` (sugestão). | `tinta-suave` | Deixa claro que os números são previstos. |
+| | No limite | Opacidade 0,45, cursor `not-allowed`. | | "Próximo mês" no mês atual; "Mês anterior" no primeiro mês com dados. Use `aria-disabled="true"`, não `disabled` (veja Acessibilidade). |
 | Avatar | Hover | Anel 2px `borda` por dentro (sugestão). | `borda` | |
 | | Foco | Anel 2px `foco`, afastado 2px. | `foco` | |
 | | Menu aberto | `aria-expanded="true"`; menu em `superficie` com `sombra-cartao` e `radius-md`. | `superficie`, `sombra-cartao` | |
@@ -116,7 +115,6 @@ Com apelido: "Bom dia, Miguel." Sem apelido: "Bom dia." Nunca use o nome complet
 | Mês atual, apertado | Boa noite. Setembro está apertado: faltam R$ 120 para fechar no azul. |
 | Mês passado com sobra | Bom dia, Miguel. Agosto fechou *no azul*. |
 | Mês passado com falta | Bom dia, Miguel. Agosto fechou com R$ 210 a menos. |
-| Mês futuro (projeção) | Boa tarde. Outubro deve fechar *no azul*. |
 | Mês sem lançamentos | Bom dia, Miguel. (sem avaliação; o [EmptyState](empty-state.md) cuida do resto) |
 
 O limite entre "vai bem" e "apertado" é o saldo projetado para o fim do mês: zero ou mais é "vai bem"; abaixo de zero é "apertado", com o valor que falta. A regra fica numa função só (sugestão: `assessMonth()` em `src/lib/greeting.ts`) para que título, gráfico e avisos digam a mesma coisa.
@@ -135,9 +133,9 @@ O limite entre "vai bem" e "apertado" é o saldo projetado para o fim do mês: z
 - **Estrutura:** `<header>` (landmark `banner`) com o link do logo, o grupo de mês e o botão do avatar. A saudação fica fora do `<header>`, dentro do `<main>`, porque o `h1` é o título do painel.
 - **Logo:** `<svg role="img" aria-label="Midas">` dentro de `<a href="/">`. O link é anunciado como "Midas, link". Os caminhos internos não precisam de `aria-hidden`.
 - **Troca de mês:** contêiner `role="group"` com `aria-label="Mês"`. Botões com `aria-label="Mês anterior"` e `aria-label="Próximo mês"`, ícones com `aria-hidden="true"`. O nome do mês fica num `<span aria-live="polite">` que já existe no primeiro render; ao trocar, o leitor anuncia "Outubro 2026" sem mover o foco, que fica no botão.
-- **Limite de 12 meses:** no último mês permitido, "Próximo mês" recebe `aria-disabled="true"` e ignora o clique. Com `disabled`, o botão perderia o foco no meio da navegação por teclado. Anuncie o motivo uma vez na região ao vivo: "Outubro 2027. Esse é o último mês com projeção."
+- **Limites:** a troca de mês vai do primeiro mês com dados (criação da conta ou lançamento mais antigo) até o **mês atual**; os meses seguintes são assunto do [Planejamento](../17-padroes-de-tela.md#planejamento). No limite, o botão recebe `aria-disabled="true"` e ignora o clique. Com `disabled`, o botão perderia o foco no meio da navegação por teclado. Anuncie o motivo uma vez na região ao vivo: "Setembro 2026. Os próximos meses estão no Planejamento."
 - **Avatar:** `<button>` com `aria-label="Sua conta"`, `aria-haspopup="menu"` e `aria-expanded`. As iniciais ficam com `aria-hidden="true"` para o leitor não soletrar "M A". O protótipo usa `<div aria-label>`, que não é focável nem anunciado de forma confiável; no app, é sempre botão.
-- **Menu da conta:** `role="menu"` com itens `role="menuitem"` (o `DropdownMenu` do shadcn/Radix já entrega isso). Setas movem entre itens, Esc fecha e devolve o foco ao avatar, Enter ativa.
+- **Menu da conta:** botão que abre uma lista de links (padrão *disclosure*), sem `role="menu"`. Tab percorre os links, Esc e clique fora fecham e o foco volta ao avatar.
 - **Saudação:** `h1` único da página. O acento é `<em>` sem texto extra. O eyebrow é um `<p>`, não um heading. O veio tem `aria-hidden="true"`.
 - **Valores na frase:** texto corrido, sem `aria-hidden`, porque não há sinal visual; "Sobraram" e "faltam" dizem a direção.
 - **Contraste (Calacatta / Portoro):** ícones e nome do mês em `tinta` 14,34 / 15,81 sobre `marmore`; eyebrow e frase em `tinta-suave` 6,30 / 9,15; acento em `ouro-texto` 5,53 / 10,90; iniciais 9,06 / 8,99. Nome do logo em `mogno` sobre `marmore`: 9,06:1 (no Portoro, `tinta`). A moeda em `ouro` não é texto.
@@ -251,7 +249,7 @@ O `dark:` precisa seguir o atributo do tema: `@custom-variant dark (&:where([dat
 export interface AppHeaderProps {
   /** Mês exibido, "AAAA-MM". Omitido: topo sem troca de mês. */
   month?: string;
-  /** Mês atual, "AAAA-MM" (limite da projeção = currentMonth + 12). */
+  /** Mês atual, "AAAA-MM" (último mês que a troca alcança). */
   currentMonth?: string;
   /** Primeiro mês navegável (criação da conta ou lançamento mais antigo). */
   firstMonth?: string;
@@ -326,7 +324,7 @@ Notas:
 | --- | --- |
 | Topo que rola com a página. | Cabeçalho fixo. |
 | Avatar como `<button>` com `aria-label="Sua conta"`. | `<div>` com `aria-label` e clique. |
-| `aria-disabled` no limite de 12 meses. | `disabled`, que tira o foco do botão. |
+| `aria-disabled` no limite de meses. | `disabled`, que tira o foco do botão. |
 | Um acento só quando o mês vai bem. | Acento em mês apertado. |
 | Um veio por tela, na saudação. | Veio também em cartões abaixo. |
 | Frase com um número real e palavras de direção. | Sinal + e − em frase corrida. |

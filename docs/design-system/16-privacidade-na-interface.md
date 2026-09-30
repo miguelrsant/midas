@@ -24,10 +24,13 @@ A privacidade é parte da marca do Midas: **"Seus dados são só seus."** Esta p
 | E-mail | Entrar, recuperar a senha, avisos de segurança |
 | Senha (só o resumo criptográfico, nunca a senha) | Entrar |
 | Nome ou apelido | A saudação ("Bom dia, Miguel.") |
-| Lançamentos: valor, tipo, categoria, data e descrição opcional | Mostrar o mês, os gráficos e a projeção |
-| Respostas das calculadoras (salário, datas, tipo de saída) | Calcular e guardar as rendas previstas |
+| Lançamentos: valor, tipo, categoria, data e descrição opcional (a descrição fica cifrada) | Mostrar o mês, os gráficos e a projeção |
+| Rendas e gastos fixos: valor, categoria, nome (cifrado), dia e por quantos meses | Anotar sozinho no dia marcado e projetar |
+| Categorias próprias e ajustes das prontas: nome e ícone (cifrados), escondida | Deixar as categorias do jeito da pessoa |
+| Contas das calculadoras que a pessoa adicionou ao planejamento: respostas e resultado (cifrados) | Mostrar "Suas últimas contas" e as rendas previstas |
+| Rendas previstas: tipo, valor e data | Entrar no planejamento até "Recebi" |
 | Limites por categoria | Avisar quando estiver perto do limite |
-| Preferência de tema | Fica só no aparelho |
+| Preferência de tema e "Ocultar valores" | Ficam só no aparelho |
 
 | Não guarda, nunca | |
 | --- | --- |
@@ -35,6 +38,8 @@ A privacidade é parte da marca do Midas: **"Seus dados são só seus."** Esta p
 | Dados de banco, cartão, senha de banco, acesso a contas | |
 | Localização, contatos, fotos | |
 | Rastreadores, pixels de anúncio, analytics de terceiros | |
+
+As calculadoras rodam no aparelho: uma conta que a pessoa não adiciona ao planejamento não chega a ser guardada.
 
 **Atenção a dados sensíveis.** Lançamentos podem revelar mais do que dinheiro: a categoria Saúde e descrições como "consulta" ou "farmácia" podem indicar informações de saúde, que a LGPD trata como dado sensível (art. 5º, II). Por isso todo lançamento é tratado como confidencial: só a própria pessoa vê, nada é usado para outro fim e nada vai para registros de erro ou e-mails.
 
@@ -96,7 +101,7 @@ A tela onde a pessoa exerce os direitos da LGPD (art. 18) sem precisar pedir a n
 | --- | --- | --- |
 | O que o Midas guarda | Lista em linguagem simples, com os números da pessoa ("312 lançamentos desde março de 2026") | Confirmação e acesso (I, II) |
 | Corrigir | Explica que todo lançamento se corrige tocando nele; o e-mail e o apelido se corrigem aqui | Correção (III) |
-| Baixar meus dados | Arquivo com tudo, em JSON (completo) e CSV (planilha de lançamentos) | Acesso e portabilidade (II, V) |
+| Baixar meus dados | Pede a senha ([PasswordConfirm](componentes/password-confirm.md)) e gera na hora dois arquivos: JSON com tudo e CSV com os lançamentos (abre no Excel e no LibreOffice em português). Nada fica guardado no servidor | Acesso e portabilidade (II, V) |
 | Aparelhos conectados | Lista e "Sair de todos os aparelhos" | Segurança |
 | Apagar minha conta | Apaga a conta e todos os dados | Eliminação (VI) |
 | Quem cuida dos seus dados | Contato do encarregado pelo tratamento de dados (e-mail) e link para a política, que lista os serviços que operam o app (hospedagem, banco, envio de e-mail) e o motivo de cada um | Canal com o encarregado (art. 41) e informação sobre compartilhamento (VII) |
@@ -108,9 +113,9 @@ A tela onde a pessoa exerce os direitos da LGPD (art. 18) sem precisar pedir a n
 1. Botão `md-btn-danger` "Apagar minha conta" (ícone `trash-2`) no fim da tela.
 2. Na própria tela (sem diálogo surpresa), um bloco explica o que acontece: "Isso apaga sua conta, seus 312 lançamentos e as respostas das calculadoras. Não dá para desfazer." Com a sugestão: "Quer baixar seus dados antes?"
 3. A pessoa digita a senha e toca em "Apagar minha conta e meus dados". O outro botão diz "Manter minha conta".
-4. Tela final: "Sua conta foi apagada. Obrigado por ter usado o Midas." E um e-mail de confirmação, sem dados financeiros.
+4. Tela final (`/conta-apagada`, pública): "Sua conta foi apagada. Obrigado por ter usado o Midas." E um e-mail de confirmação, enviado depois da exclusão, sem dados financeiros.
 
-Prazos de eliminação (imediata ou após alguns dias, cópias de segurança) são decididos com a skill `lgpd-retention-erasure` e ditos na tela e na política.
+A exclusão é imediata e completa (todas as tabelas, numa transação só). Cópias de segurança do banco somem em até 7 dias; se o banco for restaurado nesse tempo, a exclusão é reaplicada antes de o app voltar. Detalhes em `.lgpd/retention.md` e `.lgpd/dsar/workflow.md`.
 
 ## Modo discreto (padrão recomendado)
 

@@ -126,7 +126,9 @@ A linha não tem estado desabilitado nem selecionado.
 - **Categoria apagada ou desconhecida**: use "Outros" com `shapes`.
 - **Valor enorme** (`− R$ 125.000,00`): cabe; a descrição encolhe. Nunca abrevie valor na lista.
 - **Valor zero**: não existe (o formulário pede "Digite um valor maior que zero").
-- **Lançamento com data futura**: aparece no dia dele, com o cabeçalho "Quinta, 15 de outubro".
+- **Data futura**: não existe. O formulário vai até hoje; o que ainda vai acontecer é um fixo no Planejamento.
+- **Renda prevista** (das calculadoras): não entra nesta lista; fica no Planejamento até "Recebi".
+- **Veio de um fixo**: a meta ganha " · Fixo" ("Moradia · Fixo").
 - **Muitos lançamentos**: a tela Lançamentos mostra o mês escolhido no AppHeader; não use rolagem infinita entre meses.
 - **Linha recém-salva**: entra no topo do seu dia com `md-brilho`. É por ela que a pessoa desfaz: tocar na linha abre a edição (o aviso "Anotado" não tem botão).
 
@@ -195,7 +197,7 @@ No protótipo, a divisória está no `.md-tx` com `.md-tx:last-child`. Com o lin
 
 ## Implementação no app
 
-Base: nenhum componente shadcn; `Link` do Next.js e ícones do `lucide-react`. Utilitários sugeridos: `formatMoney` em `src/lib/money.ts` e `formatShortDate` / `formatDayHeading` em `src/lib/dates.ts`.
+Base: nenhum componente shadcn; `Link` do Next.js e ícones do `lucide-react`. Utilitários sugeridos: `formatMoney` em `src/lib/money.ts` e `formatEntryDate` / `formatDayHeading` em `src/lib/dates.ts` (o `formatShortDate` que já existe continua dando "30/09/2026" para datas com hora).
 
 ```ts
 // Props sugeridas
@@ -222,12 +224,12 @@ export interface TransactionRowProps {
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { formatMoney } from "@/lib/money";
-import { formatShortDate } from "@/lib/dates";
+import { formatEntryDate } from "@/lib/dates";
 
 export function TransactionRow(p: TransactionRowProps) {
   const Icon = p.category.icon;
   const isIncome = p.kind === "income";
-  const date = formatShortDate(p.date); // { short: "5 set", long: "5 de setembro" }
+  const date = formatEntryDate(p.date, today); // { short: "5 set", long: "5 de setembro" }
 
   return (
     <li className="border-b border-veio last:border-b-0">
@@ -278,7 +280,7 @@ export function TransactionDayGroup({ date, children }: { date: string; children
 
 Notas:
 
-- `formatShortDate` devolve "hoje", "ontem" ou "5 set"; na forma longa, "hoje", "ontem" ou "5 de setembro". Não use `Intl.DateTimeFormat` com `month: "short"` direto: em pt-BR ele produz "set." com ponto. Use uma lista fixa de abreviações ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez").
+- `formatEntryDate` recebe a data sem hora ("2026-09-05") e o dia de hoje em São Paulo, e devolve "hoje", "ontem" ou "5 set"; na forma longa, "hoje", "ontem" ou "5 de setembro". Não use `Intl.DateTimeFormat` com `month: "short"` direto: em pt-BR ele produz "set." com ponto. Use uma lista fixa de abreviações ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez").
 - `formatDayHeading` devolve "Hoje", "Ontem" ou "Sábado, 26 de setembro": pegue o dia da semana com `Intl.DateTimeFormat("pt-BR", { weekday: "long" })`, tire o "-feira" e ponha a inicial maiúscula.
 - Compare datas no fuso da pessoa (o lançamento guarda só o dia). "Hoje" muda à meia-noite local.
 - Ordem: dias do mais recente para o mais antigo; dentro do dia, o último salvo primeiro.

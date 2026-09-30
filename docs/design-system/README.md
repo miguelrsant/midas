@@ -1,6 +1,6 @@
 # Design system do Midas
 
-> Versão 3.1 · setembro de 2026 · Protótipo visual: [Midas Design System](https://claude.ai/artifact/S92PKRq1pybfHpSttekfe4)
+> Versão 3.3 · setembro de 2026 · Protótipo visual: [Midas Design System](https://claude.ai/artifact/S92PKRq1pybfHpSttekfe4)
 
 O design system do Midas junta **mármore, ouro e mogno** a uma interface calma, de números grandes e textos simples. A ideia vem do rei Midas, mas ao contrário do mito: aqui o toque de ouro é o **controle** que a pessoa ganha sobre o próprio dinheiro, sem cobiça e sem pressa.
 
@@ -85,6 +85,18 @@ Os arquivos trazem metadados de procedência (C2PA). Não os remova ao otimizar 
 4. Registre no [Histórico](#histórico).
 
 ## Histórico
+
+### 3.3 (30 de setembro de 2026): núcleo do produto
+
+- Personalização de categorias: categorias próprias (nome e ícone de uma lista curada), trocar nome e ícone das prontas, esconder do formulário. Continua sem cor por categoria.
+- Atalhos no lançamento (Café, Farmácia, Ônibus…) e fixos prontos (Aluguel, Luz, Internet…), com o fluxo "Monte seu mês" no primeiro acesso.
+- "Repete todo mês" no lançamento; fixos "todo mês", "por alguns meses" (parcelas) ou "só uma vez". Lançamento não tem data futura, e a troca de mês vai só até o mês atual.
+- Rendas previstas das calculadoras ficam no Planejamento, não na lista de Lançamentos, até "Recebi".
+- Duas calculadoras novas: salário líquido e seguro-desemprego. Toque de ouro continua só no lançamento novo.
+- Gráfico de meses em SVG próprio, desenhado no servidor, sem biblioteca. Barras sem `style=""` (a CSP bloqueia): larguras por classe pronta.
+- shadcn/ui entra onde não esbarra no design system (Button, Dialog, Collapsible, Tooltip, Popover, Switch, Skeleton); chips, rádios e o aviso "Anotado" continuam nativos.
+- Componentes novos: Bar, Shortcuts, CategoryIconPicker, ExpectedIncomeRow, RadioCards, PasswordConfirm, TaskHeader.
+- Regra da projeção fechada: gastos variáveis na média, fixos somados à parte, meses sem lançamento fora da média.
 
 ### 3.2 (30 de setembro de 2026): telas de entrada
 

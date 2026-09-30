@@ -129,7 +129,7 @@ Exemplos do Midas:
 
 - **Texto longo** (nome de categoria grande, "Educação e cursos online"): quebra de linha normal, sem reticências.
 - **Valor restante zero ou negativo**: a mensagem muda de fato, não de cor. "**Restaurante chegou ao limite.** Você planejou R$ 400,00 para setembro." Passou do limite: "**Restaurante passou do limite em R$ 25,00.** Você planejou R$ 400,00 para setembro."
-- **Várias categorias perto do limite**: um aviso só, com a que está mais perto: "**Restaurante chegou a 90% do limite.** …". As demais aparecem na tela de categorias.
+- **Várias categorias perto do limite**: um aviso só, com a que está mais perto: "**Restaurante chegou a 90% do limite.** …". O título ganha "e mais 2 categorias" quando houver outras; todas aparecem em Planejamento › Limites.
 - **Projeção sem base** (menos de um mês fechado): não mostre o aviso de projeção.
 - **Pessoa corrige a causa** (edita o gasto, muda o limite): o aviso some na próxima renderização.
 - **Erro de rede**: um Notice de alerta no topo, com "Tentar de novo", mesmo que várias partes da tela tenham falhado. Cada parte que falhou mostra só uma frase curta no lugar dos dados ("Não foi possível carregar o saldo."), sem botão próprio, e nunca zeros no lugar de dados que não chegaram. Ao salvar sem conexão, o formulário mantém o que a pessoa digitou.

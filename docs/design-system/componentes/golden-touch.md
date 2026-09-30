@@ -7,13 +7,13 @@ Grupo: Lançamentos · Classes base: `md-toque`, `md-onda`, `md-brilho`, `md-avi
 ## Quando usar
 
 - Só ao salvar um **lançamento novo** (gasto ou renda), no botão principal do formulário: "Salvar gasto", "Salvar renda".
-- Também quando uma calculadora cria uma renda (13º salário, Férias, Rescisão) e a pessoa toca em salvar.
 
 ## Quando não usar
 
 - Em qualquer outro botão: "Adicionar gasto" (só abre o formulário), "Entrar", "Baixar meus dados", "Salvar" de configurações.
 - Na edição de um lançamento: sem onda nem brilho; a confirmação usa a mesma região de status, só com texto ("Alterado: Café, − R$ 9,00"), sem a moeda.
-- Ao excluir: nada de dourado. A confirmação é texto ("Lançamento apagado.").
+- Ao excluir: nada de dourado. A confirmação é texto ("Lançamento excluído: Mercado do bairro, − R$ 127,90").
+- Nas calculadoras ("Adicionar ao planejamento"), nos fixos, nos limites e em "Monte seu mês": só o aviso em texto, sem onda nem moeda.
 - Para erros ou avisos: use [Notice](notice.md).
 - Nunca para "premiar" gastos menores ou metas: a conquista do mês é o [Achievement](achievement.md).
 
