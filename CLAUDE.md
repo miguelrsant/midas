@@ -177,3 +177,13 @@ O plugin tem um maestro, **`lgpd-audit`**, que escolhe o caminho (para o Midas, 
 3. Rode lint, checagem de tipos e testes antes de abrir um PR.
    Se o PR toca autenticação, dados pessoais, e-mail, configuração ou dependências, rode também o agente de revisão de segurança ([.claude/agents/security-reviewer.md](.claude/agents/security-reviewer.md)): ele pensa como quem ataca e só relata achados confirmados.
 4. Se uma decisão mudar o design system, atualize os docs no mesmo PR. Se mudar o tratamento de dados, atualize `.lgpd/` no mesmo PR.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
