@@ -7,3 +7,6 @@ overrides:
   # Dependência opcional do Better Auth (não usamos MySQL); força a versão corrigida
   # de GHSA-3f6p-5ww8-9rcr e do inflate sem limite.
   mysql2: ">=3.23.1"
+  # Só no CLI do Prisma (@prisma/config), fora do app em produção; força a versão
+  # corrigida de GHSA-ggr8-5vv4-36mx (estouro de pilha com objetos recursivos).
+  deepmerge-ts: ">=8.0.0"
