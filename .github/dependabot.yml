@@ -8,6 +8,14 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # ESLint 10 e TypeScript 7 ainda quebram o eslint-config-next (plugin do React)
+      # e o typescript-eslint. Versões menores e correções continuam chegando.
+      # Tire estas regras quando o ecossistema suportar as versões novas.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
