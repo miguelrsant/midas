@@ -86,6 +86,18 @@ Os arquivos trazem metadados de procedência (C2PA). Não os remova ao otimizar 
 
 ## Histórico
 
+### 3.2 (30 de setembro de 2026): telas de entrada
+
+- Entrada, cadastro e recuperação de senha ficam sempre no tema claro (Calacatta): o Portoro com mármore ficou pesado atrás do cartão.
+- Cadastro pede nome (obrigatório, pode ser apelido), e-mail e senha, nessa ordem.
+- Senha com no mínimo 8 caracteres, e não mais 15; senhas comuns e vazadas continuam recusadas.
+- O cartão de entrada cabe sem rolagem a partir de 390×844 e 1366×768, com ajudas de uma linha e o aviso de privacidade como linha simples com ícone.
+- O tema claro é o padrão do app, também sem JavaScript; "Escuro" e "Automático" são escolhas em Configurações.
+- Estrutura do app no celular: topo com logo e avatar (menu da conta com Seus dados, Configurações e Sair) e navegação inferior fixa. Cada item ocupa a largura do próprio rótulo, para nenhum ser cortado; abaixo de 360px o rótulo cai para peso 400, mantendo 14px. A partir de 1024px, a navegação vai para o topo.
+- O menu da conta é um botão que abre uma lista de links (padrão *disclosure*), sem `role="menu"`: Esc e clique fora fecham e o foco volta ao avatar. Evita uma dependência a mais para quatro itens.
+- "Seus dados" não repete a lista de serviços que operam o app: ela fica na Política de privacidade, com link no fim da tela (LGPD, art. 18, VII).
+- Links de navegação não usam o estilo de `md-link` (dourado sublinhado): ficam em `tinta-suave`, e o atual em `tinta` com a barra de ouro.
+
 ### 3.1 (setembro de 2026): documentação
 
 Ajustes feitos ao documentar, que valem sobre o protótipo:
@@ -98,7 +110,7 @@ Ajustes feitos ao documentar, que valem sobre o protótipo:
 - Erro de formulário com borda de 2px em `alerta` e ícone `triangle-alert`; a mensagem fica em `tinta`.
 - Botão em carregamento ("Salvando…") não fica apagado e usa `aria-busy`.
 - Um mármore por tela: nos dias da conquista do mês, o cartão de conquista leva o mármore e o de saldo fica liso.
-- Senha com no mínimo 15 caracteres, sem regras de composição e sem campo de confirmação (NIST SP 800-63B-4).
+- Senha com no mínimo 8 caracteres, sem regras de composição e sem campo de confirmação (NIST SP 800-63B-4).
 - "13º" com o indicador ordinal, ícone `utensils` para Restaurante, aviso "Anotado" sem botão.
 - Botão fechar com 48 × 48px; botão "Mostrar senha" sem `aria-pressed`.
 

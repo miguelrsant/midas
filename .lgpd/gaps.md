@@ -1,0 +1,33 @@
+# Gaps de Conformidade — Midas
+
+**Data**: 2026-09-30
+**Responsável por todos os itens**: Miguel
+**Prioridade**: P0 = antes de abrir o cadastro ao público; P1 = antes da próxima etapa (lançamentos); P2 = logo depois.
+
+> Não é aconselhamento jurídico. Itens com ⏸ são checkpoints do `lgpd-audit`: exigem aprovação humana e revisão por pessoa especialista em proteção de dados.
+
+| ID | Pendência | Norma | Prioridade | Skill | Prazo | Responsável |
+|---|---|---|---|---|---|---|
+| G01 | Designar o encarregado e publicar o contato em destaque no site e em "Seus dados" (canal dedicado; não usar e-mail pessoal) | Art. 41; Res. CD/ANPD nº 18/2024, Art. 9º; Res. CD/ANPD nº 2/2022, Art. 11 (se ATPP, canal ainda é obrigatório) | P0 | `lgpd-dpo-encarregado` → `.lgpd/encarregado.md` | antes do lançamento público | Miguel |
+| G02 | Identificar o controlador (Miguel como pessoa natural ou uma PJ) e verificar enquadramento como ATPP. Recomendação: não contar com prazos em dobro (Res. 2/2022, Art. 14) no planejamento | Art. 5º, VI; Res. CD/ANPD nº 2/2022 | P0 | `lgpd-audit` | antes da política | Miguel |
+| G03 ⏸ | Política de privacidade v1 (checkpoint, revisão jurídica): 7 elementos do Art. 9º, operadores, transferências, HIBP com k-anonimato, prazos de [retention.md](./retention.md), encarregado. E os Termos de uso que `user.termsVersion` referencia | Art. 9º; Art. 33 e 34 | P0 | `lgpd-privacy-policy` → `.lgpd/policies/privacy-policy-v1-draft.md` | antes do lançamento público | Miguel |
+| G04 | Decidir a idade mínima. **Recomendação: 18 anos**, sem pedir data de nascimento. Documentar a avaliação de "acesso provável" por menores em `.lgpd/eca-digital.md`. Atenção: se a lei se aplicar, autodeclaração não basta como verificação (Art. 9º, § 1º) | Lei 15.211/2025 (ECA Digital, vigente desde 17/03/2026); LGPD Art. 14 | P0 | `lgpd-eca-digital-minors` | antes do lançamento público | Miguel |
+| G05 | Plano de resposta a incidentes: runbook, modelos de comunicação e `.lgpd/incidents/log.md`. Comunicação à ANPD e aos titulares em 3 dias úteis; registro de todos os incidentes por 5 anos. Hash de senha, token de sessão e (depois) dados financeiros são categorias do Art. 5º | Art. 48; Res. CD/ANPD nº 15/2024, Arts. 5º, 6º, 9º e 10 | P0 | `lgpd-incident-response` | antes do lançamento público | Miguel |
+| G06 ⏸ | ROPA (checkpoint): consolidar [data-map.md](./data-map.md) e [legal-basis.md](./legal-basis.md) no modelo da ANPD | Art. 37 | P1 | `lgpd-ropa` → `.lgpd/ROPA.md` | antes da próxima etapa | Miguel |
+| G07 ⏸ | RIPD dos lançamentos (checkpoint), **antes de escrever o código**: inclui calculadoras e limites; decide a base do Art. 11 (I — consentimento específico e destacado, ou II, "d" — exercício regular de direitos, inclusive em contrato) e a criptografia de coluna | Art. 38; Art. 5º, II; Art. 11; Res. CD/ANPD nº 2/2022, Art. 4º | P1 | `lgpd-ripd` → `.lgpd/RIPD/ripd-lancamentos.md` | antes da próxima etapa | Miguel |
+| G08 | Revisar DPAs e cláusulas-padrão de Vercel, Neon e Google (12 itens da `lgpd-dpa`; Anexo II da Res. 19/2024). **Gmail pessoal**: provável ausência de DPA → critério eliminatório da skill; decidir entre Google Workspace com adendo ou provedor transacional com DPA | Art. 39; Art. 42; Arts. 33 a 36; Res. CD/ANPD nº 19/2024 | P0 (Google) / P1 (Vercel, Neon) | `lgpd-dpa`, `lgpd-vendor-audit`, `lgpd-international-transfer` | ver prioridade | Miguel |
+| G09 | Aprovar LIAs das atividades com legítimo interesse: A006 (limite de tentativas), A007 (eventos de segurança), A008 (logs técnicos), em `.lgpd/lia/` | Art. 7º, IX; Art. 10 | P1 | `lgpd-legal-basis` (`assets/lia-template.md`) | antes da próxima etapa | Miguel |
+| G10 | Verificar com revisão jurídica se o Marco Civil (Lei 12.965/2014, Art. 15: registros de acesso por 6 meses) se aplica ao Midas. Hoje `ipAddress` é sempre nulo e não guardamos registro de acesso com IP | Lei 12.965/2014, Art. 15; LGPD Art. 7º, II | P1 | `lgpd-retention-erasure` | antes do lançamento público | Miguel |
+| G11 | Retenção das cópias de e-mail no Gmail ("Enviados" e devoluções): proposta de 30 dias | Art. 6º, III; Art. 16 | P1 | `lgpd-retention-erasure` | com G08 | Miguel |
+| G12 | Guardar HMAC do IP (com segredo do servidor) em `rateLimit`, em vez do IP em claro; confirmar implementação | Art. 6º, III; Art. 46 | P2 | `lgpd-encryption-keys` | próxima revisão de segurança | Miguel |
+| G13 | Token de sessão em claro no banco diverge do CLAUDE.md ("id aleatório guardado com hash no banco"). Mitigação verificada no código do Better Auth 1.7: o cookie leva o token + assinatura HMAC com `BETTER_AUTH_SECRET` (`getSignedCookie` em `api/routes/session`), então uma cópia só do banco não basta para montar um cookie válido; o plugin `bearer` não está habilitado. Exceção registrada no CLAUDE.md. Resta: guardar o segredo só na Vercel, rotacionar em caso de incidente (encerra todas as sessões) e reavaliar se o Better Auth passar a oferecer hash de sessão | Art. 46; Res. 15/2024, Art. 5º, IV | P1 | `lgpd-encryption-keys` | revisão a cada atualização do Better Auth | Miguel |
+| G14 | "Seus dados": acesso, correção, exportação JSON e CSV, aparelhos, exclusão (resposta completa em até 15 dias quando não for autosserviço) | Art. 18; Art. 19, II | P1 | `lgpd-dsar` → `.lgpd/dsar/` | com a próxima etapa | Miguel |
+| G15 | Aprovar prazos propostos em [retention.md](./retention.md): `securityEvent` 6 meses; PITR do Neon 7 dias (conferir plano) com reaplicação de exclusões após restauração; frequência de `pnpm db:limpeza`, já que a limpeza interna só roda após login ou cadastro | Arts. 15, 16; Art. 18, VI | P1 | `lgpd-retention-erasure` | antes do lançamento público | Miguel |
+| G16 | Trilha de auditoria (F6): decidir se `securityEvent` precisa de encadeamento por hash; sem dados pessoais além de `userId` | Art. 6º, X; Art. 37 | P2 | `lgpd-audit-logging` | P2 | Miguel |
+| G17 | Criptografia e chaves (F7): confirmar criptografia em repouso no Neon; decidir criptografia de coluna para descrição dos lançamentos; rotação de `BETTER_AUTH_SECRET` e da senha de app | Art. 46 | P1 | `lgpd-encryption-keys` | antes da próxima etapa | Miguel |
+| G18 | GitHub: habilitar varredura de segredos e orientar que pedidos com dado pessoal usem o canal do encarregado, não issues públicas | Art. 46; Art. 6º, VII | P2 | `lgpd-vendor-audit` | P2 | Miguel |
+
+## Fora do escopo agora (registrar antes de começar)
+
+- **Integração com WhatsApp**: telefone é dado novo; rodar `lgpd-audit` (mapa, base legal, política, transferência) antes de qualquer código (CLAUDE.md).
+- **Qualquer caixa opcional** (ex.: novidades por e-mail): exige consentimento separado e desmarcado (Art. 8º) e `lgpd-consent-schema`.

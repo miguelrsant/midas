@@ -107,17 +107,9 @@ O bloco abaixo é o começo do `src/app/globals.css` do app. Ele define os token
   --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.5);
   --textura: url("/texturas/marmore-portoro.webp");
 }
-
-/* Sem JavaScript (ou antes dele): segue o aparelho, a menos que a pessoa tenha escolhido "Claro". */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    /* Repita aqui exatamente o bloco do Portoro acima. */
-  }
-}
 ```
 
-O bloco do Portoro aparece duas vezes (no atributo e na media query). Mantenha os dois iguais; um teste que lê `tokens.json` e compara com o CSS evita que eles se separem.
+O tema claro é o padrão, inclusive sem JavaScript: o Portoro só vale com `data-theme="dark"`, quando a pessoa escolhe "Escuro" (ou "Automático" com o aparelho no escuro) em Configurações. Um teste que lê `tokens.json` e compara com o CSS evita que os dois se separem.
 
 **Por que não `light-dark()`?** A função CSS `light-dark()` evitaria a repetição, mas só funciona a partir do Safari 17.5, e parte do público usa iPhones mais antigos. O piso de navegadores do app é o do Tailwind v4 (Safari 16.4, Chrome 111, Firefox 128).
 
@@ -276,10 +268,10 @@ As demais classes `md-*` que aparecem nas páginas de componentes (`md-btn`, `md
 
 ## Tema no Next.js
 
-- Use `next-themes` com `attribute="data-theme"`, `defaultTheme="system"`, `enableSystem` e `disableTransitionOnChange`. Ele aplica o tema antes da primeira pintura (sem piscar) e guarda a escolha no aparelho.
+- Use `next-themes` com `attribute="data-theme"`, `defaultTheme="light"`, `enableSystem` e `disableTransitionOnChange`. Ele aplica o tema antes da primeira pintura (sem piscar) e guarda a escolha no aparelho.
 - O `<html>` recebe `suppressHydrationWarning`, porque o atributo muda antes da hidratação.
-- A meta `theme-color` acompanha o tema: `#f5f2ec` (claro) e `#17110c` (escuro).
-- Em Configurações, o controle de tema tem três opções: "Claro", "Escuro" e "Automático".
+- A meta `theme-color` usa o `marmore` do tema padrão: `#f5f2ec`.
+- Em Configurações, o controle de tema tem três opções: "Claro" (marcado de início), "Escuro" e "Automático".
 
 ## Nomes do protótipo e nomes do app
 

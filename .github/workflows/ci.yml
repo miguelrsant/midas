@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: midas
+          POSTGRES_PASSWORD: midas
+          POSTGRES_DB: midas
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U midas -d midas"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:latest
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "true"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+        ports: ["1025:1025", "8025:8025"]
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Banco de teste
+        run: PGPASSWORD=midas psql -h localhost -U midas -d midas -c "CREATE DATABASE midas_test OWNER midas;"
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - name: Auditoria de dependências (produção)
+        run: pnpm audit --prod --audit-level high
+
+      - name: Migrações e build (valores de .env.development)
+        run: |
+          set -a; . ./.env.development; set +a
+          pnpm prisma migrate deploy
+          pnpm build
+
+      - name: Testes de ponta a ponta
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

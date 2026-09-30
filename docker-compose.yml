@@ -1,0 +1,36 @@
+# Ambiente de desenvolvimento do Midas.
+# Sobe o Postgres e o Mailpit (caixa de e-mail falsa) só na máquina local.
+# Uso: docker compose up -d
+# As portas ficam presas em 127.0.0.1: nada fica exposto na rede.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: midas
+      POSTGRES_PASSWORD: midas
+      POSTGRES_DB: midas
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U midas -d midas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # Interface: http://localhost:8025
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
+volumes:
+  postgres-data:

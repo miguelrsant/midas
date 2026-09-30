@@ -9,7 +9,7 @@ A privacidade é parte da marca do Midas: **"Seus dados são só seus."** Esta p
 | Princípio (LGPD, art. 6º) | Como aparece no Midas |
 | --- | --- |
 | Finalidade e adequação | Cada dado pedido tem um motivo dito na tela: "Seu e-mail serve para entrar e recuperar a senha." |
-| Necessidade | O cadastro pede só e-mail e senha; o apelido é opcional. Nada de CPF, RG, telefone, endereço, data de nascimento ou dados bancários. |
+| Necessidade | O cadastro pede só nome (ou apelido), e-mail e senha. Nada de CPF, RG, telefone, endereço, data de nascimento ou dados bancários. |
 | Livre acesso | "Seus dados" mostra o que o Midas guarda e permite baixar tudo. |
 | Qualidade dos dados | Todo lançamento pode ser corrigido com um toque na linha. |
 | Transparência | Política de privacidade em linguagem simples, com data e versão, a um toque de qualquer tela. |
@@ -23,7 +23,7 @@ A privacidade é parte da marca do Midas: **"Seus dados são só seus."** Esta p
 | --- | --- |
 | E-mail | Entrar, recuperar a senha, avisos de segurança |
 | Senha (só o resumo criptográfico, nunca a senha) | Entrar |
-| Apelido (opcional) | A saudação ("Bom dia, Miguel.") |
+| Nome ou apelido | A saudação ("Bom dia, Miguel.") |
 | Lançamentos: valor, tipo, categoria, data e descrição opcional | Mostrar o mês, os gráficos e a projeção |
 | Respostas das calculadoras (salário, datas, tipo de saída) | Calcular e guardar as rendas previstas |
 | Limites por categoria | Avisar quando estiver perto do limite |
@@ -50,7 +50,7 @@ O aviso de privacidade ([Notice](componentes/notice.md), ícone `shield-check`) 
 
 ## Cadastro
 
-- Campos: **e-mail**, **senha** e, opcional, **"Como você quer que o Midas te chame?"**. Mais nada.
+- Campos, nesta ordem: **nome** (pode ser um apelido), **e-mail** e **senha**. Mais nada.
 - Ao lado de cada campo, o motivo em `caption`: "Seu e-mail serve para entrar e recuperar a senha. Não mandamos propaganda."
 - Aceite dos termos e da política numa caixa **desmarcada**, com os links abertos na mesma aba e voltando ao formulário sem perder o que foi digitado: "Li e aceito os [Termos de uso] e a [Política de privacidade]."
 - Nenhuma outra caixa de marcar. Se um dia existir algo opcional (por exemplo, receber novidades por e-mail), é uma caixa separada, desmarcada, que não impede o cadastro.
@@ -63,7 +63,7 @@ Regras alinhadas à recomendação do NIST (SP 800-63B-4) para senha como único
 
 | Regra | Na tela |
 | --- | --- |
-| Mínimo de **15 caracteres**, máximo de pelo menos 64 | Contador em `caption`: "12 de 15 caracteres" |
+| Mínimo de **8 caracteres** (piso do NIST; decisão do projeto), máximo de 128 | Contador em `caption`: "5 de 8 caracteres" |
 | Sem exigência de maiúscula, número ou símbolo | Dica: "Uma frase fácil de lembrar funciona bem, como 'café com leite na varanda'." |
 | Recusa senhas comuns e vazadas | "Essa senha aparece em listas de senhas vazadas. Escolha outra." |
 | Espaços e acentos permitidos | Nada a dizer: simplesmente funciona |
@@ -97,10 +97,9 @@ A tela onde a pessoa exerce os direitos da LGPD (art. 18) sem precisar pedir a n
 | O que o Midas guarda | Lista em linguagem simples, com os números da pessoa ("312 lançamentos desde março de 2026") | Confirmação e acesso (I, II) |
 | Corrigir | Explica que todo lançamento se corrige tocando nele; o e-mail e o apelido se corrigem aqui | Correção (III) |
 | Baixar meus dados | Arquivo com tudo, em JSON (completo) e CSV (planilha de lançamentos) | Acesso e portabilidade (II, V) |
-| Com quem compartilhamos | "Com ninguém." Mais a lista dos serviços que operam o app (hospedagem, envio de e-mail), com o motivo de cada um | Informação sobre compartilhamento (VII) |
 | Aparelhos conectados | Lista e "Sair de todos os aparelhos" | Segurança |
 | Apagar minha conta | Apaga a conta e todos os dados | Eliminação (VI) |
-| Quem cuida dos seus dados | Contato do encarregado pelo tratamento de dados (e-mail) e link para a política | Canal com o encarregado (art. 41) |
+| Quem cuida dos seus dados | Contato do encarregado pelo tratamento de dados (e-mail) e link para a política, que lista os serviços que operam o app (hospedagem, banco, envio de e-mail) e o motivo de cada um | Canal com o encarregado (art. 41) e informação sobre compartilhamento (VII) |
 
 ### Apagar a conta
 

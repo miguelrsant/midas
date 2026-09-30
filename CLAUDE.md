@@ -64,7 +64,9 @@ O projeto faz parte do portfólio de Miguel Angelo ([@miguelrsant](https://githu
 | Gráficos     | Recharts (meses); HTML e CSS para barras por categoria e progresso          |
 | Tema         | next-themes com `attribute="data-theme"` (Claro, Escuro, Automático)        |
 | Banco        | PostgreSQL com Prisma                                                       |
-| Autenticação | E-mail e senha, hash com Argon2id, sessão em cookie `HttpOnly`              |
+| Autenticação | Better Auth (e-mail e senha), hash com Argon2id, sessão em cookie `HttpOnly` |
+| E-mail       | SMTP (Gmail com senha de app em produção, Mailpit no dev), atrás de `EmailSender` |
+| Hospedagem   | Vercel (região `gru1`) e Neon (`aws-sa-east-1`); sem Redis, fila, cache ou cron |
 | Fontes       | Servidas pelo próprio app (`next/font` e `public/fontes/`), nunca de CDN    |
 
 Mudanças de stack são decididas com o Miguel.
@@ -97,15 +99,15 @@ As regras completas estão nos docs. As que mais se quebram sem querer:
 
 O Midas guarda a vida financeira das pessoas. Trate cada linha de código como se fosse auditada, porque é código aberto e vai ser.
 
-- **Senhas:** Argon2id com parâmetros atuais recomendados pela OWASP; mínimo de 15 caracteres, sem regras de composição, bloqueio de senhas comuns e vazadas (NIST SP 800-63B-4). Nunca registrar, logar ou devolver a senha.
-- **Sessão:** cookie `HttpOnly`, `Secure`, `SameSite=Lax`, id aleatório guardado com hash no banco; renovar o id ao entrar e ao trocar a senha; "Sair de todos os aparelhos" invalida tudo.
+- **Senhas:** Argon2id com parâmetros atuais recomendados pela OWASP; mínimo de 8 caracteres (piso do NIST SP 800-63B-4; decisão do projeto para facilitar a digitação, compensada pela recusa de senhas comuns e vazadas e pelo limite de tentativas), sem regras de composição. Nunca registrar, logar ou devolver a senha.
+- **Sessão:** cookie `HttpOnly`, `Secure`, `SameSite=Lax`, token aleatório; renovar ao entrar e ao trocar a senha; "Sair de todos os aparelhos" invalida tudo. **Exceção registrada:** o Better Auth guarda o token da sessão em claro na tabela `session`; o cookie leva o token com assinatura HMAC (`BETTER_AUTH_SECRET`), então uma cópia só do banco não monta um cookie válido. Não habilite o plugin `bearer` sem rever isso (`.lgpd/gaps.md`, G13). Sessões não guardam IP nem User-Agent completo.
 - **Ações sensíveis** (apagar conta, trocar senha ou e-mail, baixar dados) pedem a senha de novo.
 - **Mensagens que não revelam contas:** login, cadastro e recuperação respondem igual exista ou não o e-mail.
 - **Limite de tentativas** no servidor para entrar, cadastrar e recuperar senha.
 - **Autorização em toda consulta:** todo acesso a dados filtra pelo `userId` da sessão, no servidor. Nunca confiar em id vindo do cliente.
 - **Validação** de toda entrada no servidor (por exemplo, com Zod), inclusive em Server Actions.
 - **Cabeçalhos:** Content Security Policy restrita (sem domínios de terceiros), HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'`.
-- **Segredos** só em variáveis de ambiente; nunca no repositório, em logs ou em mensagens de erro. `.env.example` sem valores reais.
+- **Segredos** só em variáveis de ambiente; nunca no repositório, em logs ou em mensagens de erro. `.env.development` e `.env.test` versionados só com valores falsos de localhost.
 - **Logs sem dados pessoais nem financeiros:** nada de e-mail, valores ou descrições de lançamentos em logs, erros ou ferramentas de monitoramento.
 - **Dependências** mínimas e atualizadas; revisar antes de adicionar qualquer uma.
 
@@ -115,7 +117,7 @@ O Midas trata dados pessoais e precisa seguir a **LGPD (Lei 13.709/2018)** desde
 
 ### Regras que valem sempre
 
-- **Necessidade:** colete só o que a funcionalidade precisa. Hoje: e-mail, hash da senha, apelido opcional, lançamentos, respostas das calculadoras, limites. Qualquer dado novo exige motivo escrito e revisão com o plugin.
+- **Necessidade:** colete só o que a funcionalidade precisa. Hoje: e-mail, hash da senha, nome ou apelido (obrigatório, só para a saudação), lançamentos, respostas das calculadoras, limites. Qualquer dado novo exige motivo escrito e revisão com o plugin.
 - **Finalidade:** os dados servem para mostrar as finanças da própria pessoa. Nunca para perfilar, pontuar, vender ou anunciar.
 - **Dado sensível:** lançamentos podem revelar saúde (categoria Saúde, descrições como "farmácia"). Trate **todo lançamento como confidencial**: só a dona ou o dono vê, fora de logs e de e-mails.
 - **Direitos do titular (art. 18)** na própria interface: acessar, corrigir, baixar (JSON e CSV) e apagar a conta. Veja [Privacidade na interface](docs/design-system/16-privacidade-na-interface.md).
