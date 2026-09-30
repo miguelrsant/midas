@@ -19,6 +19,7 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { checkNickname } from "@/lib/validation";
 import { errorCode, log } from "@/lib/log";
 import { maybePurgeExpiredData } from "@/lib/maintenance";
+import { consume, emailKey } from "@/lib/throttle";
 
 import { deviceLabel } from "./auth/device";
 import { hashPassword, verifyPassword } from "./auth/password";
@@ -29,6 +30,14 @@ import { recordSecurityEvent } from "./auth/security-events";
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+
+/**
+ * Tentativas de entrada por conta, somando todos os IPs. O limite por IP (abaixo) não
+ * segura um ataque distribuído contra um e-mail só. Conta toda tentativa, certa ou
+ * errada, exista a conta ou não: assim a resposta não revela quem tem conta.
+ */
+const SIGN_IN_PER_ACCOUNT = { windowMs: HOUR * 1000, max: 10 };
+const EMAIL_MAX_LENGTH = 254;
 
 /** Rotas em que uma senha nova é escolhida, e o campo que a carrega. */
 const NEW_PASSWORD_FIELDS: Record<string, "password" | "newPassword"> = {
@@ -103,7 +112,9 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     // Se a pessoa tentar entrar sem confirmar, um link novo é enviado.
     sendOnSignIn: true,
-    autoSignInAfterVerification: true,
+    // Sem entrar pelo link: quem criou a conta com o e-mail de outra pessoa conhece a
+    // senha, e a dona do e-mail, ao confirmar, entraria numa conta que não é só dela.
+    autoSignInAfterVerification: false,
     expiresIn: DAY,
     sendVerificationEmail: async ({ user, url }) => {
       runInBackground(sendEmail(verifyEmailMessage(user.email, url), "verify-email"));
@@ -147,6 +158,9 @@ export const auth = betterAuth({
     useSecureCookies: env.SECURE_COOKIES,
     defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
     // Na Vercel, x-real-ip e x-forwarded-for são definidos pela própria plataforma.
+    // Fora dela, ponha na frente um proxy que sobrescreva x-real-ip (ou configure
+    // trustedProxies): sem isso, o cabeçalho pode ser forjado, ou todo mundo cai num
+    // contador só e 5 erros travam a entrada de todas as pessoas (README, "Hospedar").
     ipAddress: { ipAddressHeaders: ["x-real-ip", "x-forwarded-for"] },
     backgroundTasks: { handler: runInBackground },
   },
@@ -163,8 +177,30 @@ export const auth = betterAuth({
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email") {
+        const email = (ctx.body as { email?: unknown } | undefined)?.email;
+        if (
+          typeof email === "string" &&
+          !(await consume(emailKey("signin", email), SIGN_IN_PER_ACCOUNT))
+        ) {
+          throw new APIError("TOO_MANY_REQUESTS", {
+            message: "Too many requests",
+            code: "TOO_MANY_ATTEMPTS",
+          });
+        }
+      }
+
       if (ctx.path === "/sign-up/email") {
-        const body = ctx.body as { name?: unknown; termsVersion?: unknown; image?: unknown };
+        const body = ctx.body as {
+          email?: unknown;
+          name?: unknown;
+          termsVersion?: unknown;
+          image?: unknown;
+        };
+        // O banco guarda até 254 (RFC 5321); maior que isso seria um erro 500.
+        if (typeof body.email === "string" && body.email.length > EMAIL_MAX_LENGTH) {
+          throw new APIError("BAD_REQUEST", { message: "Invalid email", code: "INVALID_EMAIL" });
+        }
         if (body.termsVersion !== TERMS_VERSION) {
           throw new APIError("BAD_REQUEST", {
             message: "Terms not accepted",
@@ -256,6 +292,13 @@ export const auth = betterAuth({
         after: async (user) => {
           await recordSecurityEvent(user.id, "SIGNUP");
         },
+      },
+      update: {
+        // O hook de /update-user valida o apelido; aqui ele é gravado já normalizado.
+        before: async (user) => ({
+          data:
+            user.name === undefined ? user : { ...user, name: checkNickname(user.name).nickname },
+        }),
       },
     },
     session: {

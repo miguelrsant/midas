@@ -7,16 +7,19 @@ import { getOptionalSession } from "@/lib/auth/dal";
 
 export const metadata: Metadata = { title: "Confirmar e-mail" };
 
-/** Para onde o link de confirmação leva depois de validar o token (ou com ?error= se falhar). */
+/**
+ * Para onde o link de confirmação leva depois de validar o token (ou com ?error= se falhar).
+ * O link não faz entrar na conta (autoSignInAfterVerification em src/lib/auth.ts):
+ * depois de confirmar, a pessoa entra com o e-mail e a senha.
+ */
 export default async function ConfirmEmailPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const session = await getOptionalSession();
 
-  if (error || !session) {
+  if (error) {
     return (
       <AuthShell>
         <AuthTitle>Esse link venceu.</AuthTitle>
@@ -31,17 +34,30 @@ export default async function ConfirmEmailPage({
     );
   }
 
+  const session = await getOptionalSession();
+
   return (
     <AuthShell>
       <AuthTitle>
         Conta <Accent>confirmada</Accent>.
       </AuthTitle>
-      <p className="text-center">
-        Tudo pronto. Agora é só começar a anotar o que entra e o que sai.
-      </p>
-      <Link href="/" className={buttonClasses({ size: "lg", fullWidth: true })}>
-        Ir para o início
-      </Link>
+      {session ? (
+        <>
+          <p className="text-center">
+            Tudo pronto. Agora é só começar a anotar o que entra e o que sai.
+          </p>
+          <Link href="/" className={buttonClasses({ size: "lg", fullWidth: true })}>
+            Ir para o início
+          </Link>
+        </>
+      ) : (
+        <>
+          <p className="text-center">Tudo pronto. Agora entre com seu e-mail e sua senha.</p>
+          <Link href="/entrar" className={buttonClasses({ size: "lg", fullWidth: true })}>
+            Entrar
+          </Link>
+        </>
+      )}
     </AuthShell>
   );
 }
