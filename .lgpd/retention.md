@@ -1,6 +1,6 @@
 # Retenção e Eliminação — Midas
 
-**Versão**: v1 (proposta, aguarda aprovação do Miguel)
+**Versão**: v2 (proposta, aguarda aprovação do Miguel; v2 inclui as tabelas do núcleo do produto)
 **Data**: 2026-09-30
 **Skill**: `lgpd-retention-erasure` (F8, Pipeline A). A skill não fixa nome de arquivo; usamos `.lgpd/retention.md`.
 **Normas**: LGPD Arts. 15 e 16 (término do tratamento e eliminação), Art. 18, VI (eliminação a pedido), Art. 6º, III (necessidade), Art. 46 (segurança); Res. CD/ANPD nº 15/2024, Art. 10 (registro de incidentes por 5 anos).
@@ -26,7 +26,7 @@ Não há agendador externo (sem Vercel Cron, Redis, fila ou cache). A limpeza do
 
 | Dado (tabela) | Atividade | Prazo | Gatilho | Ação ao fim | Onde roda |
 |---|---|---|---|---|---|
-| `user`, `account` | A001 | Enquanto a conta existir | Pedido de exclusão (Art. 18, VI) | HARD_DELETE em cascata (account, session, securityEvent, e na próxima etapa lançamentos, calculadoras e limites) | Ação "Apagar minha conta" |
+| `user`, `account` | A001 | Enquanto a conta existir | Pedido de exclusão (Art. 18, VI) | HARD_DELETE em cascata (account, session, securityEvent, entry, recurring, category_limit, user_category, calculation, expected_income, user_preference) numa transação; `verification` da pessoa apagada na mesma transação | Ação "Apagar minha conta" |
 | `user` não confirmado | A001 | **7 dias** após o cadastro | `emailVerified = false` e `createdAt` + 7 dias | HARD_DELETE em cascata | Limpeza interna / `pnpm db:limpeza` |
 | `session` | A002 | **30 dias** após o último uso (renova com o uso) | `expiresAt` vencido; sair; trocar senha; "Sair de todos os aparelhos" | HARD_DELETE | Na hora (sair/trocar senha) e limpeza interna (vencidas) |
 | `verification` (confirmação) | A003 | **24 h**, uso único | `expiresAt` vencido ou uso | HARD_DELETE | Na hora (uso) e limpeza interna |
@@ -40,7 +40,12 @@ Não há agendador externo (sem Vercel Cron, Redis, fila ou cache). A limpeza do
 | E-mails enviados (cópia no Gmail) | A004 | **Proposta: 30 dias** | Data de envio | Apagar da pasta "Enviados" (filtro ou rotina) | Conta Google (a configurar) |
 | Backups do banco (PITR do Neon) | todas | **Proposta: janela de 7 dias** (limitada ao plano; **a verificar**) | Rotação automática | Sobrescrita pelo operador | Neon |
 | Exportação "Seus dados" | A009 | Nenhum (gerada na hora) | Download | Não guardada | — |
-| Lançamentos, calculadoras, limites | A010 a A012 | Enquanto a conta existir | Exclusão pela pessoa ou da conta | HARD_DELETE | Próxima etapa |
+| `entry` (lançamentos) | A010 | Enquanto a conta existir | Excluir lançamento; apagar a conta | HARD_DELETE (sem soft delete) | Ação da pessoa / cascata |
+| `recurring` (fixos) | A014 | Enquanto a conta existir | "Parar" o fixo; apagar a conta | HARD_DELETE; lançamentos já criados ficam (vínculo vira nulo) | Ação da pessoa / cascata |
+| `expected_income` | A014 | Até "Recebi" ou "Não recebi" | Confirmação da pessoa; apagar a conta de calculadora; apagar a conta | HARD_DELETE ("Recebi" cria o lançamento real) | Ação da pessoa / cascata |
+| `calculation` | A011 | Enquanto a conta existir | Apagar a conta de calculadora; apagar a conta | HARD_DELETE (leva as previstas junto) | Ação da pessoa / cascata |
+| `category_limit`, `user_category`, `user_preference` | A012, A013, A014 | Enquanto a conta existir | Remover o limite; apagar a categoria (lançamentos e fixos vão para "Outros"); apagar a conta | HARD_DELETE | Ação da pessoa / cascata |
+| `deleted_account` | A009 | **Janela do PITR (7 dias) + 1 dia** | `deletedAt` + 8 dias | HARD_DELETE | Limpeza interna / `pnpm db:limpeza` |
 | Registro de incidentes | — | **5 anos** | Registro do incidente | Eliminar após 5 anos | `.lgpd/incidents/log.md` (Res. 15/2024, Art. 10) |
 
 ## Propostas que precisam de decisão
@@ -58,7 +63,11 @@ Não há agendador externo (sem Vercel Cron, Redis, fila ou cache). A limpeza do
 - **Proposta**:
   1. Configurar a menor janela que ainda permita recuperar de um erro (proposta: **7 dias**).
   2. Dizer na política: "Cópias de segurança são sobrescritas em até 7 dias. Depois disso, não sobra nada."
-  3. **Eliminação após restauração**: guardar uma lista de ids apagados (id aleatório, sem e-mail, sem outro dado) pelo mesmo prazo da janela. Se o banco for restaurado a um ponto anterior, reaplicar as exclusões antes de reabrir o app. Apagar a lista quando a janela vencer.
+  3. **Eliminação após restauração**: a tabela `deleted_account` guarda só o id aleatório da conta e a data, pelo prazo da janela + 1 dia. Como ela mora no mesmo banco, um restore também a volta no tempo. **Runbook de restauração**:
+     1. antes de restaurar, anotar o ponto de restauração e manter o app em manutenção;
+     2. depois de restaurar, copiar para o banco restaurado as linhas de `deleted_account` da branch anterior ao restore (o Neon preserva a branch de origem);
+     3. rodar a reaplicação (`DELETE FROM "user" WHERE id IN (SELECT id FROM deleted_account)`), que apaga tudo em cascata;
+     4. só então reabrir o app.
   4. **Branches**: não criar branches do Neon a partir de produção para desenvolvimento, testes ou **previews da Vercel** (a integração Neon ↔ Vercel usa como origem a branch `dev`, vazia; README, "Publicar na Vercel"); dados de teste são fictícios (ou anonimizados com `lgpd-anonymization`). Branch temporária de produção, se inevitável, é apagada no mesmo dia.
 - **Base**: Art. 16 (eliminação após o término), Art. 46 (segurança), Art. 18, VI.
 
@@ -69,10 +78,11 @@ Ao enviar pelo SMTP do Gmail, cópias costumam ficar na pasta "Enviados" da cont
 ## Exclusão da conta (Art. 18, VI)
 
 1. A pessoa confirma com a senha ("Apagar minha conta e meus dados").
-2. HARD_DELETE imediato em cascata no banco.
-3. E-mail de confirmação enviado **antes** de apagar o endereço, sem dado financeiro.
-4. O que ainda resta por um tempo, e é dito na tela e na política: cópias de segurança (até a janela do PITR), a cópia do e-mail de confirmação no Gmail (até 30 dias, se aprovado) e logs técnicos da plataforma (prazo da Vercel, a verificar).
-5. Não há retenção legal conhecida; se a revisão jurídica apontar alguma, aplicar bloqueio só dos campos necessários.
+2. Numa só transação: registra o id em `deleted_account`, apaga as linhas de `verification` da pessoa e apaga o `user` (cascata para todas as tabelas com `userId`).
+3. A sessão é encerrada e os cookies (`midas.session_token`, `midas.device`) removidos.
+4. E-mail de confirmação enviado **depois** da exclusão confirmada, com o endereço só na memória da requisição, sem dado financeiro. Se a exclusão falhar, nada é enviado.
+5. O que ainda resta por um tempo, e é dito na tela e na política: cópias de segurança (até a janela do PITR), a cópia do e-mail de confirmação no Gmail (até 30 dias, se aprovado) e logs técnicos da plataforma (prazo da Vercel, a verificar).
+6. Não há retenção legal conhecida; se a revisão jurídica apontar alguma, aplicar bloqueio só dos campos necessários.
 
 ## Schema sugerido pela skill
 
@@ -80,6 +90,7 @@ A skill sugere um model `RetentionRule` (entidade, finalidade, prazo, base legal
 
 ## Status
 
-- Regras propostas: 14 (itens "a verificar" dependem dos operadores).
+- Regras propostas: 19 (itens "a verificar" dependem dos operadores).
 - Limpeza interna do app + `pnpm db:limpeza` (sem agendador externo).
-- Pendente: aprovação dos prazos de `securityEvent`, PITR e Gmail; teste da cascata de exclusão; frequência do script manual.
+- Pendente: aprovação dos prazos de `securityEvent`, PITR e Gmail; frequência do script manual.
+- Cascata coberta por teste automático a partir do PR de lançamentos: toda chave estrangeira para `user` precisa de `ON DELETE CASCADE` (conferido em `pg_constraint`) e toda tabela com `userId` precisa estar na exportação.

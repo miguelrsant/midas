@@ -2,7 +2,7 @@
 
 **Projeto**: Midas
 **Última atualização**: 2026-09-30
-**Escopo**: fundação + autenticação (A001 a A008, em uso) e atividades da próxima etapa (A009 a A012, previstas)
+**Escopo**: fundação + autenticação (A001 a A008, em uso) e núcleo do produto (A009 a A014, a implementar)
 **Skill**: `lgpd-legal-basis` (F1, Pipeline A)
 
 > Registro técnico de apoio. Não é aconselhamento jurídico: as decisões marcadas como pendentes precisam de revisão por pessoa especialista em proteção de dados.
@@ -21,10 +21,12 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 | A006 | Limite de tentativas | Art. 7º, IX + Art. 10 | em uso, **LIA pendente** |
 | A007 | Eventos de segurança da conta | Art. 7º, IX + Art. 10 | em uso, **LIA pendente** |
 | A008 | Operação e logs técnicos | Art. 7º, IX + Art. 10 | em uso, **LIA pendente** |
-| A009 | Direitos do titular ("Seus dados") | Art. 7º, II (Art. 18 e 19) | próxima etapa |
-| A010 | Lançamentos, gráficos e projeção | Art. 7º, V + **Art. 11 a decidir** | próxima etapa, **RIPD antes** |
-| A011 | Calculadoras trabalhistas | Art. 7º, V | próxima etapa |
-| A012 | Limites por categoria | Art. 7º, V | próxima etapa |
+| A009 | Direitos do titular ("Seus dados") | Art. 7º, II (Art. 18 e 19) | a implementar |
+| A010 | Lançamentos, gráficos e projeção | Art. 7º, V + Art. 11, II, "d" | a implementar, RIPD v1 |
+| A011 | Calculadoras trabalhistas | Art. 7º, V | a implementar |
+| A012 | Limites por categoria | Art. 7º, V + Art. 11, II, "d" | a implementar |
+| A013 | Categorias próprias e personalização | Art. 7º, V + Art. 11, II, "d" | a implementar |
+| A014 | Fixos, rendas previstas e preferências | Art. 7º, V + Art. 11, II, "d" | a implementar |
 
 ---
 
@@ -137,7 +139,7 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 ## Próxima etapa (previstas, ainda sem código)
 
 <a id="a009"></a>
-## Atividade: A009 — Direitos do titular ("Seus dados") — próxima etapa
+## Atividade: A009 — Direitos do titular ("Seus dados")
 
 - **Finalidade**: permitir acessar, corrigir, baixar (JSON e CSV) e apagar os dados, e ver os aparelhos conectados.
 - **Dados tratados**: todos os dados da conta, lidos para exportação ou apagados.
@@ -148,25 +150,27 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 - **Última revisão**: 2026-09-30
 
 <a id="a010"></a>
-## Atividade: A010 — Lançamentos, gráficos e projeção — próxima etapa
+## Atividade: A010 — Lançamentos, gráficos e projeção
 
 - **Finalidade**: mostrar quanto entrou, saiu e sobrou, gráficos por mês e categoria e a estimativa dos próximos meses, só para a própria pessoa.
-- **Dados tratados**: valor (centavos), tipo (renda ou gasto; fixo ou variável), categoria, data, descrição opcional.
+- **Dados tratados**: valor (centavos), tipo (renda ou gasto), categoria, data, descrição opcional (cifrada), vínculo com fixo.
 - **Sensíveis?**: **Potencialmente sim.** A categoria Saúde e descrições livres ("farmácia", "consulta") podem revelar dado referente à saúde (Art. 5º, II).
-- **Base legal**: Art. 7º, V para a parte comum. Para a parte sensível, Art. 7º, V e IX **não servem** (Art. 11). **Decisão pendente** entre:
-  - Art. 11, I — consentimento específico e destacado para a finalidade; ou
-  - Art. 11, II, "d" — exercício regular de direitos, inclusive em contrato.
-- **Justificativa**: a escolha depende da RIPD e de revisão jurídica. Até lá: nenhum uso secundário, nada de inferir saúde a partir dos lançamentos, nada em logs ou e-mails, acesso só pelo `userId` da sessão.
-- **Projeção**: é estimativa exibida ao próprio titular; não é decisão automatizada que afete seus interesses (Art. 20), mas deve ser apresentada como estimativa.
-- **RIPD**: **obrigatória antes de implementar** (Art. 38; Res. CD/ANPD nº 2/2022, Art. 4º, critério específico de dado sensível). Arquivo previsto: `.lgpd/RIPD/ripd-lancamentos.md` (checkpoint).
-- **Retenção**: enquanto a conta existir; apagados com ela.
+- **Base legal**:
+  - Parte comum: Art. 7º, V — execução de contrato.
+  - Parte sensível: **Art. 11, II, "d"** — tratamento indispensável ao exercício regular de direitos, inclusive em contrato. Decisão do controlador em 2026-09-30, registrada na [RIPD](./RIPD/ripd-lancamentos.md#6-base-legal).
+- **Justificativa**: o serviço contratado é registrar e mostrar os gastos da própria pessoa; se ela anota um gasto de saúde, guardá-lo e mostrá-lo a ela é a execução do contrato. A base não cobre nenhum outro uso: estatística, pesquisa, IA ou compartilhamento exigiriam nova avaliação (provavelmente Art. 11, I, ou anonimização).
+- **Salvaguardas**: texto livre cifrado; nada em logs, e-mails ou URLs; nenhuma inferência de saúde nem perfil; acesso só pelo `userId` da sessão; exclusão e exportação em autosserviço.
+- **Ponto jurídico em aberto**: a leitura do Art. 11, II, "d" como base para execução contratual com dado sensível não tem orientação específica da ANPD; revisão por especialista antes da abertura ao público (G21).
+- **Projeção**: estimativa exibida ao próprio titular; não é decisão automatizada que afete seus interesses (Art. 20). Sempre apresentada como estimativa.
+- **RIPD**: [ripd-lancamentos.md](./RIPD/ripd-lancamentos.md) (v1).
+- **Retenção**: enquanto a conta existir ou até a pessoa excluir.
 - **Última revisão**: 2026-09-30
 
 <a id="a011"></a>
-## Atividade: A011 — Calculadoras trabalhistas — próxima etapa
+## Atividade: A011 — Calculadoras trabalhistas
 
-- **Finalidade**: estimar rescisão, férias e 13º e criar rendas previstas no orçamento.
-- **Dados tratados**: salário, datas (admissão, saída, férias), tipo de saída, respostas da calculadora e rendas previstas geradas.
+- **Finalidade**: estimar férias, 13º, rescisão, salário líquido e seguro-desemprego e criar rendas previstas (ou o fixo "Salário") no planejamento.
+- **Dados tratados**: salário, média de extras, datas (admissão, saída, férias), tipo de saída, aviso prévio, férias vencidas, número de dependentes, saldo do FGTS (opcional), saque-aniversário, pedidos anteriores de seguro-desemprego, resultado e rendas previstas geradas. Tudo cifrado num só campo; guardado só quando a pessoa adiciona ao planejamento.
 - **Sensíveis?**: Não (Art. 5º, II), mas são dados financeiros e trabalhistas confidenciais.
 - **Base legal**: Art. 7º, V — execução de contrato (funcionalidade pedida pelo titular).
 - **Justificativa**: sem esses dados não há cálculo. Não pedir empregador, CPF, CTPS ou documentos (Art. 6º, III).
@@ -174,11 +178,32 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 - **Última revisão**: 2026-09-30
 
 <a id="a012"></a>
-## Atividade: A012 — Limites por categoria — próxima etapa
+## Atividade: A012 — Limites por categoria
 
 - **Finalidade**: avisar a pessoa quando o gasto de uma categoria chega a 90% do limite que ela definiu.
 - **Dados tratados**: categoria, valor do limite, mês.
 - **Sensíveis?**: Pode revelar hábito (ex.: limite em Saúde); tratar como A010.
-- **Base legal**: Art. 7º, V — execução de contrato.
+- **Base legal**: Art. 7º, V — execução de contrato; parte sensível: Art. 11, II, "d" (como A010).
 - **Retenção**: enquanto a conta existir.
+- **Última revisão**: 2026-09-30
+
+<a id="a013"></a>
+## Atividade: A013 — Categorias próprias e personalização
+
+- **Finalidade**: deixar a pessoa criar categorias com nome e ícone, trocar nome e ícone das prontas e esconder as que não usa.
+- **Dados tratados**: tipo, nome e ícone (cifrados juntos), categoria pronta ajustada, escondida.
+- **Sensíveis?**: Potencialmente (nome ou ícone como "remédio", "psicólogo").
+- **Base legal**: Art. 7º, V; parte sensível: Art. 11, II, "d" (como A010).
+- **Justificativa**: funcionalidade pedida pela pessoa; sem cor e sem outros atributos.
+- **Retenção**: enquanto a conta existir ou até a pessoa apagar a categoria.
+- **Última revisão**: 2026-09-30
+
+<a id="a014"></a>
+## Atividade: A014 — Fixos, rendas previstas e preferências do planejamento
+
+- **Finalidade**: anotar sozinho as rendas e gastos que se repetem, mostrar rendas previstas das calculadoras até "Recebi" e lembrar se o resumo do mês já foi visto.
+- **Dados tratados**: valor, categoria, descrição cifrada, dia do mês, meses de início e fim, próxima ocorrência; renda prevista (categoria, rótulo, valor, data); último resumo aberto.
+- **Sensíveis?**: Potencialmente (como A010).
+- **Base legal**: Art. 7º, V; parte sensível: Art. 11, II, "d".
+- **Retenção**: enquanto a conta existir ou até a pessoa parar o fixo ou apagar a prevista.
 - **Última revisão**: 2026-09-30
