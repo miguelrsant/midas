@@ -75,25 +75,14 @@ export default async function YourDataPage() {
         <SignOutEverywhere />
       </Section>
 
-      <Section title="Com quem compartilhamos">
-        <p>
-          <strong className="font-semibold">Com ninguém.</strong> Para o app funcionar, usamos
-          serviços que operam em nosso nome:
-        </p>
-        <ul className="flex list-disc flex-col gap-2 pl-6">
-          <li>Vercel: hospeda o app (servidores em São Paulo).</li>
-          <li>Neon: guarda o banco de dados (servidores em São Paulo).</li>
-          <li>Google: envia os e-mails de confirmação e de senha.</li>
-        </ul>
-      </Section>
-
       <Section title="Quem cuida dos seus dados">
         <p>
           Leia a{" "}
           <Link href="/privacidade" className="md-link">
             Política de privacidade
           </Link>{" "}
-          para saber como tratamos seus dados e como falar com a pessoa encarregada.
+          para saber como tratamos seus dados, quais serviços ajudam o Midas a funcionar e como
+          falar com a pessoa encarregada.
         </p>
         <p className="text-caption text-tinta-suave">
           Baixar e apagar todos os seus dados chegam junto com os lançamentos, na próxima versão.

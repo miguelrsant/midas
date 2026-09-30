@@ -97,10 +97,9 @@ A tela onde a pessoa exerce os direitos da LGPD (art. 18) sem precisar pedir a n
 | O que o Midas guarda | Lista em linguagem simples, com os números da pessoa ("312 lançamentos desde março de 2026") | Confirmação e acesso (I, II) |
 | Corrigir | Explica que todo lançamento se corrige tocando nele; o e-mail e o apelido se corrigem aqui | Correção (III) |
 | Baixar meus dados | Arquivo com tudo, em JSON (completo) e CSV (planilha de lançamentos) | Acesso e portabilidade (II, V) |
-| Com quem compartilhamos | "Com ninguém." Mais a lista dos serviços que operam o app (hospedagem, envio de e-mail), com o motivo de cada um | Informação sobre compartilhamento (VII) |
 | Aparelhos conectados | Lista e "Sair de todos os aparelhos" | Segurança |
 | Apagar minha conta | Apaga a conta e todos os dados | Eliminação (VI) |
-| Quem cuida dos seus dados | Contato do encarregado pelo tratamento de dados (e-mail) e link para a política | Canal com o encarregado (art. 41) |
+| Quem cuida dos seus dados | Contato do encarregado pelo tratamento de dados (e-mail) e link para a política, que lista os serviços que operam o app (hospedagem, banco, envio de e-mail) e o motivo de cada um | Canal com o encarregado (art. 41) e informação sobre compartilhamento (VII) |
 
 ### Apagar a conta
 

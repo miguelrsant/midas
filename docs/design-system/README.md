@@ -95,6 +95,7 @@ Os arquivos trazem metadados de procedência (C2PA). Não os remova ao otimizar 
 - O tema claro é o padrão do app, também sem JavaScript; "Escuro" e "Automático" são escolhas em Configurações.
 - Estrutura do app no celular: topo com logo e avatar (menu da conta com Seus dados, Configurações e Sair) e navegação inferior fixa. Cada item ocupa a largura do próprio rótulo, para nenhum ser cortado; abaixo de 360px o rótulo cai para peso 400, mantendo 14px. A partir de 1024px, a navegação vai para o topo.
 - O menu da conta é um botão que abre uma lista de links (padrão *disclosure*), sem `role="menu"`: Esc e clique fora fecham e o foco volta ao avatar. Evita uma dependência a mais para quatro itens.
+- "Seus dados" não repete a lista de serviços que operam o app: ela fica na Política de privacidade, com link no fim da tela (LGPD, art. 18, VII).
 - Links de navegação não usam o estilo de `md-link` (dourado sublinhado): ficam em `tinta-suave`, e o atual em `tinta` com a barra de ouro.
 
 ### 3.1 (setembro de 2026): documentação
