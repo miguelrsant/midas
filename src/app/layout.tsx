@@ -46,9 +46,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
       </head>
       <body className="min-h-dvh bg-marmore text-tinta antialiased">
+        {/* Invisível até receber foco pelo teclado (WCAG 2.4.1). */}
         <a
           href="#conteudo"
-          className="md-sr md-sr-focavel m-2 rounded-md bg-superficie p-3 text-label text-tinta"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-superficie focus:p-3 focus:text-label focus:text-tinta focus:shadow-cartao"
         >
           Pular para o conteúdo
         </a>

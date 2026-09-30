@@ -31,7 +31,7 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
 | `pnpm dev` | App em modo de desenvolvimento |
 | `pnpm lint`, `pnpm typecheck`, `pnpm format:check` | Qualidade do código |
 | `pnpm test` | Testes unitários e de integração (usa o banco `midas_test` do Docker) |
-| `pnpm build && pnpm test:e2e` | Testes de ponta a ponta com Playwright (rode `pnpm exec playwright install chromium` uma vez) |
+| `pnpm build && pnpm test:e2e` | Testes de ponta a ponta com Playwright (rode `pnpm exec playwright install chromium` uma vez). Com o `pnpm dev` aberto na 3000, use `E2E_PORT=3100 pnpm test:e2e` |
 | `pnpm db:migrate` | Cria uma migração nova a partir do `prisma/schema.prisma` |
 | `pnpm db:limpeza` | Apaga dados vencidos (sessões, tokens, contadores, contas não confirmadas) |
 

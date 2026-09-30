@@ -24,6 +24,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Sem o botão das ferramentas de dev no canto da tela (só aparecia no `pnpm dev`).
+  devIndicators: false,
   reactStrictMode: true,
   typedRoutes: true,
   // Pacotes com binário nativo ficam fora do bundle do servidor.

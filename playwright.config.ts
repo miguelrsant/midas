@@ -4,6 +4,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Os testes rodam contra o Docker local (Postgres + Mailpit), com os valores do .env.development.
 const { combinedEnv } = loadEnvConfig(process.cwd(), true);
 
+// Porta própria para não esbarrar num `pnpm dev` aberto (E2E_PORT=3100 pnpm test:e2e).
+const port = Number(process.env.E2E_PORT ?? 3000);
+const baseURL = `http://localhost:${port}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -13,7 +17,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   globalSetup: "./e2e/global-setup.ts",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     locale: "pt-BR",
     timezoneId: "America/Sao_Paulo",
     trace: "retain-on-failure",
@@ -21,10 +25,10 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     // Usa o build de produção (rode `pnpm build` antes).
-    command: "pnpm start",
-    url: "http://localhost:3000/entrar",
+    command: `pnpm start -p ${port}`,
+    url: `${baseURL}/entrar`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { ...(combinedEnv as Record<string, string>) },
+    env: { ...(combinedEnv as Record<string, string>), BETTER_AUTH_URL: baseURL },
   },
 });
