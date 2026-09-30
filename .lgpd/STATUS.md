@@ -6,7 +6,7 @@
 **Última atualização**: 2026-09-30
 **Encarregado**: pendente designação (G01)
 
-**Etapa do produto**: fundação + autenticação em uso (Next.js 16 na Vercel gru1; Postgres no Neon aws-sa-east-1; Better Auth com e-mail e senha). Núcleo do produto (lançamentos, fixos, limites, categorias próprias, calculadoras e rendas previstas) planejado, com RIPD v1 aguardando aprovação.
+**Etapa do produto**: fundação, autenticação e núcleo do produto (lançamentos, fixos, limites, categorias próprias, calculadoras, rendas previstas e "Seus dados") implementados; RIPD v1 aprovada no PR #8. Abertura ao público depende dos itens P0 de `gaps.md`.
 
 > Registros técnicos de apoio, gerados com o plugin `lgpd-skills`. Não são aconselhamento jurídico.
 
@@ -16,9 +16,9 @@
 - [x] F2 — Data mapping (v2, com A013 e A014 e as tabelas planejadas)
 - [ ] F3 — Consent schema — N/A (a RIPD escolheu Art. 11, II, "d"); reavaliar se a revisão jurídica (G21) pedir consentimento
 - [ ] F4 — Política de privacidade v1 ⏸ CHECKPOINT (G03)
-- [~] F5 — DSAR / "Seus dados": fluxo em `dsar/workflow.md`; implementação junto com os lançamentos (G14)
+- [x] F5 — DSAR / "Seus dados": exportação JSON/CSV e exclusão da conta implementadas com os lançamentos (G14), com testes de cobertura de toda tabela com userId
 - [ ] F6 — Audit logging (parcial: `securityEvent` sem IP; encadeamento pendente — G16)
-- [~] F7 — Encryption & keys: decisão em `encryption.md` (G17); pendências do Neon e do `BETTER_AUTH_SECRET`
+- [~] F7 — Encryption & keys: texto livre cifrado em produção de código (`src/lib/crypto/fields.ts`, rotação `pnpm db:recifrar`); pendências do Neon, do `BETTER_AUTH_SECRET` e da cópia offline das chaves (G17)
 - [x] F8 — Retention & erasure (v2 proposta, com as tabelas novas e o runbook de restauração; aprovação pendente — G15)
 - [ ] F9 — Incident response (G05)
 - [x] F10 — ROPA v1.0 ⏸ revisão pendente (G06)

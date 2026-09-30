@@ -93,3 +93,70 @@ export function parseMoney(text: string): number | null {
   const result = readMoney(text);
   return result.ok ? result.cents : null;
 }
+
+/** Soma centavos conferindo que o resultado continua inteiro e seguro. */
+export function sumCents(values: Iterable<number>): number {
+  let total = 0;
+  for (const value of values) {
+    assertCents(value);
+    total += value;
+  }
+  assertCents(total);
+  return total;
+}
+
+/**
+ * a × num ÷ den com arredondamento meio para cima (longe do zero), só com inteiros.
+ * Usado nas regras de dinheiro para nunca passar por float.
+ */
+export function mulDivRound(a: number, num: number, den: number): number {
+  if (!Number.isSafeInteger(a) || !Number.isSafeInteger(num) || !Number.isSafeInteger(den)) {
+    throw new Error("mulDivRound só aceita inteiros");
+  }
+  if (den === 0) throw new Error("Divisão por zero");
+  const product = BigInt(a) * BigInt(num);
+  const d = BigInt(den);
+  const negative = product < 0n !== d < 0n;
+  const absP = product < 0n ? -product : product;
+  const absD = d < 0n ? -d : d;
+  const q = (absP * 2n + absD) / (absD * 2n);
+  const result = Number(negative ? -q : q);
+  if (!Number.isSafeInteger(result)) throw new Error("Resultado grande demais");
+  return result;
+}
+
+/** Arredonda à centena de reais (10.000 centavos), para projeções: "R$ 6.300". */
+export function roundToHundredReais(cents: number): number {
+  return mulDivRound(cents, 1, 10_000) * 10_000;
+}
+
+/** Arredonda ao real, para frases: "Sobraram R$ 1.842". */
+export function roundToReais(cents: number): number {
+  return mulDivRound(cents, 1, 100) * 100;
+}
+
+/** "R$ 1.842" (sem centavos), para frases de resumo. */
+export function formatWholeMoney(cents: number): string {
+  assertCents(cents);
+  const reais = mulDivRound(Math.abs(cents), 1, 100);
+  const text = `R$${NBSP}${new Intl.NumberFormat("pt-BR").format(reais)}`;
+  return cents < 0 ? `${MINUS}${NBSP}${text}` : text;
+}
+
+/** Porcentagem inteira arredondada para baixo (nunca diz 100% se ainda sobra). */
+export function floorPercent(part: number, whole: number): number {
+  if (whole <= 0) return 0;
+  return Number((BigInt(Math.max(0, part)) * 100n) / BigInt(whole));
+}
+
+const compact = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
+
+/** Eixo dos gráficos: "0", "4 mil", "1,2 mi" (sem "R$"). */
+export function formatAxis(cents: number): string {
+  return compact.format(Math.round(cents / 100)).replace(/\s/g, NBSP);
+}
+
+/** Valor com sinal e espaço inseparável, pronto para a interface. */
+export function formatSigned(cents: number, kind: "income" | "expense"): string {
+  return formatMoney(kind === "income" ? Math.abs(cents) : -Math.abs(cents), { sign: "always" });
+}

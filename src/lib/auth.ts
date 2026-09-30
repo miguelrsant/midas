@@ -25,6 +25,7 @@ import { deviceLabel } from "./auth/device";
 import { hashPassword, verifyPassword } from "./auth/password";
 import { checkPasswordLocally, isPasswordBreached } from "./auth/password-policy";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./auth/password-rules";
+import { PASSWORD_CHECK_PER_ACCOUNT } from "./auth/reauth";
 import { recordSecurityEvent } from "./auth/security-events";
 import { knownDevice, rememberDevice } from "./auth/trusted-device";
 
@@ -40,11 +41,6 @@ const DAY = 24 * HOUR;
  * entrou conta à parte (./auth/trusted-device.ts): um ataque de fora não o tranca.
  */
 const SIGN_IN_PER_ACCOUNT = { windowMs: HOUR * 1000, max: 10 };
-/**
- * Senha atual errada ao trocar a senha, por conta. Quem acha uma sessão aberta (um
- * computador compartilhado) não consegue ficar testando palpites de vários IPs.
- */
-const PASSWORD_CHECK_PER_ACCOUNT = { windowMs: HOUR * 1000, max: 10 };
 const EMAIL_MAX_LENGTH = 254;
 
 /** Rotas em que uma senha nova é escolhida, e o campo que a carrega. */
@@ -62,7 +58,8 @@ const SIGN_UP_FIELDS = new Set(["email", "password", "name", "termsVersion", "ca
  * servidor com `auth.api` continuam valendo.
  */
 const DISABLED_PATHS = [
-  // Confere a senha sem limite por conta; o Midas não usa.
+  // Confere a senha sem limite por conta. O Midas confere a senha de novo com
+  // verifyCurrentPassword (./auth/reauth.ts), que tem limite por conta.
   "/verify-password",
   "/update-session",
   "/change-email",

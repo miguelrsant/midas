@@ -4,6 +4,8 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { documentNonce } from "@/components/ui/nonce-provider";
+
 /**
  * O tema claro (Calacatta) é o padrão; escuro e automático são escolhas em Configurações.
  * Telas de entrada ficam sempre no claro, qualquer que seja a escolha.
@@ -29,7 +31,7 @@ export function ThemeProvider({ children, nonce }: { children: ReactNode; nonce?
       enableSystem
       disableTransitionOnChange
       forcedTheme={lightOnly ? "light" : undefined}
-      nonce={nonce}
+      nonce={documentNonce(nonce)}
     >
       {children}
     </NextThemesProvider>

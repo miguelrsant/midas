@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 export const inputBoxClasses =
   "flex min-h-13 items-center gap-2 rounded-md border border-borda bg-superficie-funda px-4 " +
   "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-foco " +
-  "has-[input[aria-invalid=true]]:border-2 has-[input[aria-invalid=true]]:border-gasto";
+  "has-[input[aria-invalid=true]]:border-2 has-[input[aria-invalid=true]]:border-alerta";
 
 export const inputClasses =
   "min-w-0 flex-1 border-0 bg-transparent py-3 text-body text-tinta outline-none " +
@@ -35,7 +35,7 @@ export function FieldMessages({
         <p id={`${id}-erro`} className="flex gap-2 text-caption text-tinta">
           <TriangleAlert
             aria-hidden="true"
-            className="mt-0.5 size-4 flex-none text-gasto"
+            className="mt-0.5 size-4 flex-none text-alerta"
             strokeWidth={1.75}
           />
           <span>{error}</span>

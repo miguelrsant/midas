@@ -2,7 +2,13 @@
 
 **Suas finanças, seu controle.** O Midas é um app web de finanças pessoais, de código aberto, para quem quer saber "como está o meu dinheiro?" sem planilha e sem jargão.
 
-> Em construção. Esta versão tem a base do app e a autenticação. Os lançamentos, o painel e as calculadoras vêm nas próximas.
+> Em construção, ainda não aberto ao público. Esta versão tem:
+>
+> - lançamentos de rendas e gastos, com atalhos e categorias personalizáveis (nome e ícone);
+> - painel com o saldo do mês, gráfico de meses com projeção e aviso de limite;
+> - planejamento do ano, fixos (inclusive parcelas), limites por categoria e resumo do mês;
+> - calculadoras de férias, 13º, rescisão, salário líquido e seguro-desemprego, que criam rendas previstas;
+> - "Seus dados": baixar tudo (JSON e CSV) e apagar a conta.
 
 - Guia para quem contribui (pessoas e agentes de IA): [CLAUDE.md](CLAUDE.md)
 - Design system: [docs/design-system](docs/design-system/README.md)
@@ -46,6 +52,7 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
    - `DATABASE_URL` (com pooler) e `DATABASE_URL_UNPOOLED` (sem pooler): a integração Neon ↔ Vercel cria as duas sozinha. Sem a integração, use `DIRECT_URL` no lugar da segunda.
    - `BETTER_AUTH_URL`: o endereço público, com `https://`. Nos previews pode ficar vazio.
    - `BETTER_AUTH_SECRET`: gere com `openssl rand -base64 32`. Um valor diferente por ambiente (Production e Preview), para um cookie de um ambiente nunca valer no outro.
+   - `DATA_ENCRYPTION_KEYS` e `DATA_ENCRYPTION_KEY_ID`: chave que cifra o texto livre (descrições, nomes de fixos e de categorias, contas das calculadoras). Gere com `openssl rand -base64 32` e grave como `k1:<valor>`, com `DATA_ENCRYPTION_KEY_ID=k1`. Uma chave diferente por ambiente, e **guarde uma cópia offline da de produção**: sem ela, as descrições não voltam. Rotação em [.lgpd/encryption.md](.lgpd/encryption.md).
    - `EMAIL_DAILY_LIMIT` (opcional, padrão 400): teto de e-mails por dia, abaixo da cota do remetente.
    - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER`, `SMTP_PASSWORD` e `EMAIL_FROM`.
    - `PASSWORD_BREACH_CHECK=true`.
@@ -53,7 +60,7 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
 
 5. **Proteções da Vercel:** deixe ligadas a Deployment Protection nos previews, a proteção de logs e do código-fonte (Build Logs and Source Protection) e a Git Fork Protection (PR de fork só faz deploy com aprovação).
 
-Sem Redis, fila, cache ou cron: a limpeza de dados vencidos roda dentro do próprio app, depois de entradas e cadastros, e pode ser rodada à mão com `pnpm db:limpeza`.
+Sem Redis, fila, cache ou cron: a limpeza de dados vencidos roda dentro do próprio app, depois de entradas e cadastros, e pode ser rodada à mão com `pnpm db:limpeza`. Os fixos também não usam cron: são anotados quando a pessoa abre o app. A rotação da chave de cifra usa `pnpm db:recifrar` ([.lgpd/encryption.md](.lgpd/encryption.md)).
 
 ## Segurança e privacidade, em resumo
 

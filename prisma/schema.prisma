@@ -26,9 +26,16 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions       Session[]
-  accounts       Account[]
-  securityEvents SecurityEvent[]
+  sessions        Session[]
+  accounts        Account[]
+  securityEvents  SecurityEvent[]
+  entries         Entry[]
+  recurrings      Recurring[]
+  categories      UserCategory[]
+  categoryLimits  CategoryLimit[]
+  calculations    Calculation[]
+  expectedIncomes ExpectedIncome[]
+  preference      UserPreference?
 
   @@index([emailVerified, createdAt])
   @@map("user")
@@ -106,6 +113,8 @@ enum SecurityEventType {
   PASSWORD_CHANGED
   PASSWORD_RESET
   SESSIONS_REVOKED
+  /// A pessoa baixou os dados em "Seus dados" (A009).
+  DATA_EXPORTED
 }
 
 /// Trilha mínima de responsabilização (LGPD, art. 6º, X). Sem IP, sem e-mail, sem conteúdo.
@@ -131,4 +140,168 @@ model Throttle {
 
   @@index([expiresAt])
   @@map("throttle")
+}
+
+// ---------------------------------------------------------------------------
+// Núcleo do produto (.lgpd/RIPD/ripd-lancamentos.md, A009–A014).
+// Toda tabela com userId: ON DELETE CASCADE e presença na exportação de "Seus dados"
+// (testes em src/lib/data/guards.integration.test.ts). CHECKs ficam na migração.
+// Colunas "sealed"/"description"/"name" com texto livre são cifradas na aplicação
+// (src/lib/crypto/fields.ts; .lgpd/encryption.md).
+// ---------------------------------------------------------------------------
+
+enum EntryKind {
+  EXPENSE
+  INCOME
+}
+
+/// @lgpd:activity=a010 @lgpd:legal_basis=art7-v,art11-ii-d @lgpd:retention=account @lgpd:sensitive=potential
+model Entry {
+  /// UUID gerado no aparelho: salvar duas vezes não duplica.
+  id              String     @id @db.Uuid
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            EntryKind
+  /// Centavos inteiros, de 1 a 999.999.999 (CHECK na migração).
+  amountCents     Int
+  /// Id de categoria pronta ("mercado") ou própria ("u-<uuid>").
+  categoryId      String     @db.VarChar(40)
+  /// Descrição opcional, cifrada (AAD: entry.description|userId|id).
+  description     String?
+  /// Dia do lançamento (sem hora), no calendário de São Paulo.
+  date            DateTime   @db.Date
+  /// Fixo que gerou este lançamento, se houver.
+  recurringId     String?    @db.Uuid
+  recurring       Recurring? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  /// Mês da ocorrência do fixo ("2026-09"); junto com recurringId, impede duplicar.
+  occurrenceMonth String?    @db.Char(7)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([recurringId, occurrenceMonth])
+  @@index([userId, date])
+  @@map("entry")
+}
+
+/// @lgpd:activity=a014 @lgpd:legal_basis=art7-v,art11-ii-d @lgpd:retention=account @lgpd:sensitive=potential
+model Recurring {
+  id               String    @id @db.Uuid
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind             EntryKind
+  amountCents      Int
+  categoryId       String    @db.VarChar(40)
+  /// Nome do fixo, cifrado (AAD: recurring.description|userId|id).
+  description      String?
+  /// Dia do mês (1 a 31); meses mais curtos usam o último dia.
+  dayOfMonth       Int       @db.SmallInt
+  /// Primeiro mês ("2026-10").
+  startMonth       String    @db.Char(7)
+  /// Último mês, para parcelas e "só uma vez"; nulo = sem fim.
+  endMonth         String?   @db.Char(7)
+  /// Próxima ocorrência ainda não anotada; nulo = terminou.
+  nextOccurrenceOn DateTime? @db.Date
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  entries          Entry[]
+
+  @@index([userId, nextOccurrenceOn])
+  @@map("recurring")
+}
+
+/// @lgpd:activity=a013 @lgpd:legal_basis=art7-v,art11-ii-d @lgpd:retention=account @lgpd:sensitive=potential
+model UserCategory {
+  id        String    @id @db.Uuid
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      EntryKind
+  /// Id da categoria pronta ajustada; nulo = categoria própria ("u-<id>").
+  systemId  String?   @db.VarChar(40)
+  /// {name, icon} cifrados juntos (AAD: user_category.sealed|userId|id); nulo = sem ajuste.
+  sealed    String?
+  hidden    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, systemId])
+  @@index([userId])
+  @@map("user_category")
+}
+
+/// @lgpd:activity=a012 @lgpd:legal_basis=art7-v,art11-ii-d @lgpd:retention=account @lgpd:sensitive=potential
+model CategoryLimit {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String   @db.VarChar(40)
+  amountCents Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, categoryId])
+  @@map("category_limit")
+}
+
+enum CalculatorKind {
+  VACATION
+  THIRTEENTH
+  TERMINATION
+  NET_SALARY
+  UNEMPLOYMENT
+}
+
+/// @lgpd:activity=a011 @lgpd:legal_basis=art7-v @lgpd:retention=account
+model Calculation {
+  /// Gerado no aparelho: "Adicionar ao planejamento" duas vezes não duplica.
+  id              String           @id @db.Uuid
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            CalculatorKind
+  /// {input, result, engineVersion, tableYear} cifrados (AAD: calculation.sealed|userId|id).
+  sealed          String
+  createdAt       DateTime         @default(now())
+  expectedIncomes ExpectedIncome[]
+
+  @@index([userId, createdAt])
+  @@map("calculation")
+}
+
+/// @lgpd:activity=a014 @lgpd:legal_basis=art7-v @lgpd:retention=account
+model ExpectedIncome {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId    String       @db.VarChar(40)
+  /// Rótulo gerado pelo sistema ("decimo-terceiro-1"), nunca texto livre.
+  labelKey      String       @db.VarChar(40)
+  amountCents   Int
+  dueDate       DateTime     @db.Date
+  calculationId String?      @db.Uuid
+  calculation   Calculation? @relation(fields: [calculationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, dueDate])
+  @@map("expected_income")
+}
+
+/// @lgpd:activity=a014 @lgpd:legal_basis=art7-v @lgpd:retention=account
+model UserPreference {
+  userId                 String   @id
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Último mês cujo resumo foi aberto ("2026-09"), para a conquista sumir.
+  lastSummaryOpenedMonth String?  @db.Char(7)
+  updatedAt              DateTime @updatedAt
+
+  @@map("user_preference")
+}
+
+/// Contas apagadas, só o id, para reaplicar exclusões depois de um restore
+/// (.lgpd/retention.md). Sem FK: a conta já não existe. Limpa em 8 dias.
+/// @lgpd:activity=a009 @lgpd:legal_basis=art7-ii @lgpd:retention=8d
+model DeletedAccount {
+  id        String   @id
+  deletedAt DateTime @default(now())
+
+  @@index([deletedAt])
+  @@map("deleted_account")
 }

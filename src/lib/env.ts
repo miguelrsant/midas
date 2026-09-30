@@ -11,6 +11,12 @@ import { z } from "zod";
 /** Produção de verdade (o deploy de produção na Vercel): aqui as regras ficam mais rígidas. */
 const isProduction = process.env.VERCEL_ENV === "production";
 
+/** Chaves de exemplo versionadas em .env.development e .env.test: nunca valem em produção. */
+const PUBLIC_DATA_KEYS = [
+  "ZGV2LW9ubHkta2V5LW5hby11c2UtZW0tcHJvZHVjYW8=",
+  "dGVzdC1vbmx5LWtleS1uYW8tdXNlLWVtLXByb2R1Y2E=",
+];
+
 const booleanFromString = z.enum(["true", "false"]).transform((value) => value === "true");
 
 const schema = z
@@ -36,15 +42,40 @@ const schema = z
     // Protege a confirmação e a recuperação de senha de quem tenta esgotar a cota.
     EMAIL_DAILY_LIMIT: z.coerce.number().int().positive().default(400),
 
+    // Chaves que cifram o texto livre (.lgpd/encryption.md): "k1:<base64 de 32 bytes>[,k0:...]".
+    DATA_ENCRYPTION_KEYS: z
+      .string()
+      .regex(
+        /^[a-z0-9]{1,8}:[A-Za-z0-9+/]{43}=(,[a-z0-9]{1,8}:[A-Za-z0-9+/]{43}=)*$/,
+        "use kid:base64 de 32 bytes, separados por vírgula",
+      ),
+    DATA_ENCRYPTION_KEY_ID: z.string().regex(/^[a-z0-9]{1,8}$/),
+
     // Consulta de senhas vazadas (Have I Been Pwned, k-anonimato).
     PASSWORD_BREACH_CHECK: booleanFromString.default(true),
   })
   .superRefine((env, ctx) => {
+    const kids = env.DATA_ENCRYPTION_KEYS.split(",").map((entry) => entry.split(":")[0]);
+    if (!kids.includes(env.DATA_ENCRYPTION_KEY_ID)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["DATA_ENCRYPTION_KEY_ID"],
+        message: "não está em DATA_ENCRYPTION_KEYS",
+      });
+    }
     if (!isProduction) return;
     const required = ["BETTER_AUTH_URL", "SMTP_USER", "SMTP_PASSWORD"] as const;
     for (const key of required) {
       if (!env[key])
         ctx.addIssue({ code: "custom", path: [key], message: "obrigatória em produção" });
+    }
+    // As chaves de .env.development e .env.test são públicas (estão no repositório).
+    if (PUBLIC_DATA_KEYS.some((key) => env.DATA_ENCRYPTION_KEYS.includes(key))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["DATA_ENCRYPTION_KEYS"],
+        message: "use uma chave própria em produção (as de dev e teste são públicas)",
+      });
     }
     if (!env.SMTP_SECURE) {
       ctx.addIssue({ code: "custom", path: ["SMTP_SECURE"], message: "use TLS em produção" });

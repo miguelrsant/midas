@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/privacidade",
   "/termos",
   "/sobre",
+  "/conta-apagada",
 ];
 
 function isPublic(pathname: string) {
@@ -47,7 +48,15 @@ export function buildCsp(nonce: string, { isDev, isHttps }: { isDev: boolean; is
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (!isPublic(pathname) && !getSessionCookie(request, { cookiePrefix: "midas" })) {
+  // Server Actions sem sessão não são redirecionadas: o 307 faria o navegador reenviar
+  // o POST para /entrar, onde a action não existe. A action confere a sessão e devolve
+  // "session_expired", e a tela leva à entrada sem perder o que foi digitado.
+  const isServerAction = request.method === "POST" && request.headers.has("next-action");
+  if (
+    !isServerAction &&
+    !isPublic(pathname) &&
+    !getSessionCookie(request, { cookiePrefix: "midas" })
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/entrar";
     url.search = pathname === "/" ? "" : `?de=${encodeURIComponent(pathname + search)}`;

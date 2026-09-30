@@ -17,27 +17,34 @@ const DAY_MS = 24 * HOUR_MS;
 export const UNVERIFIED_ACCOUNT_TTL_MS = 7 * DAY_MS;
 /** Contadores de tentativas: a maior janela é de 1 hora; guardamos no máximo 1 dia. */
 export const RATE_LIMIT_TTL_MS = DAY_MS;
+/** Ids de contas apagadas: janela do PITR (7 dias) + 1 dia de margem (.lgpd/retention.md). */
+export const DELETED_ACCOUNT_TTL_MS = 8 * DAY_MS;
 
 export async function purgeExpiredData(now = new Date()) {
-  const [sessions, verifications, rateLimits, throttles, unverifiedUsers] = await db.$transaction([
-    db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
-    db.verification.deleteMany({ where: { expiresAt: { lt: now } } }),
-    db.rateLimit.deleteMany({
-      where: { lastRequest: { lt: BigInt(now.getTime() - RATE_LIMIT_TTL_MS) } },
-    }),
-    db.throttle.deleteMany({ where: { expiresAt: { lt: now } } }),
-    db.user.deleteMany({
-      where: {
-        emailVerified: false,
-        createdAt: { lt: new Date(now.getTime() - UNVERIFIED_ACCOUNT_TTL_MS) },
-      },
-    }),
-  ]);
+  const [sessions, verifications, rateLimits, throttles, unverifiedUsers, deletedAccounts] =
+    await db.$transaction([
+      db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+      db.verification.deleteMany({ where: { expiresAt: { lt: now } } }),
+      db.rateLimit.deleteMany({
+        where: { lastRequest: { lt: BigInt(now.getTime() - RATE_LIMIT_TTL_MS) } },
+      }),
+      db.throttle.deleteMany({ where: { expiresAt: { lt: now } } }),
+      db.user.deleteMany({
+        where: {
+          emailVerified: false,
+          createdAt: { lt: new Date(now.getTime() - UNVERIFIED_ACCOUNT_TTL_MS) },
+        },
+      }),
+      db.deletedAccount.deleteMany({
+        where: { deletedAt: { lt: new Date(now.getTime() - DELETED_ACCOUNT_TTL_MS) } },
+      }),
+    ]);
   return {
     sessions: sessions.count,
     verifications: verifications.count,
     rateLimits: rateLimits.count + throttles.count,
     unverifiedUsers: unverifiedUsers.count,
+    deletedAccounts: deletedAccounts.count,
   };
 }
 
