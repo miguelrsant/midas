@@ -36,10 +36,27 @@ const schema = z
     // Protege a confirmação e a recuperação de senha de quem tenta esgotar a cota.
     EMAIL_DAILY_LIMIT: z.coerce.number().int().positive().default(400),
 
+    // Chaves que cifram o texto livre (.lgpd/encryption.md): "k1:<base64 de 32 bytes>[,k0:...]".
+    DATA_ENCRYPTION_KEYS: z
+      .string()
+      .regex(
+        /^[a-z0-9]{1,8}:[A-Za-z0-9+/]{43}=(,[a-z0-9]{1,8}:[A-Za-z0-9+/]{43}=)*$/,
+        "use kid:base64 de 32 bytes, separados por vírgula",
+      ),
+    DATA_ENCRYPTION_KEY_ID: z.string().regex(/^[a-z0-9]{1,8}$/),
+
     // Consulta de senhas vazadas (Have I Been Pwned, k-anonimato).
     PASSWORD_BREACH_CHECK: booleanFromString.default(true),
   })
   .superRefine((env, ctx) => {
+    const kids = env.DATA_ENCRYPTION_KEYS.split(",").map((entry) => entry.split(":")[0]);
+    if (!kids.includes(env.DATA_ENCRYPTION_KEY_ID)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["DATA_ENCRYPTION_KEY_ID"],
+        message: "não está em DATA_ENCRYPTION_KEYS",
+      });
+    }
     if (!isProduction) return;
     const required = ["BETTER_AUTH_URL", "SMTP_USER", "SMTP_PASSWORD"] as const;
     for (const key of required) {

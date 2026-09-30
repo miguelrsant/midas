@@ -46,6 +46,7 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
    - `DATABASE_URL` (com pooler) e `DATABASE_URL_UNPOOLED` (sem pooler): a integração Neon ↔ Vercel cria as duas sozinha. Sem a integração, use `DIRECT_URL` no lugar da segunda.
    - `BETTER_AUTH_URL`: o endereço público, com `https://`. Nos previews pode ficar vazio.
    - `BETTER_AUTH_SECRET`: gere com `openssl rand -base64 32`. Um valor diferente por ambiente (Production e Preview), para um cookie de um ambiente nunca valer no outro.
+   - `DATA_ENCRYPTION_KEYS` e `DATA_ENCRYPTION_KEY_ID`: chave que cifra o texto livre (descrições, nomes de fixos e de categorias, contas das calculadoras). Gere com `openssl rand -base64 32` e grave como `k1:<valor>`, com `DATA_ENCRYPTION_KEY_ID=k1`. Uma chave diferente por ambiente, e **guarde uma cópia offline da de produção**: sem ela, as descrições não voltam. Rotação em [.lgpd/encryption.md](.lgpd/encryption.md).
    - `EMAIL_DAILY_LIMIT` (opcional, padrão 400): teto de e-mails por dia, abaixo da cota do remetente.
    - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER`, `SMTP_PASSWORD` e `EMAIL_FROM`.
    - `PASSWORD_BREACH_CHECK=true`.

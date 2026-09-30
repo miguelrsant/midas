@@ -6,6 +6,12 @@
  */
 @import "tailwindcss";
 
+/*
+ * Larguras em porcentagem inteira para barras (componente Bar e gráficos). A CSP
+ * bloqueia style="" vindo do servidor, então cada largura é uma classe pronta.
+ */
+@source inline("w-[{0..100}%]");
+
 /* O tema escuro é o atributo data-theme="dark" no <html> (next-themes com attribute="data-theme"). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
@@ -366,6 +372,22 @@
     width: auto;
     height: auto;
     clip: auto;
+  }
+}
+
+/* ——— Modo discreto ("Ocultar valores"): só no aparelho, via data-discreto no <html>. ——— */
+@layer components {
+  .md-oculto {
+    display: none;
+  }
+  [data-discreto] .md-valor {
+    display: none;
+  }
+  [data-discreto] .md-oculto {
+    display: inline;
+  }
+  [data-discreto] .md-grafico-eixo {
+    visibility: hidden;
   }
 }
 
