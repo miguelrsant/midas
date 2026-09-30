@@ -9,7 +9,7 @@
 - **Cláusulas-padrão (intl.)**: **a verificar** — ver [transfers/neon.md](../transfers/neon.md).
 - **Certificações**: **a verificar**.
 - **Suboperadores**: AWS (infraestrutura em sa-east-1); lista completa **a verificar**.
-- **Criptografia em repouso**: **a verificar** na documentação do operador (decisão de criptografia de coluna na F7, `lgpd-encryption-keys`). Em trânsito: `sslmode=verify-full` (`.env.example`).
+- **Criptografia em repouso**: **a verificar** na documentação do operador (decisão de criptografia de coluna na F7, `lgpd-encryption-keys`). Em trânsito: `sslmode=verify-full` (na `DATABASE_URL` configurada na Vercel).
 - **Pontos de atenção**:
   - Janela de PITR e branches: ver [retention.md](../retention.md).
   - Confirmar se o painel ou o suporte do operador acessam dados a partir de fora do Brasil.

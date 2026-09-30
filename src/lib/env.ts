@@ -5,7 +5,7 @@ import { z } from "zod";
 /**
  * Variáveis de ambiente validadas na subida do servidor.
  * Nunca imprima valores: as mensagens de erro citam só o nome da variável.
- * A lista completa, comentada, está em .env.example.
+ * A lista das variáveis está no README (seção "Publicar na Vercel").
  */
 
 /** Produção de verdade (o deploy de produção na Vercel): aqui as regras ficam mais rígidas. */
@@ -54,7 +54,7 @@ function loadEnv() {
     const problems = parsed.error.issues
       .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Variáveis de ambiente inválidas:\n${problems}\nVeja .env.example.`);
+    throw new Error(`Variáveis de ambiente inválidas:\n${problems}\nVeja o README.`);
   }
   const env = parsed.data;
 

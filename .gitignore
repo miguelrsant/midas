@@ -18,7 +18,6 @@ src/generated/
 # Ambiente e segredos: nunca versionar
 .env
 .env.*
-!.env.example
 # Valores falsos de localhost (Docker), seguros para versionar
 !.env.development
 !.env.test
