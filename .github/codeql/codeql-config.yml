@@ -1,0 +1,7 @@
+name: Midas CodeQL
+# Testes reproduzem padrões de propósito (por exemplo, o SHA-1 que o Have I Been
+# Pwned exige) e não vão para produção; o código do app continua todo analisado.
+paths-ignore:
+  - "**/*.test.ts"
+  - e2e
+  - src/generated

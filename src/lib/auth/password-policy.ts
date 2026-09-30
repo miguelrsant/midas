@@ -170,6 +170,9 @@ export function checkPasswordLocally(password: string): PasswordProblem | null {
  * a checagem é pulada (o cadastro não pode depender de terceiros), e isso fica no log.
  */
 export async function isPasswordBreached(password: string, fetchImpl: typeof fetch = fetch) {
+  // SHA-1 aqui NÃO é armazenamento de senha: é o formato que a API do HIBP exige, e
+  // o resumo nunca é gravado. A senha é guardada só com Argon2id (./password.ts).
+  // O alerta js/insufficient-password-hash do CodeQL nesta linha é falso positivo.
   const sha1 = createHash("sha1").update(normalizePassword(password)).digest("hex").toUpperCase();
   const prefix = sha1.slice(0, 5);
   const suffix = sha1.slice(5);
