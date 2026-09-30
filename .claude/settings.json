@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "lgpd-skills": {
+      "source": {
+        "source": "github",
+        "repo": "goul4rt/lgpd-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "lgpd-skills@lgpd-skills": true
+  }
+}
