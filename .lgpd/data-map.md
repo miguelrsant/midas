@@ -147,13 +147,13 @@ Teste de alto risco (Res. CD/ANPD nº 2/2022, Art. 4º, critério geral **e** es
 | Base legal | Art. 7º, IX + Art. 10 — LIA pendente ([detalhes](./legal-basis.md#a006)) |
 | Categorias de titulares | Qualquer pessoa que acesse as rotas de autenticação |
 | Sensíveis? | Não |
-| Dados | `key` = IP + rota, contador, `lastRequest` |
-| Fonte | Observado na requisição |
-| Sistemas | Postgres (`rateLimit`) |
+| Dados | `rateLimit`: `key` = IP + rota, contador, `lastRequest`. `throttle`: `key` = HMAC-SHA256 do e-mail (com `BETTER_AUTH_SECRET`) + finalidade (`signin`, `mail`) ou `mail:global`, contador, `expiresAt` |
+| Fonte | Observado na requisição (IP) e digitado pela pessoa (e-mail, só como HMAC) |
+| Sistemas | Postgres (`rateLimit`, `throttle`) |
 | Operadores | Neon, Vercel |
 | Transferência intl. | Potencial (idem A001) |
-| Retenção | Janela de 15 min a 1 h; registro apagado 1 dia após a última requisição, pela limpeza interna do app (ver [retention.md](./retention.md)) |
-| Segurança | Sem vínculo com `userId`. Recomendação: guardar HMAC do IP em vez do IP (G12) |
+| Retenção | `rateLimit`: janela de 15 min a 1 h; registro apagado 1 dia após a última requisição. `throttle`: janela de 1 h (por e-mail) ou 24 h (total); apagado quando vence. Ambos pela limpeza interna do app (ver [retention.md](./retention.md)) |
+| Segurança | Sem vínculo com `userId`. `throttle` já guarda só HMAC do e-mail (pseudonimizado, Art. 13, § 4º). Recomendação: guardar HMAC do IP em vez do IP no `rateLimit` (G12) |
 | Alto risco? | Não |
 | RIPD | N/A |
 | Owner | Miguel |
