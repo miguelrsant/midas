@@ -8,11 +8,11 @@ import { type ActionResult, fail, ok } from "@/lib/actions/result";
 import { findCategory, otherCategory } from "@/lib/categories";
 import { isUsableCategory, loadCategories } from "@/lib/data/categories";
 import { createEntry, deleteEntry, getEntry, updateEntry } from "@/lib/data/entries";
-import { countRecurring, createRecurring } from "@/lib/data/recurring";
+import { countRecurring, createRecurringWithinLimit } from "@/lib/data/recurring";
 import { addDays, isDateOnly, monthOf, parseDate, todayInSaoPaulo } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
-import { RECURRING_LIMIT } from "@/lib/finance/recurring";
+import { firstMonthFor, RECURRING_LIMIT } from "@/lib/finance/recurring";
 import { formatSigned, MAX_CENTS } from "@/lib/money";
 
 /**
@@ -90,24 +90,32 @@ export async function createEntryAction(
     );
 
     if (input.repeatMonthly && result.status === "created") {
-      const recurring = await createRecurring(
-        user.id,
+      // O fixo nunca preenche meses passados: se o lançamento é deste mês, ele é a
+      // ocorrência do mês; se é de um mês anterior, o fixo começa na próxima data a partir de hoje.
+      const day = parseDate(input.date).day;
+      const sameMonth = monthOf(input.date) === monthOf(today);
+      const startMonth = sameMonth ? monthOf(today) : firstMonthFor(day, today, false);
+      const created = await createRecurringWithinLimit(user.id, [
         {
-          kind: input.kind,
-          amountCents: input.amountCents,
-          categoryId,
-          description: input.description,
-          dayOfMonth: parseDate(input.date).day,
-          startMonth: monthOf(input.date),
-          repeat: { mode: "monthly" },
+          input: {
+            kind: input.kind,
+            amountCents: input.amountCents,
+            categoryId,
+            description: input.description,
+            dayOfMonth: day,
+            startMonth,
+            repeat: { mode: "monthly" },
+          },
+          firstAlreadyRecorded: sameMonth,
         },
-        { firstAlreadyRecorded: true },
-      );
-      await db.entry.updateMany({
-        where: { id: input.id, userId: user.id },
-        data: { recurringId: recurring.id, occurrenceMonth: monthOf(input.date) },
-      });
-      message += `. Ele se repete todo dia ${parseDate(input.date).day}.`;
+      ]);
+      if (created && sameMonth) {
+        await db.entry.updateMany({
+          where: { id: input.id, userId: user.id },
+          data: { recurringId: created[0]!.id, occurrenceMonth: monthOf(input.date) },
+        });
+      }
+      if (created) message += `. Ele se repete todo dia ${day}.`;
     }
 
     refresh();

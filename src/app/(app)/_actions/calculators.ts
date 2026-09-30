@@ -7,7 +7,7 @@ import type { CalculatorKind } from "@/generated/prisma/client";
 import { authedAction, invalid } from "@/lib/actions/server";
 import { type ActionResult, fail, ok } from "@/lib/actions/result";
 import { addCalculationToPlan, deleteCalculation } from "@/lib/data/planning";
-import { countRecurring, createRecurring, updateRecurring } from "@/lib/data/recurring";
+import { createRecurringWithinLimit, updateRecurring } from "@/lib/data/recurring";
 import { addMonths, clampDay, monthName, monthOf, todayInSaoPaulo } from "@/lib/dates";
 import { db } from "@/lib/db";
 import {
@@ -26,7 +26,6 @@ import {
   vacationInput,
 } from "@/lib/labor/schemas";
 import { LABOR_ENGINE_VERSION, type LaborResult } from "@/lib/labor/types";
-import { RECURRING_LIMIT } from "@/lib/finance/recurring";
 
 /**
  * "Adicionar ao planejamento" das calculadoras (docs/design-system/17-padroes-de-tela.md#resultado).
@@ -100,17 +99,20 @@ export async function addToPlanAction(raw: unknown): Promise<ActionResult<{ mess
           endMonth: existing.endMonth,
         });
       } else {
-        if ((await countRecurring(user.id)) >= RECURRING_LIMIT)
-          return fail("limit", "Você chegou ao máximo de 100 fixos.");
-        await createRecurring(user.id, {
-          kind: "income",
-          amountCents: result.headlineCents,
-          categoryId: "salario",
-          description: "Salário",
-          dayOfMonth: input.payDay,
-          startMonth: start,
-          repeat: { mode: "monthly" },
-        });
+        const created = await createRecurringWithinLimit(user.id, [
+          {
+            input: {
+              kind: "income",
+              amountCents: result.headlineCents,
+              categoryId: "salario",
+              description: "Salário",
+              dayOfMonth: input.payDay,
+              startMonth: start,
+              repeat: { mode: "monthly" },
+            },
+          },
+        ]);
+        if (!created) return fail("limit", "Você chegou ao máximo de 100 fixos.");
       }
     }
 

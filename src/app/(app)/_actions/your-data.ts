@@ -11,7 +11,7 @@ import { recordSecurityEvent } from "@/lib/auth/security-events";
 import { buildExport, deleteAccountData } from "@/lib/data/account";
 import { sendEmail } from "@/lib/email/sender";
 import { accountDeletedMessage } from "@/lib/email/templates";
-import { reset } from "@/lib/throttle";
+import { consume, reset } from "@/lib/throttle";
 
 /**
  * "Seus dados" (.lgpd/dsar/workflow.md): baixar tudo e apagar a conta, sempre com a
@@ -21,6 +21,14 @@ import { reset } from "@/lib/throttle";
 const passwordSchema = z
   .object({ password: z.string().min(1, "Digite sua senha.").max(512) })
   .strict();
+const exportSchema = passwordSchema.extend({ format: z.enum(["json", "csv"]) }).strict();
+
+/**
+ * Downloads por hora, contados mesmo com a senha certa: cada um custa um Argon2 e um
+ * arquivo inteiro. JSON e CSV vêm em chamadas separadas, para cada resposta ficar
+ * menor (a Vercel limita a resposta de uma função a 4,5 MB).
+ */
+const EXPORTS_PER_HOUR = { windowMs: 60 * 60 * 1000, max: 10 };
 
 function reauthFailure(result: "wrong" | "limited") {
   return result === "limited" ? fail("too_many") : fail("wrong_password");
@@ -28,17 +36,21 @@ function reauthFailure(result: "wrong" | "limited") {
 
 export async function exportDataAction(
   raw: unknown,
-): Promise<ActionResult<{ fileBase: string; json: string; csv: string }>> {
+): Promise<ActionResult<{ fileName: string; content: string }>> {
   return authedAction(
     "your_data.export",
     async (user) => {
-      const parsed = passwordSchema.safeParse(raw);
+      const parsed = exportSchema.safeParse(raw);
       if (!parsed.success) return fail("wrong_password", "Digite sua senha.");
+      if (!(await consume(`export:${user.id}`, EXPORTS_PER_HOUR))) return fail("too_many");
       const check = await verifyCurrentPassword(user.id, parsed.data.password);
       if (check !== "ok") return reauthFailure(check);
       const file = await buildExport(user.id);
-      await recordSecurityEvent(user.id, "DATA_EXPORTED");
-      return ok({ fileBase: file.fileBase, json: file.json, csv: file.csv });
+      if (parsed.data.format === "json") await recordSecurityEvent(user.id, "DATA_EXPORTED");
+      return ok({
+        fileName: `${file.fileBase}.${parsed.data.format}`,
+        content: parsed.data.format === "json" ? file.json : file.csv,
+      });
     },
     { write: false },
   );
@@ -59,6 +71,7 @@ export async function deleteAccountAction(raw: unknown): Promise<ActionResult<nu
       const email = user.email;
       await deleteAccountData(user.id);
       await reset(`pwcheck:${user.id}`);
+      await reset(`export:${user.id}`);
 
       const jar = await cookies();
       for (const prefix of ["midas.", "__Secure-midas."]) {

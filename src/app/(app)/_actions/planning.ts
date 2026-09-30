@@ -10,10 +10,10 @@ import { isUsableCategory, loadCategories } from "@/lib/data/categories";
 import { removeLimit, setLimit } from "@/lib/data/limits";
 import { dismissExpectedIncome, receiveExpectedIncome } from "@/lib/data/planning";
 import {
-  countRecurring,
-  createRecurring,
+  createRecurringWithinLimit,
   deleteRecurring,
   getRecurring,
+  type RecurringInput,
   updateRecurring,
 } from "@/lib/data/recurring";
 import {
@@ -29,7 +29,7 @@ import {
 } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { DESCRIPTION_MAX_LENGTH } from "@/lib/entry";
-import { MAX_INSTALLMENTS, RECURRING_LIMIT, type RepeatMode } from "@/lib/finance/recurring";
+import { MAX_INSTALLMENTS, type RepeatMode } from "@/lib/finance/recurring";
 import { paymentLabel } from "@/lib/labor/types";
 import { formatSigned, MAX_CENTS } from "@/lib/money";
 
@@ -98,9 +98,10 @@ export async function createRecurringAction(
     if (!(await isUsableCategory(user.id, categoryId, input.kind))) {
       return { ...fail("invalid"), fields: { categoryId: "Escolha uma categoria da lista." } };
     }
-    if ((await countRecurring(user.id)) >= RECURRING_LIMIT)
-      return fail("limit", "Você chegou ao máximo de 100 fixos.");
-    const created = await createRecurring(user.id, { ...input, categoryId });
+    const created = (
+      await createRecurringWithinLimit(user.id, [{ input: { ...input, categoryId } }])
+    )?.[0];
+    if (!created) return fail("limit", "Você chegou ao máximo de 100 fixos.");
     const name = input.description ?? findCategory(await loadCategories(user.id), categoryId).name;
     refresh();
     return ok({
@@ -261,9 +262,6 @@ export async function saveStarterPlanAction(
     const parsed = starterSchema.safeParse(raw);
     if (!parsed.success) return invalid(parsed.error);
     const { income, expenses } = parsed.data;
-    if ((await countRecurring(user.id)) + expenses.length + 1 > RECURRING_LIMIT) {
-      return fail("limit", "Você chegou ao máximo de 100 fixos.");
-    }
     for (const e of expenses) {
       if (!(await isUsableCategory(user.id, e.categoryId, "expense"))) {
         return { ...fail("invalid"), fields: { expenses: "Escolha categorias da lista." } };
@@ -274,30 +272,38 @@ export async function saveStarterPlanAction(
     const startFor = (day: number, include: boolean) =>
       clampDay(current, day) >= today || include ? current : addMonths(current, 1);
 
+    const items: Array<{ input: RecurringInput }> = [];
     if (income) {
-      await createRecurring(user.id, {
-        kind: "income",
-        amountCents: income.amountCents,
-        categoryId: "salario",
-        description: "Salário",
-        dayOfMonth: income.dayOfMonth,
-        startMonth: startFor(income.dayOfMonth, false),
-        repeat: { mode: "monthly" },
+      items.push({
+        input: {
+          kind: "income",
+          amountCents: income.amountCents,
+          categoryId: "salario",
+          description: "Salário",
+          dayOfMonth: income.dayOfMonth,
+          startMonth: startFor(income.dayOfMonth, false),
+          repeat: { mode: "monthly" },
+        },
       });
     }
     for (const e of expenses) {
       const repeatMode: RepeatMode = e.installments
         ? { mode: "installments", count: e.installments }
         : { mode: "monthly" };
-      await createRecurring(user.id, {
-        kind: "expense",
-        amountCents: e.amountCents,
-        categoryId: e.categoryId,
-        description: e.presetLabel,
-        dayOfMonth: e.dayOfMonth,
-        startMonth: startFor(e.dayOfMonth, e.alreadyHappened),
-        repeat: repeatMode,
+      items.push({
+        input: {
+          kind: "expense",
+          amountCents: e.amountCents,
+          categoryId: e.categoryId,
+          description: e.presetLabel,
+          dayOfMonth: e.dayOfMonth,
+          startMonth: startFor(e.dayOfMonth, e.alreadyHappened),
+          repeat: repeatMode,
+        },
       });
+    }
+    if (!(await createRecurringWithinLimit(user.id, items))) {
+      return fail("limit", "Você chegou ao máximo de 100 fixos.");
     }
     refresh();
     return ok({ message: "Seu mês está montado." });

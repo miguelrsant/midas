@@ -11,6 +11,12 @@ import { z } from "zod";
 /** Produção de verdade (o deploy de produção na Vercel): aqui as regras ficam mais rígidas. */
 const isProduction = process.env.VERCEL_ENV === "production";
 
+/** Chaves de exemplo versionadas em .env.development e .env.test: nunca valem em produção. */
+const PUBLIC_DATA_KEYS = [
+  "ZGV2LW9ubHkta2V5LW5hby11c2UtZW0tcHJvZHVjYW8=",
+  "dGVzdC1vbmx5LWtleS1uYW8tdXNlLWVtLXByb2R1Y2E=",
+];
+
 const booleanFromString = z.enum(["true", "false"]).transform((value) => value === "true");
 
 const schema = z
@@ -62,6 +68,14 @@ const schema = z
     for (const key of required) {
       if (!env[key])
         ctx.addIssue({ code: "custom", path: [key], message: "obrigatória em produção" });
+    }
+    // As chaves de .env.development e .env.test são públicas (estão no repositório).
+    if (PUBLIC_DATA_KEYS.some((key) => env.DATA_ENCRYPTION_KEYS.includes(key))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["DATA_ENCRYPTION_KEYS"],
+        message: "use uma chave própria em produção (as de dev e teste são públicas)",
+      });
     }
     if (!env.SMTP_SECURE) {
       ctx.addIssue({ code: "custom", path: ["SMTP_SECURE"], message: "use TLS em produção" });

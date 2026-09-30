@@ -15,7 +15,7 @@ import {
 } from "./categories";
 import { createEntry, deleteEntry, entryFacts, getEntry, updateEntry } from "./entries";
 import { addCalculationToPlan, listExpectedIncomes, receiveExpectedIncome } from "./planning";
-import { createRecurring, ensureRecurringUpToDate } from "./recurring";
+import { createRecurring, createRecurringWithinLimit, ensureRecurringUpToDate } from "./recurring";
 
 /*
  * Camada de dados contra o Postgres de teste (midas_test): isolamento entre contas,
@@ -165,7 +165,7 @@ describe("fixos", () => {
   it("anota as ocorrências vencidas uma vez só, mesmo com duas abas ao mesmo tempo", async () => {
     const a = await makeUser("a");
     const start = addMonths(monthOf(today), -2);
-    await createRecurring(a, {
+    const aluguel = await createRecurring(a, {
       kind: "expense",
       amountCents: 165_000,
       categoryId: "moradia",
@@ -173,6 +173,11 @@ describe("fixos", () => {
       dayOfMonth: 1,
       startMonth: start,
       repeat: { mode: "monthly" },
+    });
+    // Simula um fixo criado há 2 meses (um fixo nunca anota antes do mês em que foi criado).
+    await db.recurring.update({
+      where: { id: aluguel.id },
+      data: { createdAt: new Date(`${start}-01T12:00:00Z`) },
     });
     await Promise.all([ensureRecurringUpToDate(a, today), ensureRecurringUpToDate(a, today)]);
     const entries = await db.entry.findMany({
@@ -202,6 +207,10 @@ describe("fixos", () => {
       startMonth: start,
       repeat: { mode: "installments", count: 3 },
     });
+    await db.recurring.update({
+      where: { id: r.id },
+      data: { createdAt: new Date(`${start}-01T12:00:00Z`) },
+    });
     await ensureRecurringUpToDate(a, today);
     const dates = (
       await db.entry.findMany({
@@ -214,6 +223,65 @@ describe("fixos", () => {
     expect(
       (await db.recurring.findUniqueOrThrow({ where: { id: r.id } })).nextOccurrenceOn,
     ).toBeNull();
+  });
+});
+
+describe("defesas da revisão de segurança", () => {
+  it("fixo nunca anota meses anteriores à criação, mesmo com início no passado", async () => {
+    const a = await makeUser("a");
+    await createRecurring(a, {
+      kind: "expense",
+      amountCents: 1_000,
+      categoryId: "contas",
+      description: null,
+      dayOfMonth: 5,
+      startMonth: addMonths(monthOf(today), -24),
+      repeat: { mode: "monthly" },
+    });
+    await ensureRecurringUpToDate(a, today);
+    const months = (await db.entry.findMany({ where: { userId: a }, select: { date: true } })).map(
+      (e) => e.date.toISOString().slice(0, 7),
+    );
+    expect(months.every((m) => m >= monthOf(today))).toBe(true);
+  });
+
+  it("tetos de categorias e fixos valem com pedidos ao mesmo tempo", async () => {
+    const a = await makeUser("a");
+    const results = await Promise.all(
+      Array.from({ length: 35 }, (_, i) =>
+        createCustomCategory(a, { kind: "expense", name: `Cat ${i}`, icon: "moradia" }),
+      ),
+    );
+    expect(results.filter((r) => r.ok)).toHaveLength(30);
+    expect(await db.userCategory.count({ where: { userId: a, systemId: null } })).toBe(30);
+
+    const item = {
+      input: {
+        kind: "expense" as const,
+        amountCents: 100,
+        categoryId: "contas",
+        description: null,
+        dayOfMonth: 5,
+        startMonth: monthOf(today),
+        repeat: { mode: "monthly" as const },
+      },
+    };
+    await Promise.all(Array.from({ length: 105 }, () => createRecurringWithinLimit(a, [item])));
+    expect(await db.recurring.count({ where: { userId: a } })).toBe(100);
+  });
+
+  it("a exportação traz todas as contas de calculadora", async () => {
+    const a = await makeUser("a");
+    for (let i = 0; i < 21; i++) {
+      await addCalculationToPlan(
+        a,
+        randomUUID(),
+        "NET_SALARY",
+        { input: {}, result: {} as never, engineVersion: 1 },
+        [],
+      );
+    }
+    expect(JSON.parse((await buildExport(a)).json).contasDeCalculadora).toHaveLength(21);
   });
 });
 

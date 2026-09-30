@@ -57,7 +57,7 @@ const KIND_NAMES: Record<CalculatorKind, string> = {
 /** "Quanto vou receber?" (docs/design-system/17-padroes-de-tela.md#calculadoras) */
 export default async function CalculatorsPage() {
   const user = await requireUser();
-  const calculations = await listCalculations(user.id);
+  const calculations = await listCalculations(user.id, { take: 50 });
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex flex-col gap-2">

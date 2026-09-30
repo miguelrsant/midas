@@ -6,7 +6,14 @@ import { cache } from "react";
 
 import { Prisma } from "@/generated/prisma/client";
 import { sealOptional, tryOpenText } from "@/lib/crypto/fields";
-import { type DateOnly, fromDbDate, type MonthKey, toDbDate } from "@/lib/dates";
+import {
+  type DateOnly,
+  fromDbDate,
+  type MonthKey,
+  monthOf,
+  toDbDate,
+  todayInSaoPaulo,
+} from "@/lib/dates";
 import { db } from "@/lib/db";
 import { type EntryKind, fromDbKind, toDbKind } from "@/lib/entry";
 import {
@@ -20,6 +27,7 @@ import {
 import { errorCode, log } from "@/lib/log";
 
 import { sealDescription } from "./entries";
+import { type Tx, withUserLock } from "./lock";
 
 /**
  * Fixos (A014). Sem cron: `ensureRecurringUpToDate` anota as ocorrências vencidas
@@ -52,6 +60,7 @@ const select = {
   startMonth: true,
   endMonth: true,
   nextOccurrenceOn: true,
+  createdAt: true,
 } satisfies Prisma.RecurringSelect;
 
 type Row = Prisma.RecurringGetPayload<{ select: typeof select }>;
@@ -95,8 +104,11 @@ export const ensureRecurringUpToDate = cache(
     let created = 0;
     for (const row of due) {
       const rule = toView(userId, row);
-      const { due: occurrences, next } = dueOccurrences(rule, rule.nextOccurrenceOn, today);
-      if (occurrences.length === 0) continue;
+      const { due, next } = dueOccurrences(rule, rule.nextOccurrenceOn, today);
+      if (due.length === 0) continue;
+      // Defesa extra: um fixo nunca anota meses anteriores ao mês em que foi criado.
+      const createdMonth = monthOf(todayInSaoPaulo(row.createdAt));
+      const occurrences = due.filter((o) => o.month >= createdMonth);
       try {
         const [inserted] = await db.$transaction([
           db.entry.createMany({
@@ -155,14 +167,15 @@ export async function createRecurring(
   {
     firstAlreadyRecorded = false,
     id = randomUUID(),
-  }: { firstAlreadyRecorded?: boolean; id?: string } = {},
+    client = db,
+  }: { firstAlreadyRecorded?: boolean; id?: string; client?: Tx | typeof db } = {},
 ): Promise<RecurringView> {
   const endMonth = endMonthFor(input.startMonth, input.repeat);
   const rule = { dayOfMonth: input.dayOfMonth, startMonth: input.startMonth, endMonth };
   const first = firstAlreadyRecorded
     ? nextAfter(rule, input.startMonth)
     : occurrenceDate(rule, input.startMonth);
-  const row = await db.recurring.create({
+  const row = await client.recurring.create({
     data: {
       id,
       userId,
@@ -220,4 +233,29 @@ export async function updateRecurring(
 export async function deleteRecurring(userId: string, id: string): Promise<boolean> {
   const deleted = await db.recurring.deleteMany({ where: { id, userId } });
   return deleted.count === 1;
+}
+
+/**
+ * Cria vários fixos respeitando o teto por pessoa, com a contagem e a criação na
+ * mesma transação travada. Devolve null se passar do teto.
+ */
+export async function createRecurringWithinLimit(
+  userId: string,
+  items: ReadonlyArray<{ input: RecurringInput; firstAlreadyRecorded?: boolean; id?: string }>,
+): Promise<RecurringView[] | null> {
+  return withUserLock(userId, async (tx) => {
+    const count = await tx.recurring.count({ where: { userId } });
+    if (count + items.length > RECURRING_LIMIT) return null;
+    const created: RecurringView[] = [];
+    for (const item of items) {
+      created.push(
+        await createRecurring(userId, item.input, {
+          firstAlreadyRecorded: item.firstAlreadyRecorded,
+          id: item.id,
+          client: tx,
+        }),
+      );
+    }
+    return created;
+  });
 }

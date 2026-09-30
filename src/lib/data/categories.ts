@@ -23,6 +23,8 @@ import { openText, sealText } from "@/lib/crypto/fields";
 import { db } from "@/lib/db";
 import { type EntryKind, fromDbKind, toDbKind } from "@/lib/entry";
 
+import { withUserLock } from "./lock";
+
 /**
  * Categorias da pessoa: ajustes das prontas e categorias próprias (A013).
  * Nome e ícone ficam cifrados juntos no campo `sealed`.
@@ -107,15 +109,24 @@ export async function createCustomCategory(
     return { ok: false, error: "name_taken" };
   }
   const rowId = randomUUID();
-  await db.userCategory.create({
-    data: {
-      id: rowId,
-      userId,
-      kind: toDbKind(input.kind),
-      systemId: null,
-      sealed: sealCategory(userId, rowId, { name, icon: input.icon }),
-    },
+  // Conta e cria com a trava da pessoa: o teto vale mesmo com pedidos ao mesmo tempo.
+  const created = await withUserLock(userId, async (tx) => {
+    if (
+      (await tx.userCategory.count({ where: { userId, systemId: null } })) >= CUSTOM_CATEGORY_LIMIT
+    )
+      return false;
+    await tx.userCategory.create({
+      data: {
+        id: rowId,
+        userId,
+        kind: toDbKind(input.kind),
+        systemId: null,
+        sealed: sealCategory(userId, rowId, { name, icon: input.icon }),
+      },
+    });
+    return true;
   });
+  if (!created) return { ok: false, error: "limit" };
   return { ok: true, id: customCategoryId(rowId) };
 }
 

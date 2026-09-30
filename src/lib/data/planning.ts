@@ -56,11 +56,15 @@ export interface CalculationView {
   data: StoredCalculation | null;
 }
 
-export async function listCalculations(userId: string): Promise<CalculationView[]> {
+/** Contas de calculadora; `take` limita a lista da tela, a exportação pega todas. */
+export async function listCalculations(
+  userId: string,
+  { take }: { take?: number } = {},
+): Promise<CalculationView[]> {
   const rows = await db.calculation.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take,
     select: { id: true, kind: true, createdAt: true, sealed: true },
   });
   return rows.map((r) => {

@@ -20,29 +20,43 @@ export function ExportData() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [files, setFiles] = useState<{ json: string; csv: string; base: string } | null>(null);
+  const [files, setFiles] = useState<{
+    json: { url: string; name: string };
+    csv: { url: string; name: string };
+  } | null>(null);
   const id = useId();
 
   async function submit() {
     setBusy(true);
     setError(null);
-    const result = await runAction(() => exportDataAction({ password }));
-    setBusy(false);
-    if (!result.ok) {
-      if (result.code === "session_expired") {
-        router.push(signInHref() as Route);
-        return;
-      }
-      setError(result.message);
-      return;
-    }
     const make = (content: string, type: string) =>
       URL.createObjectURL(new Blob([content], { type }));
-    setFiles({
-      json: make(result.data.json, "application/json;charset=utf-8"),
-      csv: make(result.data.csv, "text/csv;charset=utf-8"),
-      base: result.data.fileBase,
-    });
+    const ready: Record<"json" | "csv", { url: string; name: string } | null> = {
+      json: null,
+      csv: null,
+    };
+    // Um arquivo por chamada: cada resposta fica menor.
+    for (const format of ["json", "csv"] as const) {
+      const result = await runAction(() => exportDataAction({ password, format }));
+      if (!result.ok) {
+        setBusy(false);
+        if (result.code === "session_expired") {
+          router.push(signInHref() as Route);
+          return;
+        }
+        setError(result.message);
+        return;
+      }
+      ready[format] = {
+        url: make(
+          result.data.content,
+          format === "json" ? "application/json;charset=utf-8" : "text/csv;charset=utf-8",
+        ),
+        name: result.data.fileName,
+      };
+    }
+    setBusy(false);
+    setFiles({ json: ready.json!, csv: ready.csv! });
     setPassword("");
     setOpen(false);
     announce("Seu arquivo está pronto para baixar.");
@@ -55,11 +69,11 @@ export function ExportData() {
     <div className="flex flex-col gap-3">
       {files ? (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <a href={files.json} download={`${files.base}.json`} className={link}>
+          <a href={files.json.url} download={files.json.name} className={link}>
             <Download aria-hidden="true" className="size-5" strokeWidth={1.75} />
             Baixar tudo (JSON)
           </a>
-          <a href={files.csv} download={`${files.base}.csv`} className={link}>
+          <a href={files.csv.url} download={files.csv.name} className={link}>
             <Download aria-hidden="true" className="size-5" strokeWidth={1.75} />
             Baixar lançamentos (planilha CSV)
           </a>
