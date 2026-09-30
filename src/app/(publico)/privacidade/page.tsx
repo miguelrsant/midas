@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <ul>
         <li>E-mail: para você entrar, recuperar a senha e receber avisos de segurança.</li>
         <li>Um resumo criptográfico da senha (nunca a senha).</li>
-        <li>Apelido, se você quiser: para a saudação.</li>
+        <li>Nome ou apelido: só para a saudação.</li>
         <li>
           Aparelhos conectados: o tipo de navegador e a data do último uso. Sem IP e sem
           localização.

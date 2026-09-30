@@ -234,6 +234,33 @@
     outline: 2px solid var(--foco);
     outline-offset: 2px;
   }
+
+  /*
+   * Barra de rolagem com as cores do tema. Largura normal (não "thin"): barras finas
+   * são difíceis de pegar para quem tem pouca coordenação fina. O polegar em `borda`
+   * tem 3:1 ou mais sobre `marmore` e `superficie` (WCAG 1.4.11).
+   */
+  html {
+    scrollbar-color: var(--borda) var(--marmore);
+  }
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--marmore);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--borda);
+    border: 3px solid var(--marmore);
+    border-radius: var(--radius-pill);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--tinta-suave);
+  }
+  ::-webkit-scrollbar-corner {
+    background: var(--marmore);
+  }
   h1,
   h2,
   h3 {
