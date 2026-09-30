@@ -28,7 +28,7 @@ function uniqueEmail() {
 
 async function signUp(email: string, password = PASSWORD) {
   return auth.api.signUpEmail({
-    body: { email, password, name: "", termsVersion: TERMS_VERSION },
+    body: { email, password, name: "  Ana  Maria ", termsVersion: TERMS_VERSION },
     headers: requestHeaders(),
   });
 }
@@ -54,6 +54,7 @@ describe("cadastro", () => {
     expect(user.emailVerified).toBe(false);
     expect(user.image).toBeNull();
     expect(user.termsVersion).toBe(TERMS_VERSION);
+    expect(user.name).toBe("Ana Maria");
     expect(user.termsAcceptedAt).toBeInstanceOf(Date);
     expect(user.accounts[0]?.password).toMatch(/^\$argon2id\$/);
     expect(user.accounts[0]?.password).not.toContain(PASSWORD);
@@ -80,13 +81,27 @@ describe("cadastro", () => {
     expect(plain).toBeNull();
   });
 
+  it("exige o nome", async () => {
+    await expect(
+      auth.api.signUpEmail({
+        body: {
+          email: uniqueEmail(),
+          password: PASSWORD,
+          name: "   ",
+          termsVersion: TERMS_VERSION,
+        },
+        headers: requestHeaders(),
+      }),
+    ).rejects.toMatchObject({ body: { code: "INVALID_NICKNAME" } });
+  });
+
   it("recusa senha comum e cadastro sem aceite dos termos", async () => {
     await expect(signUp(uniqueEmail(), "passwordpassword")).rejects.toMatchObject({
       body: { code: "PASSWORD_COMMON" },
     });
     await expect(
       auth.api.signUpEmail({
-        body: { email: uniqueEmail(), password: PASSWORD, name: "", termsVersion: "antiga" },
+        body: { email: uniqueEmail(), password: PASSWORD, name: "Ana", termsVersion: "antiga" },
         headers: requestHeaders(),
       }),
     ).rejects.toMatchObject({ body: { code: "TERMS_NOT_ACCEPTED" } });

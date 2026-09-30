@@ -41,7 +41,7 @@ Use o `AuthLayout` em toda tela de pessoa ainda não identificada. A tela de nov
 | Variante | Campos | Botão | Link abaixo do botão | Troca de tela |
 | --- | --- | --- | --- | --- |
 | Entrada (`/entrar`) | E-mail (`autocomplete="email"`), Senha (`current-password`) | Entrar | Esqueci minha senha | Ainda não tem conta? Criar conta |
-| Cadastro (`/criar-conta`) | E-mail (`email`), Senha (`new-password`), Como quer que o Midas te chame (opcional, `nickname`), aceite da política | Criar conta | nenhum | Já tem conta? Entrar |
+| Cadastro (`/criar-conta`) | Nome (`nickname`), E-mail (`email`), Senha (`new-password`), aceite da política | Criar conta | nenhum | Já tem conta? Entrar |
 | Recuperação (`/recuperar-senha`) | E-mail (`email`) | Enviar link | nenhum | Lembrou a senha? Entrar |
 | Recuperação enviada | nenhum; o formulário dá lugar à confirmação | nenhum | Voltar para a entrada | nenhum |
 
@@ -101,9 +101,9 @@ Todas usam os mesmos tokens: `marmore`, `superficie`, `superficie-funda`, `borda
 
 **Títulos:** um acento por título. Entrada: "Que bom te ver *de novo*." Cadastro: "Suas finanças *em ordem*." Recuperação: "Esqueceu a senha? *Acontece*."
 
-**Rótulos:** "E-mail", "Senha", "Como quer que o Midas te chame? (opcional)". Ajuda do apelido: "Aparece na saudação do painel. Pode deixar em branco."
+**Rótulos:** "Nome", "E-mail", "Senha". Ajuda do nome: "Como o Midas vai te chamar. Pode ser um apelido." Ajuda do e-mail: "Para entrar e recuperar a senha."
 
-**Senha no cadastro:** no mínimo 15 caracteres, sem exigir maiúscula, número ou símbolo. Ajuda: "Use 15 caracteres ou mais. Uma frase fácil de lembrar funciona bem, como “café com pão na varanda”." As regras completas (senhas comuns e vazadas, limite máximo, colar) estão em [Privacidade na interface](../16-privacidade-na-interface.md).
+**Senha no cadastro:** no mínimo 8 caracteres, sem exigir maiúscula, número ou símbolo. Ajuda: "Use 8 caracteres ou mais." As regras completas (senhas comuns e vazadas, limite máximo, colar) estão em [Privacidade na interface](../16-privacidade-na-interface.md).
 
 **Mensagens de segurança (textos fixos):**
 
@@ -112,7 +112,7 @@ Todas usam os mesmos tokens: `marmore`, `superficie`, `superficie-funda`, `borda
 | E-mail ou senha errados, ou conta inexistente | E-mail ou senha incorretos. |
 | Muitas tentativas | Muitas tentativas. Espere 15 minutos e tente de novo. |
 | Recuperação enviada (sempre, exista ou não a conta) | Se esse e-mail tiver conta no Midas, você vai receber um link em alguns minutos. |
-| Senha curta | A senha precisa ter pelo menos 15 caracteres. Faltam 6. |
+| Senha curta | A senha precisa ter pelo menos 8 caracteres. Faltam 3. |
 | Senha comum | Essa senha é muito usada e fácil de adivinhar. Tente uma frase só sua. |
 | Senha vazada | Essa senha já apareceu em vazamentos de outros sites. Escolha outra, de preferência uma frase. |
 | Campo de e-mail vazio | Digite seu e-mail. |
@@ -129,7 +129,7 @@ No cadastro, um e-mail já cadastrado não gera mensagem na tela: a pessoa vê "
 | --- | --- |
 | E-mail ou senha incorretos. | Não encontramos uma conta com esse e-mail. |
 | Se esse e-mail tiver conta no Midas, você vai receber um link em alguns minutos. | E-mail enviado para miguel@exemplo.com.br! |
-| Use 15 caracteres ou mais. Uma frase fácil de lembrar funciona bem. | A senha deve conter maiúscula, número e caractere especial. |
+| Use 8 caracteres ou mais. | A senha deve conter maiúscula, número e caractere especial. |
 | Muitas tentativas. Espere 15 minutos e tente de novo. | Conta bloqueada. |
 
 ## Acessibilidade
@@ -153,7 +153,8 @@ No cadastro, um e-mail já cadastrado não gera mensagem na tela: a pessoa vê "
 - **Desktop:** cartão de 400px centralizado vertical e horizontalmente.
 - **Altura curta ou zoom alto:** o fundo cresce com o conteúdo (`min-height`, nunca `height` fixa) e a página rola. Nada fica escondido sob o selo, que está atrás do cartão (`position: relative` no cartão).
 - **Teclado virtual:** com `100dvh`, a página rola até o campo ativo.
-- **Tema:** antes de identificar a pessoa, segue o aparelho (Automático).
+- **Tema:** sempre Calacatta (claro), qualquer que seja o aparelho. O Portoro com mármore ficou pesado atrás do cartão (decisão de 30/09/2026).
+- **Sem rolagem:** o cartão cabe inteiro a partir de 390×844 (celular) e 1366×768 (notebook), com ajudas de uma linha. Em telas menores a página rola; nunca esconda conteúdo para caber.
 
 ## Casos-limite
 
@@ -309,7 +310,7 @@ Notas:
 
 - A mensagem "E-mail ou senha incorretos." vem do servidor para qualquer falha de credencial; o cliente não tenta adivinhar a causa.
 - O limite de tentativas e a checagem de senhas comuns ou vazadas ficam no servidor. O cliente só mostra o texto que recebe.
-- Guarde o apelido como opcional (`nickname: string | null`); ele alimenta a saudação e as iniciais do [AppHeader](app-header.md).
+- Guarde o nome como obrigatório (até 40 caracteres); ele alimenta a saudação e as iniciais do [AppHeader](app-header.md).
 - Envie o formulário por POST (ação de servidor ou rota de API); nunca coloque e-mail ou senha na URL.
 
 ## Faça e evite
@@ -317,7 +318,7 @@ Notas:
 | Faça | Evite |
 | --- | --- |
 | Uma mensagem genérica para qualquer falha de login. | Dizer se o e-mail existe. |
-| Senha de 15 caracteres ou mais, sem regras de composição. | Exigir maiúscula, número e símbolo. |
+| Senha de 8 caracteres ou mais, sem regras de composição. | Exigir maiúscula, número e símbolo. |
 | Permitir colar e gerenciadores de senha. | `onPaste` bloqueado ou `autocomplete="off"`. |
 | Limite de tentativas no servidor. | CAPTCHA de imagens. |
 | Caixa de aceite desmarcada. | Aceite já marcado ou escondido no botão. |

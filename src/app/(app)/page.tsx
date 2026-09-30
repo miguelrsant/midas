@@ -23,8 +23,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-2">
         <p className="md-eyebrow">{today}</p>
         <h1 className="font-display text-display-lg text-tinta">
-          {greeting()}
-          {name ? `, ${name}` : ""}. Que bom ter você <em className="md-acento">aqui</em>.
+          {greeting()}, {name}. Que bom ter você <em className="md-acento">aqui</em>.
         </h1>
         <hr className="md-veio" />
       </div>

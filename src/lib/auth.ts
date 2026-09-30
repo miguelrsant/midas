@@ -16,6 +16,7 @@ import {
 import { sendEmail } from "@/lib/email/sender";
 import { env } from "@/lib/env";
 import { TERMS_VERSION } from "@/lib/legal";
+import { checkNickname } from "@/lib/validation";
 import { errorCode, log } from "@/lib/log";
 import { maybePurgeExpiredData } from "@/lib/maintenance";
 
@@ -28,8 +29,6 @@ import { recordSecurityEvent } from "./auth/security-events";
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-
-export const NICKNAME_MAX_LENGTH = 40;
 
 /** Rotas em que uma senha nova é escolhida, e o campo que a carrega. */
 const NEW_PASSWORD_FIELDS: Record<string, "password" | "newPassword"> = {
@@ -172,7 +171,7 @@ export const auth = betterAuth({
             code: "TERMS_NOT_ACCEPTED",
           });
         }
-        if (typeof body.name !== "string" || body.name.trim().length > NICKNAME_MAX_LENGTH) {
+        if (typeof body.name !== "string" || checkNickname(body.name).error) {
           throw new APIError("BAD_REQUEST", {
             message: "Invalid nickname",
             code: "INVALID_NICKNAME",
@@ -189,7 +188,7 @@ export const auth = betterAuth({
             code: "INVALID_FIELDS",
           });
         }
-        if (typeof body.name !== "string" || body.name.trim().length > NICKNAME_MAX_LENGTH) {
+        if (typeof body.name !== "string" || checkNickname(body.name).error) {
           throw new APIError("BAD_REQUEST", {
             message: "Invalid nickname",
             code: "INVALID_NICKNAME",
@@ -247,7 +246,12 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => ({
-          data: { ...user, name: user.name.trim(), image: null, termsAcceptedAt: new Date() },
+          data: {
+            ...user,
+            name: checkNickname(user.name).nickname,
+            image: null,
+            termsAcceptedAt: new Date(),
+          },
         }),
         after: async (user) => {
           await recordSecurityEvent(user.id, "SIGNUP");

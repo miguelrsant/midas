@@ -99,7 +99,7 @@ As regras completas estão nos docs. As que mais se quebram sem querer:
 
 O Midas guarda a vida financeira das pessoas. Trate cada linha de código como se fosse auditada, porque é código aberto e vai ser.
 
-- **Senhas:** Argon2id com parâmetros atuais recomendados pela OWASP; mínimo de 15 caracteres, sem regras de composição, bloqueio de senhas comuns e vazadas (NIST SP 800-63B-4). Nunca registrar, logar ou devolver a senha.
+- **Senhas:** Argon2id com parâmetros atuais recomendados pela OWASP; mínimo de 8 caracteres (piso do NIST SP 800-63B-4; decisão do projeto para facilitar a digitação, compensada pela recusa de senhas comuns e vazadas e pelo limite de tentativas), sem regras de composição. Nunca registrar, logar ou devolver a senha.
 - **Sessão:** cookie `HttpOnly`, `Secure`, `SameSite=Lax`, token aleatório; renovar ao entrar e ao trocar a senha; "Sair de todos os aparelhos" invalida tudo. **Exceção registrada:** o Better Auth guarda o token da sessão em claro na tabela `session`; o cookie leva o token com assinatura HMAC (`BETTER_AUTH_SECRET`), então uma cópia só do banco não monta um cookie válido. Não habilite o plugin `bearer` sem rever isso (`.lgpd/gaps.md`, G13). Sessões não guardam IP nem User-Agent completo.
 - **Ações sensíveis** (apagar conta, trocar senha ou e-mail, baixar dados) pedem a senha de novo.
 - **Mensagens que não revelam contas:** login, cadastro e recuperação respondem igual exista ou não o e-mail.
@@ -117,7 +117,7 @@ O Midas trata dados pessoais e precisa seguir a **LGPD (Lei 13.709/2018)** desde
 
 ### Regras que valem sempre
 
-- **Necessidade:** colete só o que a funcionalidade precisa. Hoje: e-mail, hash da senha, apelido opcional, lançamentos, respostas das calculadoras, limites. Qualquer dado novo exige motivo escrito e revisão com o plugin.
+- **Necessidade:** colete só o que a funcionalidade precisa. Hoje: e-mail, hash da senha, nome ou apelido (obrigatório, só para a saudação), lançamentos, respostas das calculadoras, limites. Qualquer dado novo exige motivo escrito e revisão com o plugin.
 - **Finalidade:** os dados servem para mostrar as finanças da própria pessoa. Nunca para perfilar, pontuar, vender ou anunciar.
 - **Dado sensível:** lançamentos podem revelar saúde (categoria Saúde, descrições como "farmácia"). Trate **todo lançamento como confidencial**: só a dona ou o dono vê, fora de logs e de e-mails.
 - **Direitos do titular (art. 18)** na própria interface: acessar, corrigir, baixar (JSON e CSV) e apagar a conta. Veja [Privacidade na interface](docs/design-system/16-privacidade-na-interface.md).

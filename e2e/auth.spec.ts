@@ -13,6 +13,7 @@ function uniqueEmail(prefix: string) {
 
 async function signUp(page: Page, email: string, password = PASSWORD) {
   await page.goto("/criar-conta");
+  await page.getByLabel("Nome").fill("Ana");
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha", { exact: true }).fill(password);
   await page.getByLabel(/Li e aceito/).check();
@@ -113,8 +114,8 @@ test("senha errada e conta inexistente têm a mesma mensagem", async ({ page }) 
 });
 
 test("senha curta e senha comum são recusadas no cadastro", async ({ page }) => {
-  await signUp(page, uniqueEmail("curta"), "curta demais");
-  await expect(page.getByText(/pelo menos 15 caracteres\. Faltam 3\./)).toBeVisible();
+  await signUp(page, uniqueEmail("curta"), "curta");
+  await expect(page.getByText(/pelo menos 8 caracteres\. Faltam 3\./)).toBeVisible();
 
   await signUp(page, uniqueEmail("comum"), "passwordpassword");
   await expect(page.getByText(/muito usada e fácil de adivinhar/)).toBeVisible();
@@ -188,3 +189,49 @@ for (const path of ["/entrar", "/criar-conta", "/recuperar-senha", "/privacidade
     expect(results.violations).toEqual([]);
   });
 }
+
+test.describe("telas de entrada", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("ficam no tema claro mesmo com o aparelho no escuro", async ({ page }) => {
+    await page.goto("/criar-conta");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  });
+
+  test("o cadastro pede nome, e-mail e senha, nessa ordem", async ({ page }) => {
+    await page.goto("/criar-conta");
+    const labels = await page
+      .locator("form label[for]")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("for")));
+    expect(labels.slice(0, 3)).toEqual(["apelido", "email", "senha"]);
+  });
+
+  for (const [width, height] of [
+    [390, 844],
+    [768, 1024],
+    [1366, 768],
+    [1920, 1080],
+  ] as const) {
+    test(`cabem sem rolagem em ${width}x${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      for (const path of ["/criar-conta", "/entrar", "/recuperar-senha"]) {
+        await page.goto(path);
+        const size = await page.evaluate(() => ({
+          height: document.documentElement.scrollHeight,
+          width: document.documentElement.scrollWidth,
+        }));
+        expect(size.height, path).toBeLessThanOrEqual(height);
+        expect(size.width, path).toBeLessThanOrEqual(width);
+      }
+    });
+  }
+
+  test("não rolam para o lado nem em 320px", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    for (const path of ["/criar-conta", "/entrar", "/recuperar-senha"]) {
+      await page.goto(path);
+      const width = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(width, path).toBeLessThanOrEqual(320);
+    }
+  });
+});

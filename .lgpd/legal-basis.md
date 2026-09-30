@@ -32,10 +32,10 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 ## Atividade: A001 — Cadastro e conta
 
 - **Finalidade**: criar e manter a conta da pessoa para que ela use o Midas (Art. 6º, I).
-- **Dados tratados**: `user.id`, `user.email`, `user.emailVerified`, `user.name` (apelido opcional), `user.image` (sempre nulo), `user.termsVersion`, `user.termsAcceptedAt`, `createdAt`, `updatedAt`; `account` com hash Argon2id da senha (`providerId = "credential"`).
+- **Dados tratados**: `user.id`, `user.email`, `user.emailVerified`, `user.name` (nome ou apelido, obrigatório), `user.image` (sempre nulo), `user.termsVersion`, `user.termsAcceptedAt`, `createdAt`, `updatedAt`; `account` com hash Argon2id da senha (`providerId = "credential"`).
 - **Sensíveis?**: Não.
 - **Base legal**: Art. 7º, V — execução de contrato e procedimentos preliminares a pedido do titular.
-- **Justificativa**: sem e-mail e senha não há conta nem serviço. O apelido é opcional e só serve à saudação. O registro de versão e data do aceite dos termos documenta a formação do contrato; não é consentimento.
+- **Justificativa**: sem e-mail e senha não há conta nem serviço. O nome passou a ser obrigatório (decisão do produto, 30/09/2026) e só serve à saudação; a pessoa pode usar um apelido, e ele nunca sai do app nem entra em e-mails ou logs (Art. 6º, III). O registro de versão e data do aceite dos termos documenta a formação do contrato; não é consentimento.
 - **LIA**: N/A.
 - **Retenção**: enquanto a conta existir; contas não confirmadas são apagadas em 7 dias. Ver [retention.md](./retention.md).
 - **Revogação possível?**: não se aplica (não é consentimento); o titular pode apagar a conta a qualquer momento (Art. 18, VI).

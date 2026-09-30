@@ -68,7 +68,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   if (expired) return <ExpiredLink />;
 
   return (
-    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       <AuthTitle>
         Uma senha <Accent>nova</Accent>.
       </AuthTitle>
@@ -79,7 +79,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         autoComplete="new-password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        help="Use 15 caracteres ou mais. Uma frase fácil de lembrar funciona bem."
+        help="Use 8 caracteres ou mais. Uma frase fácil de lembrar funciona bem."
         error={error}
         forceHidden={busy}
       />
@@ -96,7 +96,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
 export function ExpiredLink() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <AuthTitle>Esse link venceu.</AuthTitle>
       <p className="text-center">
         Os links para criar senha nova valem por 30 minutos e só uma vez. Peça um novo.

@@ -10,10 +10,11 @@ describe("checkPasswordLocally", () => {
     expect(checkPasswordLocally("café com pão na varanda")).toBeNull();
   });
 
-  it("exige 15 caracteres, contando emoji como um", () => {
-    expect(checkPasswordLocally("14 caracteres!")).toBe("too-short");
-    expect(checkPasswordLocally("🌧🌧🌧🌧🌧🌧🌧🌧🌧🌧🌧🌧🌧🌧")).toBe("too-short");
-    expect(passwordLength("🌧".repeat(15))).toBe(15);
+  it("exige 8 caracteres, contando emoji como um", () => {
+    expect(checkPasswordLocally("7 letra")).toBe("too-short");
+    expect(checkPasswordLocally("🌧🌧🌧🌧🌧🌧🌧")).toBe("too-short");
+    expect(passwordLength("🌧".repeat(8))).toBe(8);
+    expect(checkPasswordLocally("gato azul")).toBeNull();
   });
 
   it("limita a 128 caracteres", () => {
@@ -22,6 +23,10 @@ describe("checkPasswordLocally", () => {
 
   it.each([
     "passwordpassword",
+    "12345678",
+    "Senha123",
+    "qwerty123",
+    "Flamengo",
     "Senha Senha Senha",
     "123456789012345",
     "aaaaaaaaaaaaaaaaaa",
@@ -37,8 +42,8 @@ describe("checkPasswordLocally", () => {
   });
 
   it("diz quantos caracteres faltam", () => {
-    expect(shortPasswordMessage("curta demais")).toBe(
-      "A senha precisa ter pelo menos 15 caracteres. Faltam 3.",
+    expect(shortPasswordMessage("curta")).toBe(
+      "A senha precisa ter pelo menos 8 caracteres. Faltam 3.",
     );
   });
 });

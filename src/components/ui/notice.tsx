@@ -14,8 +14,11 @@ export function Notice({
   children,
   className,
   role,
+  compact = false,
 }: {
   tone?: NoticeTone;
+  /** Menos respiro, para cartões apertados (telas de entrada). */
+  compact?: boolean;
   children: ReactNode;
   className?: string;
   role?: "note" | "status" | "alert";
@@ -25,7 +28,8 @@ export function Notice({
     <div
       role={role}
       className={cn(
-        "flex gap-3 rounded-md border border-veio bg-superficie p-4 text-[0.9375rem] leading-[1.375rem] text-tinta",
+        "flex gap-3 rounded-md border border-veio bg-superficie text-[0.9375rem] leading-[1.375rem] text-tinta",
+        compact ? "p-3" : "p-4",
         className,
       )}
     >

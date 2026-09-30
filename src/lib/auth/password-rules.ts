@@ -1,9 +1,12 @@
 /**
- * Regras de senha (NIST SP 800-63B-4): só tamanho, sem regras de composição.
+ * Regras de senha: só tamanho, sem regras de composição (NIST SP 800-63B-4).
+ * O mínimo é 8, o piso do NIST, por decisão do projeto: 15 afastava quem tem
+ * dificuldade para digitar. A força vem da recusa de senhas comuns e vazadas e
+ * do limite de tentativas no servidor (exceção registrada no CLAUDE.md).
  * Este arquivo roda no navegador e no servidor.
  */
 
-export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 
 /**
@@ -30,7 +33,7 @@ export const PASSWORD_MESSAGES: Record<PasswordProblem, string> = {
     "Essa senha já apareceu em vazamentos de outros sites. Escolha outra, de preferência uma frase.",
 };
 
-/** "A senha precisa ter pelo menos 15 caracteres. Faltam 6." */
+/** "A senha precisa ter pelo menos 8 caracteres. Faltam 3." */
 export function shortPasswordMessage(password: string) {
   const missing = PASSWORD_MIN_LENGTH - passwordLength(password);
   return `${PASSWORD_MESSAGES["too-short"]} Faltam ${missing}.`;

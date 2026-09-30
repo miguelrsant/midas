@@ -88,7 +88,7 @@ export function ChangePasswordForm() {
         autoComplete="new-password"
         value={next}
         onChange={(event) => setNext(event.target.value)}
-        help="Use 15 caracteres ou mais. Uma frase fácil de lembrar funciona bem."
+        help="Use 8 caracteres ou mais. Uma frase fácil de lembrar funciona bem."
         error={errors.next}
         forceHidden={busy}
       />

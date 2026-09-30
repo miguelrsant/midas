@@ -57,7 +57,7 @@ export function SignInForm({ redirectTo, notice }: { redirectTo: string; notice:
   }
 
   return (
-    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       <AuthTitle>
         Que bom te ver <Accent>de novo</Accent>.
       </AuthTitle>

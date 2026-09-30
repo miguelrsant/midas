@@ -9,6 +9,22 @@ export const EMAIL_MESSAGES = {
 
 const emailSchema = z.email();
 
+export const NICKNAME_MAX_LENGTH = 40;
+
+export const NICKNAME_MESSAGES = {
+  empty: "Digite seu nome ou apelido.",
+  tooLong: `Use no máximo ${NICKNAME_MAX_LENGTH} caracteres.`,
+} as const;
+
+/** Nome ou apelido para a saudação: obrigatório, até 40 caracteres, sem espaços nas pontas. */
+export function checkNickname(raw: string): { nickname: string; error: string | null } {
+  const nickname = raw.trim().replace(/\s+/g, " ");
+  if (!nickname) return { nickname, error: NICKNAME_MESSAGES.empty };
+  if ([...nickname].length > NICKNAME_MAX_LENGTH)
+    return { nickname, error: NICKNAME_MESSAGES.tooLong };
+  return { nickname, error: null };
+}
+
 /** Tira só os espaços das pontas (nunca da senha) e confere o formato. */
 export function checkEmail(raw: string): { email: string; error: string | null } {
   const email = raw.trim();

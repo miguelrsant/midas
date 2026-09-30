@@ -14,7 +14,7 @@ datasource db {
 
 model User {
   id              String    @id
-  /// Apelido opcional ("Como você quer que o Midas te chame?"). Vazio se a pessoa não informar.
+  /// Nome ou apelido obrigatório ("Como você quer que o Midas te chame?"), para a saudação.
   name            String    @db.VarChar(40)
   email           String    @unique @db.VarChar(254)
   emailVerified   Boolean   @default(false)

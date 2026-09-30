@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth/messages";
+import { checkNickname, NICKNAME_MAX_LENGTH } from "@/lib/validation";
 
 export function NicknameSetting({ initial }: { initial: string }) {
   const router = useRouter();
@@ -22,9 +23,9 @@ export function NicknameSetting({ initial }: { initial: string }) {
       onSubmit={async (event) => {
         event.preventDefault();
         setStatus("");
-        const name = value.trim();
-        if (name.length > 40) {
-          setError("Use no máximo 40 caracteres.");
+        const { nickname: name, error: problem } = checkNickname(value);
+        if (problem) {
+          setError(problem);
           return;
         }
         setError(null);
@@ -35,25 +36,23 @@ export function NicknameSetting({ initial }: { initial: string }) {
           setError(authErrorMessage(result.error));
           return;
         }
-        setStatus(
-          name ? `Pronto. O Midas vai te chamar de ${name}.` : "Pronto. A saudação fica sem nome.",
-        );
+        setStatus(`Pronto. O Midas vai te chamar de ${name}.`);
         router.refresh();
       }}
     >
       <TextField
         id="apelido"
-        label="Como você quer que o Midas te chame?"
+        label="Nome"
         autoComplete="nickname"
-        maxLength={40}
+        maxLength={NICKNAME_MAX_LENGTH}
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        help="Aparece na saudação do painel. Pode deixar em branco."
+        help="Como o Midas vai te chamar. Pode ser um apelido."
         error={error}
       />
       <div>
         <Button type="submit" variant="secondary" busy={busy}>
-          Salvar apelido
+          Salvar nome
         </Button>
       </div>
       <p role="status" className="text-caption text-tinta-suave">

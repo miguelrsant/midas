@@ -86,6 +86,13 @@ Os arquivos trazem metadados de procedência (C2PA). Não os remova ao otimizar 
 
 ## Histórico
 
+### 3.2 (30 de setembro de 2026): telas de entrada
+
+- Entrada, cadastro e recuperação de senha ficam sempre no tema claro (Calacatta): o Portoro com mármore ficou pesado atrás do cartão.
+- Cadastro pede nome (obrigatório, pode ser apelido), e-mail e senha, nessa ordem.
+- Senha com no mínimo 8 caracteres, e não mais 15; senhas comuns e vazadas continuam recusadas.
+- O cartão de entrada cabe sem rolagem a partir de 390×844 e 1366×768, com ajudas de uma linha e o aviso de privacidade como linha simples com ícone.
+
 ### 3.1 (setembro de 2026): documentação
 
 Ajustes feitos ao documentar, que valem sobre o protótipo:
@@ -98,7 +105,7 @@ Ajustes feitos ao documentar, que valem sobre o protótipo:
 - Erro de formulário com borda de 2px em `alerta` e ícone `triangle-alert`; a mensagem fica em `tinta`.
 - Botão em carregamento ("Salvando…") não fica apagado e usa `aria-busy`.
 - Um mármore por tela: nos dias da conquista do mês, o cartão de conquista leva o mármore e o de saldo fica liso.
-- Senha com no mínimo 15 caracteres, sem regras de composição e sem campo de confirmação (NIST SP 800-63B-4).
+- Senha com no mínimo 8 caracteres, sem regras de composição e sem campo de confirmação (NIST SP 800-63B-4).
 - "13º" com o indicador ordinal, ícone `utensils` para Restaurante, aviso "Anotado" sem botão.
 - Botão fechar com 48 × 48px; botão "Mostrar senha" sem `aria-pressed`.
 

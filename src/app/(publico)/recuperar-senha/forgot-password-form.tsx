@@ -53,7 +53,7 @@ export function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <AuthTitle id="confirmacao">
           Confira seu <Accent>e-mail</Accent>.
         </AuthTitle>
@@ -71,7 +71,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       <AuthTitle>
         Esqueceu a senha? <Accent>Acontece</Accent>.
       </AuthTitle>

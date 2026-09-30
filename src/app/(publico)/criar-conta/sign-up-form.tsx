@@ -19,14 +19,12 @@ import {
   shortPasswordMessage,
 } from "@/lib/auth/password-rules";
 import { TERMS_VERSION } from "@/lib/legal";
-import { checkEmail } from "@/lib/validation";
-
-const NICKNAME_MAX = 40;
+import { checkEmail, checkNickname, NICKNAME_MAX_LENGTH } from "@/lib/validation";
 
 type Errors = {
+  nickname?: string | null;
   email?: string | null;
   password?: string | null;
-  nickname?: string | null;
   terms?: string | null;
 };
 
@@ -44,11 +42,14 @@ export function SignUpForm() {
 
   const length = passwordLength(password);
 
-  function validate(): { errors: Errors; email: string } {
+  function validate(): { errors: Errors; email: string; nickname: string } {
     const checked = checkEmail(email);
+    const name = checkNickname(nickname);
     return {
       email: checked.email,
+      nickname: name.nickname,
       errors: {
+        nickname: name.error,
         email: checked.error,
         password:
           length < PASSWORD_MIN_LENGTH
@@ -56,10 +57,6 @@ export function SignUpForm() {
             : length > PASSWORD_MAX_LENGTH
               ? PASSWORD_MESSAGES["too-long"]
               : null,
-        nickname:
-          nickname.trim().length > NICKNAME_MAX
-            ? `Use no máximo ${NICKNAME_MAX} caracteres.`
-            : null,
         terms: accepted ? null : "Para criar a conta, marque que aceita a Política de privacidade.",
       },
     };
@@ -80,7 +77,7 @@ export function SignUpForm() {
       const { error } = await authClient.signUp.email({
         email: result.email,
         password,
-        name: nickname.trim(),
+        name: result.nickname,
         termsVersion: TERMS_VERSION,
         callbackURL: "/confirmar-email",
       });
@@ -105,7 +102,7 @@ export function SignUpForm() {
 
   if (sentTo) {
     return (
-      <div role="status" className="flex flex-col gap-4">
+      <div role="status" className="flex flex-col gap-3">
         <AuthTitle id="confirmacao">
           Falta <Accent>pouco</Accent>.
         </AuthTitle>
@@ -126,11 +123,22 @@ export function SignUpForm() {
   }
 
   return (
-    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       <AuthTitle>
         Suas finanças <Accent>em ordem</Accent>.
       </AuthTitle>
 
+      <TextField
+        id="apelido"
+        name="nickname"
+        label="Nome"
+        autoComplete="nickname"
+        maxLength={NICKNAME_MAX_LENGTH}
+        value={nickname}
+        onChange={(event) => setNickname(event.target.value)}
+        help="Como o Midas vai te chamar. Pode ser um apelido."
+        error={errors.nickname}
+      />
       <TextField
         id="email"
         name="email"
@@ -142,7 +150,7 @@ export function SignUpForm() {
         spellCheck={false}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        help="Seu e-mail serve para entrar e recuperar a senha. Não mandamos propaganda."
+        help="Para entrar e recuperar a senha."
         error={errors.email}
       />
       <PasswordField
@@ -154,10 +162,10 @@ export function SignUpForm() {
         onChange={(event) => setPassword(event.target.value)}
         help={
           <>
-            Use 15 caracteres ou mais. Uma frase fácil de lembrar funciona bem, como “café com pão
-            na varanda”.{" "}
+            Use {PASSWORD_MIN_LENGTH} caracteres ou mais.{" "}
+            {/* O contador some quando o erro já diz quanto falta. */}
             <span aria-live="polite">
-              {length > 0 && length < PASSWORD_MIN_LENGTH
+              {!errors.password && length > 0 && length < PASSWORD_MIN_LENGTH
                 ? `${length} de ${PASSWORD_MIN_LENGTH} caracteres.`
                 : ""}
             </span>
@@ -165,22 +173,6 @@ export function SignUpForm() {
         }
         error={errors.password}
         forceHidden={busy}
-      />
-      <TextField
-        id="apelido"
-        name="nickname"
-        label={
-          <>
-            Como quer que o Midas te chame?{" "}
-            <span className="font-normal text-tinta-suave">(opcional)</span>
-          </>
-        }
-        autoComplete="nickname"
-        maxLength={NICKNAME_MAX}
-        value={nickname}
-        onChange={(event) => setNickname(event.target.value)}
-        help="Aparece na saudação do painel. Pode deixar em branco."
-        error={errors.nickname}
       />
 
       <div className="flex flex-col gap-2">

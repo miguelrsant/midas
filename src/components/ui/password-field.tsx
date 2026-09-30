@@ -35,7 +35,7 @@ export function PasswordField({
   const shown = visible && !forceHidden;
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-1", className)}>
       <label htmlFor={id} className="text-label text-tinta">
         {label}
       </label>

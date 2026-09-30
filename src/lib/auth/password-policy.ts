@@ -17,10 +17,84 @@ import {
  */
 
 /**
- * Senhas comuns com 15 caracteres ou mais (as curtas já caem pelo tamanho).
- * Comparação sem acento, sem espaço e em minúsculas.
+ * Senhas comuns com 8 caracteres ou mais (as mais curtas já caem pelo tamanho),
+ * das listas públicas de senhas mais usadas no Brasil e no mundo. A lista completa
+ * de vazamentos fica com o Have I Been Pwned. Comparação sem acento, sem espaço e
+ * em minúsculas.
  */
-const COMMON_LONG_PASSWORDS = new Set([
+const COMMON_PASSWORDS = new Set([
+  "12345678",
+  "123456789",
+  "1234567890",
+  "12345678910",
+  "87654321",
+  "987654321",
+  "11223344",
+  "12344321",
+  "01020304",
+  "10203040",
+  "102030405060",
+  "password",
+  "password1",
+  "password12",
+  "password123",
+  "passw0rd",
+  "senha123",
+  "senha1234",
+  "senha12345",
+  "senha123456",
+  "minhasenha",
+  "mudar123",
+  "trocar123",
+  "qwerty123",
+  "qwertyuiop",
+  "asdfghjkl",
+  "zxcvbnm123",
+  "1q2w3e4r",
+  "1q2w3e4r5t",
+  "q1w2e3r4",
+  "q1w2e3r4t5",
+  "abc12345",
+  "abcd1234",
+  "a1b2c3d4",
+  "iloveyou",
+  "iloveyou1",
+  "euteamo",
+  "euteamo123",
+  "teamo123",
+  "brasil123",
+  "brasil2026",
+  "flamengo",
+  "flamengo123",
+  "corinthians",
+  "corinthians123",
+  "palmeiras",
+  "palmeiras123",
+  "saopaulo",
+  "vasco123",
+  "gremio123",
+  "internacional",
+  "cruzeiro",
+  "botafogo",
+  "fluminense",
+  "santos123",
+  "princesa",
+  "jesus123",
+  "deusefiel",
+  "sunshine",
+  "football",
+  "baseball",
+  "superman",
+  "batman123",
+  "welcome1",
+  "letmein1",
+  "admin123",
+  "administrator",
+  "changeme",
+  "trustno1",
+  "qazwsxedc",
+  "aa123456",
+  "a123456789",
   "123456789012345",
   "1234567890123456",
   "12345678901234567890",
@@ -75,7 +149,7 @@ export function checkPasswordLocally(password: string): PasswordProblem | null {
   if (length > PASSWORD_MAX_LENGTH) return "too-long";
 
   const simple = simplify(password);
-  if (COMMON_LONG_PASSWORDS.has(simple)) return "common";
+  if (COMMON_PASSWORDS.has(simple)) return "common";
 
   // Um caractere repetido ("aaaaaaaaaaaaaaa") ou um bloco curto repetido ("abcabcabcabcabc").
   if (/^(.{1,4})\1+$/u.test(simple)) return "common";

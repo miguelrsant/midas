@@ -10,7 +10,7 @@
 ## Visão geral
 
 - **Titulares**: pessoas usuárias do app (adultas, se confirmada a idade mínima de 18 anos — decisão pendente, ver G04 em [gaps.md](./gaps.md)). Não há funcionários, prospects ou terceiros cadastrados.
-- **Coletado do titular**: e-mail, senha, apelido opcional; na próxima etapa, lançamentos, respostas das calculadoras e limites.
+- **Coletado do titular**: nome ou apelido (obrigatório, só para a saudação), e-mail, senha; na próxima etapa, lançamentos, respostas das calculadoras e limites.
 - **Observado**: tipo de navegador (reduzido a rótulo), IP apenas em contadores de limite de tentativas e em logs da plataforma.
 - **Nunca coletado**: CPF, RG, telefone, endereço, data de nascimento, dados bancários, localização, contatos, fotos (Art. 6º, III; [Privacidade na interface](../docs/design-system/16-privacidade-na-interface.md)).
 - **Fica só no aparelho (não vai ao servidor)**: preferência de tema e "Ocultar valores".
@@ -47,7 +47,7 @@ Teste de alto risco (Res. CD/ANPD nº 2/2022, Art. 4º, critério geral **e** es
 | Base legal | Art. 7º, V ([detalhes](./legal-basis.md#a001)) |
 | Categorias de titulares | Usuários (adultos, a confirmar) |
 | Sensíveis? | Não |
-| Dados | `user`: id, email, emailVerified, name (apelido opcional), image (sempre nulo), termsVersion, termsAcceptedAt, createdAt, updatedAt; `account`: hash Argon2id da senha, providerId "credential" |
+| Dados | `user`: id, email, emailVerified, name (nome ou apelido, obrigatório; só para a saudação), image (sempre nulo), termsVersion, termsAcceptedAt, createdAt, updatedAt; `account`: hash Argon2id da senha, providerId "credential" |
 | Fonte | Coletado do titular no cadastro |
 | Sistemas | Postgres (Neon, aws-sa-east-1): tabelas `user`, `account` |
 | Operadores | Neon (banco), Vercel (funções gru1) |

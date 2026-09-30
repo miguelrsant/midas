@@ -50,7 +50,7 @@ export default async function YourDataPage() {
           <li>Conta criada em {formatShortDate(user.createdAt)}.</li>
         </ul>
         <p className="text-caption text-tinta-suave">
-          O e-mail aparece acima e o apelido pode ser corrigido em{" "}
+          O nome pode ser corrigido em{" "}
           <Link href="/configuracoes" className="md-link">
             Configurações
           </Link>

@@ -173,7 +173,7 @@ Todo erro diz **o que fazer**, na linguagem da pessoa, sem culpa ("Você digitou
 | E-mail inválido | "Confira o e-mail: falta o @ ou o domínio (por exemplo, nome@exemplo.com)." |
 | Login falhou | "E-mail ou senha incorretos." (não diz qual dos dois) |
 | Muitas tentativas | "Muitas tentativas. Espere 15 minutos e tente de novo." |
-| Senha curta no cadastro | "Use pelo menos 15 caracteres. Uma frase fácil de lembrar funciona bem." |
+| Senha curta no cadastro | "A senha precisa ter pelo menos 8 caracteres. Faltam 3." |
 | Senha comum ou vazada | "Essa senha aparece em listas de senhas vazadas. Escolha outra." |
 | Sem internet | "Sem conexão agora. O que você digitou continua aqui; tente salvar de novo." |
 | Erro do servidor | "Não deu para salvar agora. Tente de novo em alguns instantes." |
@@ -199,7 +199,7 @@ Um título curto com o contexto, uma frase que diz o que acontece depois do prim
 | 12h às 17h59 | "Boa tarde" |
 | 18h às 4h59 | "Boa noite" |
 
-Com apelido: "Bom dia, Miguel." Sem apelido: "Bom dia." O apelido é opcional e a pessoa escolhe como quer ser chamada.
+"Bom dia, Miguel." O nome é pedido no cadastro, e a pessoa escolhe como quer ser chamada (pode ser um apelido).
 
 ## Calculadoras
 

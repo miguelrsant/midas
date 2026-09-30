@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/brand/logo";
-import { Notice } from "@/components/ui/notice";
+import { ShieldCheck } from "lucide-react";
 
 /**
  * Moldura das telas de entrada, cadastro e recuperação
@@ -13,7 +13,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <main
       id="conteudo"
-      className="md-marmore-pleno relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-8"
+      className="md-marmore-pleno relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-6"
     >
       <div
         aria-hidden="true"
@@ -21,14 +21,22 @@ export function AuthShell({ children }: { children: ReactNode }) {
       >
         <img src="/marca/midas-selo-contorno.svg" alt="" className="size-70 sm:size-95" />
       </div>
-      <div className="relative flex w-full max-w-100 flex-col gap-4 rounded-lg bg-superficie px-6 py-8 shadow-cartao">
-        <div className="flex justify-center pb-1">
-          <Logo />
+      <div className="relative flex w-full max-w-110 flex-col gap-3 rounded-lg bg-superficie px-6 py-5 shadow-cartao sm:px-8">
+        <div className="flex justify-center">
+          <Logo className="h-9 w-auto" />
         </div>
         {children}
-        <Notice tone="privacidade" role="note" className="text-caption">
-          Sem CPF e sem acesso ao seu banco. Seus dados são só seus.
-        </Notice>
+        <p
+          role="note"
+          className="flex items-start justify-center gap-2 text-caption text-tinta-suave"
+        >
+          <ShieldCheck
+            aria-hidden="true"
+            className="mt-0.5 size-4 flex-none text-ouro-texto"
+            strokeWidth={1.75}
+          />
+          <span>Sem CPF e sem acesso ao seu banco. Seus dados são só seus.</span>
+        </p>
       </div>
     </main>
   );
