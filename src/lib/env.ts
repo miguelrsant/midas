@@ -32,6 +32,9 @@ const schema = z
     SMTP_USER: z.string().optional(),
     SMTP_PASSWORD: z.string().optional(),
     EMAIL_FROM: z.string().min(3),
+    // Teto de e-mails por dia, abaixo da cota do remetente (Gmail pessoal: cerca de 500).
+    // Protege a confirmação e a recuperação de senha de quem tenta esgotar a cota.
+    EMAIL_DAILY_LIMIT: z.coerce.number().int().positive().default(400),
 
     // Consulta de senhas vazadas (Have I Been Pwned, k-anonimato).
     PASSWORD_BREACH_CHECK: booleanFromString.default(true),

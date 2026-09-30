@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 
 import { env } from "@/lib/env";
 import { errorCode, log } from "@/lib/log";
+import { consume, emailKey } from "@/lib/throttle";
 
 export type EmailMessage = {
   to: string;
@@ -57,12 +58,34 @@ export function setEmailSender(next: EmailSender) {
   sender = next;
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+/** E-mails para o mesmo endereço por hora: cobre confirmar, redefinir e o aviso de troca. */
+export const EMAILS_PER_RECIPIENT_PER_HOUR = 5;
+
+/**
+ * Limites de envio. Sem eles, pedidos de muitos IPs enchem a caixa de alguém ou
+ * esgotam a cota diária do remetente, e aí ninguém mais confirma a conta nem
+ * recupera a senha. Passou do limite, o e-mail não sai; a resposta da API não muda.
+ */
+async function withinEmailLimits(to: string) {
+  const perRecipient = await consume(emailKey("mail", to), {
+    windowMs: HOUR_MS,
+    max: EMAILS_PER_RECIPIENT_PER_HOUR,
+  });
+  if (!perRecipient) return false;
+  return consume("mail:global", { windowMs: 24 * HOUR_MS, max: env.EMAIL_DAILY_LIMIT });
+}
+
 /**
  * Envia sem derrubar quem chamou. O erro é registrado só com o código,
  * sem o endereço nem o conteúdo (CLAUDE.md: logs sem dados pessoais).
  */
 export async function sendEmail(message: EmailMessage, kind: string) {
   try {
+    if (!(await withinEmailLimits(message.to))) {
+      log.warn("email.throttled", { code: kind });
+      return;
+    }
     await sender.send(message);
     log.info("email.sent", { code: kind });
   } catch (error) {

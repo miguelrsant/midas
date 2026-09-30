@@ -19,12 +19,13 @@ export const UNVERIFIED_ACCOUNT_TTL_MS = 7 * DAY_MS;
 export const RATE_LIMIT_TTL_MS = DAY_MS;
 
 export async function purgeExpiredData(now = new Date()) {
-  const [sessions, verifications, rateLimits, unverifiedUsers] = await db.$transaction([
+  const [sessions, verifications, rateLimits, throttles, unverifiedUsers] = await db.$transaction([
     db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
     db.verification.deleteMany({ where: { expiresAt: { lt: now } } }),
     db.rateLimit.deleteMany({
       where: { lastRequest: { lt: BigInt(now.getTime() - RATE_LIMIT_TTL_MS) } },
     }),
+    db.throttle.deleteMany({ where: { expiresAt: { lt: now } } }),
     db.user.deleteMany({
       where: {
         emailVerified: false,
@@ -35,7 +36,7 @@ export async function purgeExpiredData(now = new Date()) {
   return {
     sessions: sessions.count,
     verifications: verifications.count,
-    rateLimits: rateLimits.count,
+    rateLimits: rateLimits.count + throttles.count,
     unverifiedUsers: unverifiedUsers.count,
   };
 }
