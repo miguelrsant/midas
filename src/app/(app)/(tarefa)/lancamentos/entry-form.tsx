@@ -9,6 +9,7 @@ import {
   deleteEntryAction,
   updateEntryAction,
 } from "@/app/(app)/_actions/entries";
+import { CheckboxField } from "@/components/midas/checkbox-field";
 import { CategoryChips, ChoiceChips, SegmentedToggle } from "@/components/midas/choices";
 import { ConfirmInline } from "@/components/midas/confirm-inline";
 import { useAnnounce, useRipple } from "@/components/midas/golden-touch";
@@ -300,26 +301,16 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
         </div>
 
         {mode === "new" ? (
-          <label className="flex min-h-12 cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={repeat}
-              onChange={(event) => {
-                setRepeat(event.target.checked);
-                touch();
-              }}
-              className="mt-1 size-5 flex-none accent-[var(--ouro)]"
-            />
-            <span>
-              <span className="block text-label text-tinta">Repete todo mês</span>
-              <span className="block text-caption text-tinta-suave">
-                Cria um fixo: o Midas anota sozinho, no mesmo dia, a partir do mês que vem.
-              </span>
-              {errors.repeatMonthly ? (
-                <span className="block text-caption text-tinta">{errors.repeatMonthly}</span>
-              ) : null}
-            </span>
-          </label>
+          <CheckboxField
+            label="Repete todo mês"
+            help="Cria um fixo: o Midas anota sozinho, no mesmo dia, a partir do mês que vem."
+            checked={repeat}
+            error={errors.repeatMonthly}
+            onChange={(value) => {
+              setRepeat(value);
+              touch();
+            }}
+          />
         ) : null}
 
         <Button

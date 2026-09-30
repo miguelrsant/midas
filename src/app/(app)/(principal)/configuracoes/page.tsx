@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { DiscreetToggle } from "@/components/midas/discreet-mode";
+import { buttonClasses } from "@/components/ui/button";
 
 import { requireUser } from "@/lib/auth/dal";
 
@@ -25,6 +29,15 @@ export default async function SettingsPage() {
       <h1 className="font-display text-display-lg text-tinta">Configurações</h1>
       <Section title="Aparência">
         <ThemeSetting />
+        <DiscreetToggle variant="switch" />
+      </Section>
+      <Section title="Lançamentos">
+        <p className="text-tinta-suave">
+          Crie categorias, troque nomes e ícones e esconda as que você não usa.
+        </p>
+        <Link href="/configuracoes/categorias" className={buttonClasses({ variant: "secondary" })}>
+          Suas categorias
+        </Link>
       </Section>
       <Section title="Conta">
         <NicknameSetting initial={user.name} />
