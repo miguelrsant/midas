@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-/** Garante que o globals.css segue o tokens.json e que os dois blocos do Portoro são iguais. */
+/** Garante que o globals.css segue o tokens.json. */
 
 type Token = { name: string; value: string | { light: string; dark: string } };
 
@@ -43,10 +43,9 @@ function normalize(value: string | undefined) {
 describe("globals.css", () => {
   const light = vars(block(":root {"));
   const dark = vars(block(':root[data-theme="dark"]'));
-  const darkMedia = vars(block(':root:not([data-theme="light"])'));
 
-  it("os dois blocos do Portoro são iguais", () => {
-    expect(Object.fromEntries(darkMedia)).toEqual(Object.fromEntries(dark));
+  it("o claro é o padrão: o escuro não segue o aparelho sozinho", () => {
+    expect(css).not.toContain("prefers-color-scheme: dark");
   });
 
   for (const token of tokens.color.tokens) {

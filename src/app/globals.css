@@ -1,8 +1,8 @@
 /*
  * Midas: tokens e classes do sistema.
  * Fonte da verdade: docs/design-system/tokens.json e docs/design-system/14-tokens.md.
- * O bloco do Portoro aparece duas vezes (atributo e media query); o teste
- * src/app/globals.test.ts garante que os dois continuam iguais ao tokens.json.
+ * O tema claro é o padrão; o escuro só vale com data-theme="dark", escolhido em
+ * Configurações. O teste src/app/globals.test.ts compara estes valores com o tokens.json.
  */
 @import "tailwindcss";
 
@@ -109,39 +109,6 @@
 
   --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.5);
   --textura: url("/texturas/marmore-portoro.webp");
-}
-
-/* Sem JavaScript (ou antes dele): segue o aparelho, a menos que a pessoa tenha escolhido "Claro". */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --marmore: #17110c;
-    --superficie: #221912;
-    --superficie-funda: #2d2219;
-    --veio: #3d2f24;
-    --borda: #8a7866;
-    --tinta: #f2ebe0;
-    --tinta-suave: #c2b3a2;
-    --ouro: #d6b263;
-    --sobre-ouro: #1d140d;
-    --ouro-texto: #e2c27a;
-    --mogno: #7a5033;
-    --primario: var(--ouro);
-    --primario-hover: #e2c27a;
-    --sobre-primario: #1d140d;
-    --renda: #7cc3cf;
-    --renda-fundo: #1c2d2f;
-    --gasto: #ec957c;
-    --gasto-fundo: #3a2019;
-    --alerta: #f0c060;
-    --veu: rgba(34, 25, 18, 0.8);
-    --brilho: rgba(214, 178, 99, 0.28);
-    --foco: #e2c27a;
-
-    --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --textura: url("/texturas/marmore-portoro.webp");
-  }
 }
 
 /* Tira as paletas padrão do Tailwind: só existem as cores e fontes do Midas. */

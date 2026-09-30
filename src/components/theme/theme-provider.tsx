@@ -4,7 +4,10 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-/** Telas de entrada ficam sempre no tema claro (Calacatta), qualquer que seja o aparelho. */
+/**
+ * O tema claro (Calacatta) é o padrão; escuro e automático são escolhas em Configurações.
+ * Telas de entrada ficam sempre no claro, qualquer que seja a escolha.
+ */
 const LIGHT_ONLY_PATHS = [
   "/entrar",
   "/criar-conta",
@@ -22,7 +25,7 @@ export function ThemeProvider({ children, nonce }: { children: ReactNode; nonce?
   return (
     <NextThemesProvider
       attribute="data-theme"
-      defaultTheme="system"
+      defaultTheme="light"
       enableSystem
       disableTransitionOnChange
       forcedTheme={lightOnly ? "light" : undefined}

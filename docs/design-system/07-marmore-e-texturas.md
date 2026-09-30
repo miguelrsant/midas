@@ -76,8 +76,8 @@ A textura do tema fica numa variável, e as duas classes a usam:
 
 - A cor sólida no fim (`var(--superficie)` ou `var(--marmore)`) é a reserva enquanto a imagem carrega ou se ela falhar: a tela nunca fica sem fundo.
 - `background-size: cover` e `center`: a textura não se repete nem estica. Em telas largas, o recorte muda, e está tudo bem: mármore não tem "lado certo".
-- Com o tema escuro pela preferência do aparelho sem JavaScript, repita a troca de `--textura` dentro de `@media (prefers-color-scheme: dark)`, como os outros tokens (veja [Tokens](14-tokens.md)).
-- Na tela de entrada, pré-carregue a textura do tema, que é a maior imagem da tela: `<link rel="preload" as="image" href="/texturas/marmore-calacatta.webp" media="(prefers-color-scheme: light)">` e o equivalente do Portoro com `media="(prefers-color-scheme: dark)"`.
+- O tema claro é o padrão, também sem JavaScript; a troca de `--textura` acontece só com `data-theme="dark"` (veja [Tokens](14-tokens.md)).
+- Na tela de entrada, que fica sempre no tema claro, pré-carregue a textura Calacatta, a maior imagem da tela: `<link rel="preload" as="image" href="/texturas/marmore-calacatta.webp">`.
 
 Em Tailwind, use as classes do sistema (`md-marmore`, `md-marmore-pleno`) declaradas no CSS global. Não reescreva o `background` em utilitários soltos em cada componente.
 

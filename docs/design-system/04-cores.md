@@ -11,7 +11,7 @@ Cada cor é um **token** com nome em português. O código usa sempre o token, n
 | Claro (padrão) | **Calacatta** | "Claro" | Mármore branco quente com veios cinza e um veio dourado. |
 | Escuro | **Portoro** | "Escuro" | Mármore quase preto com veios dourados. |
 
-- O app segue a preferência do aparelho (`prefers-color-scheme`) até a pessoa escolher. Em Configurações, as opções são **Claro**, **Escuro** e **Automático** (segue o aparelho), com Automático marcado de início.
+- O app começa no **Claro** (Calacatta). Em Configurações, as opções são **Claro**, **Escuro** e **Automático** (segue o aparelho), com Claro marcado de início.
 - A escolha fica no próprio aparelho (não precisa de conta) e é aplicada antes da primeira pintura, para a tela não piscar.
 - Os nomes Calacatta e Portoro são para a equipe; a interface nunca os mostra.
 

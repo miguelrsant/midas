@@ -277,7 +277,7 @@ A tela dos direitos da pessoa, descrita em [Privacidade na interface](16-privaci
 
 | Seção | Itens |
 | --- | --- |
-| Aparência | Tema: "Claro", "Escuro", "Automático" (rádios, com Automático marcado de início). "Ocultar valores" (liga e desliga o modo discreto). |
+| Aparência | Tema: "Claro", "Escuro", "Automático" (rádios, com Claro marcado de início). "Ocultar valores" (liga e desliga o modo discreto). |
 | Conta | "Como você quer que o Midas te chame?", e-mail, "Trocar senha". |
 | Lançamentos | "Categorias no formulário" (esconder as que a pessoa não usa, se o app permitir). |
 | Sobre | Versão, "Sobre o Midas", "Ajuda". |

@@ -63,8 +63,9 @@ test("cadastro, confirmação, entrada e saída", async ({ page }) => {
   await createVerifiedAccount(page, email);
 
   await page.getByRole("link", { name: "Ir para o início" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Que bom ter você");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Ana.");
 
+  await page.getByRole("button", { name: "Sua conta" }).click();
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL(/\/entrar/);
 
@@ -232,6 +233,46 @@ test.describe("telas de entrada", () => {
       await page.goto(path);
       const width = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(width, path).toBeLessThanOrEqual(320);
+    }
+  });
+});
+
+test.describe("app no celular", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("tem navegação inferior com ícone e texto e menu da conta", async ({ page }) => {
+    const email = uniqueEmail("celular");
+    await createVerifiedAccount(page, email);
+    await page.goto("/");
+
+    const nav = page.getByRole("navigation", { name: "Principal" });
+    await expect(nav).toBeVisible();
+    for (const label of ["Início", "Lançamentos", "Planejamento", "Calculadoras"]) {
+      await expect(nav.getByRole("link", { name: label })).toBeVisible();
+    }
+    await expect(nav.getByRole("link", { name: "Início" })).toHaveAttribute("aria-current", "page");
+
+    await nav.getByRole("link", { name: "Lançamentos" }).click();
+    await expect(page).toHaveURL("/lancamentos");
+    await expect(nav.getByRole("link", { name: "Lançamentos" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    const account = page.getByRole("button", { name: "Sua conta" });
+    await account.click();
+    await expect(account).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Escape");
+    await expect(account).toHaveAttribute("aria-expanded", "false");
+    await expect(account).toBeFocused();
+
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 700 });
+      for (const path of ["/", "/lancamentos", "/configuracoes", "/seus-dados"]) {
+        await page.goto(path);
+        const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+        expect(scrollWidth, `${path} em ${width}px`).toBeLessThanOrEqual(width);
+      }
     }
   });
 });

@@ -312,7 +312,7 @@ export function initials(nickname?: string | null): string | null {
 }
 ```
 
-Menu da conta, com `DropdownMenu`: gatilho é o botão do avatar (`aria-label="Sua conta"`); itens "Seus dados" (`shield-check`), "Configurações" (`settings`), separador, "Sair" (`log-out`). Itens com 48px de altura, texto `label` em `tinta`, ícones 20px `aria-hidden`. "Sair" encerra a sessão e leva a `/entrar`.
+Menu da conta (no app, um *disclosure*: botão com `aria-expanded` e `aria-controls` abrindo uma lista de links; veja o histórico 3.2 no README): gatilho é o botão do avatar (`aria-label="Sua conta"`); itens "Seus dados" (`shield-check`), "Configurações" (`settings`), separador, "Sair" (`log-out`). Itens com 48px de altura, texto `label` em `tinta`, ícones 20px `aria-hidden`. "Sair" encerra a sessão e leva a `/entrar`.
 
 Notas:
 

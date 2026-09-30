@@ -1,36 +1,39 @@
 import type { Metadata } from "next";
 
-import { Notice } from "@/components/ui/notice";
+import { EmptyState } from "@/components/ui/empty-state";
 import { requireUser } from "@/lib/auth/dal";
-import { greeting } from "@/lib/dates";
+import { longDate, salutation } from "@/lib/greeting";
 
 export const metadata: Metadata = { title: "Início" };
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const name = user.name.trim();
-  const today = new Intl.DateTimeFormat("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  })
-    .format(new Date())
-    .replace("-feira", "");
+  const now = new Date();
 
   return (
-    <div className="flex flex-col gap-6 pt-4">
-      <div className="flex flex-col gap-2">
-        <p className="md-eyebrow">{today}</p>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2 pt-4 pb-2">
+        <p className="md-eyebrow">{longDate(now)}</p>
         <h1 className="font-display text-display-lg text-tinta">
-          {greeting()}, {name}. Que bom ter você <em className="md-acento">aqui</em>.
+          {salutation(now)}, {user.name}.
         </h1>
-        <hr className="md-veio" />
+        <hr className="md-veio" aria-hidden="true" />
       </div>
-      <Notice role="note">
-        O painel com o que entrou, o que saiu e quanto sobrou chega na próxima versão. Sua conta já
-        está pronta e protegida.
-      </Notice>
+      <EmptyState
+        title={
+          <>
+            Tudo pronto para <em className="md-acento">começar</em>.
+          </>
+        }
+        action={
+          <p className="text-caption text-tinta-suave">
+            Anotar rendas e gastos chega na próxima versão.
+          </p>
+        }
+      >
+        Sua conta está pronta e protegida. Logo você vai anotar o que entra e o que sai e ver quanto
+        sobra.
+      </EmptyState>
     </div>
   );
 }

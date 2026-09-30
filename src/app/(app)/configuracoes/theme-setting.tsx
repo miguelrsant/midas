@@ -26,7 +26,7 @@ export function ThemeSetting() {
             type="radio"
             name="tema"
             value={option.value}
-            checked={mounted ? theme === option.value : option.value === "system"}
+            checked={mounted ? theme === option.value : option.value === "light"}
             onChange={() => {
               setTheme(option.value);
               setStatus(option.done);

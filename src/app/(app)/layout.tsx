@@ -1,36 +1,27 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { Logo } from "@/components/brand/logo";
-import { SignOutButton } from "@/components/app/sign-out-button";
+import { AppHeader } from "@/components/app/app-header";
+import { BottomNav } from "@/components/app/app-nav";
 import { requireUser } from "@/lib/auth/dal";
 
 /**
- * Área logada. O requireUser() confere a sessão no servidor em toda página;
- * cada página também chama requireUser() antes de ler dados.
- * A navegação completa (Início, Lançamentos, Planejamento, Calculadoras) chega com as telas de finanças.
+ * Estrutura das telas logadas (docs/design-system/17-padroes-de-tela.md#estrutura-do-app):
+ * no celular, topo + conteúdo + navegação inferior fixa; a partir de 1024px, a navegação
+ * vai para o topo. O requireUser() confere a sessão no servidor; cada página também chama
+ * requireUser() antes de ler dados.
  */
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  await requireUser();
+  const user = await requireUser();
   return (
-    <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-        <Link href="/" className="rounded-sm">
-          <Logo className="h-8 w-auto" />
-        </Link>
-        <nav aria-label="Conta" className="flex flex-wrap items-center gap-2">
-          <Link href="/seus-dados" className="md-link px-2 py-3">
-            Seus dados
-          </Link>
-          <Link href="/configuracoes" className="md-link px-2 py-3">
-            Configurações
-          </Link>
-          <SignOutButton />
-        </nav>
-      </header>
-      <main id="conteudo" className="mx-auto max-w-5xl px-4 pb-12">
+    <div className="min-h-dvh scroll-pb-24 lg:scroll-pb-0">
+      <AppHeader nickname={user.name} />
+      <main
+        id="conteudo"
+        className="mx-auto w-full max-w-180 px-4 pb-[calc(4rem+env(safe-area-inset-bottom)+2rem)] lg:pb-12"
+      >
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 }
