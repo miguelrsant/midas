@@ -101,9 +101,7 @@ Grupo: Painel · Classe base: `md-chart` (SVG) + `md-legend` · Componente React
 
 **Nota da projeção.** Explica em uma frase de onde vem a estimativa: "Estimativa com base nos últimos 3 meses e nas rendas já previstas, como o 13º." Com só 1 ou 2 meses fechados: "Estimativa com base em agosto e setembro." Sem rendas previstas, termine em "…nos últimos 3 meses."
 
-Cálculo sugerido (o texto acima é o que a pessoa lê sobre ele):
-- Gasto projetado: média dos gastos dos últimos 3 meses fechados.
-- Renda projetada: média das rendas dos últimos 3 meses fechados, sem as rendas de uma vez só (13º, férias, rescisão), mais as rendas previstas pelas calculadoras no mês em que caem.
+O cálculo (média dos gastos variáveis mais os fixos; rendas fixas ou, na falta delas, a média; mais as rendas previstas) está em [Gráficos e dados](../13-graficos-e-dados.md#projeção-como-é-calculada-e-como-é-explicada).
 
 **Balão.** Mês por extenso, "(projeção)" ou "(até agora)" quando for o caso, e os valores com sinal: "Outubro (projeção) · Entrou + R$ 6.200 · Saiu − R$ 4.800".
 
@@ -119,7 +117,7 @@ Cálculo sugerido (o texto acima é o que a pessoa lê sobre ele):
 - **Ordem.** Sobretítulo, título-conclusão, gráfico, legenda, nota, botão da tabela. A conclusão vem antes do gráfico para quem lê e para quem ouve.
 - **SVG.** `role="img"` e um `aria-label` que resume os dados em até três frases, gerado a partir deles: "Gráfico de barras de renda e gastos, de julho a dezembro. De outubro a dezembro, os valores são projeção. A renda fica acima dos gastos em todos os meses; em dezembro, com o 13º, entram cerca de R$ 12.400." Os elementos internos do SVG ficam fora da árvore de acessibilidade.
 - **Tabela.** O botão "Ver em tabela" tem `aria-expanded` e `aria-controls`. A tabela tem `<caption>` ("Renda e gastos por mês"), cabeçalhos `<th scope="col">` (Mês, Entrou, Saiu, Sobrou ou faltou) e `<th scope="row">` no mês. Nos meses projetados, o mês diz "Outubro (projeção)". Nas colunas Entrou e Saiu, o sinal fica `aria-hidden` (o cabeçalho já diz o sentido); na última coluna, o sinal é trocado por texto escondido "Sobrou" ou "Faltou".
-- **Balão.** É um atalho visual. Se a versão do Recharts instalada oferecer navegação por teclado (prop `accessibilityLayer`), ligue-a; ainda assim, a tabela é a alternativa garantida para teclado e leitor de tela.
+- **Balão.** É um atalho visual. Cada coluna é um botão transparente sobre o par de barras (fora do SVG, que continua `role="img"`), com `aria-label` "Outubro (projeção): entrou cerca de R$ 6.200, saiu cerca de R$ 4.800" e o balão aberto no foco, no toque ou no hover. A tabela continua sendo a alternativa garantida para teclado e leitor de tela.
 - **Não só cor.** Renda e gasto se distinguem por posição (renda sempre à esquerda) e pela legenda com texto; projeção, por tracejado, rótulo "Projeção" e o texto "(projeção)" no balão e na tabela. O par azul-petróleo e terracota é seguro para daltonismo.
 - **Contraste.** Barras sobre `superficie`: `grafico-renda` 6,54:1 (claro) e 8,69:1 (escuro); `grafico-gasto` 6,11:1 e 7,53:1. Nas barras projetadas, quem dá o contraste é o contorno, na cor da série. O rótulo "Projeção" em `ouro-texto`: 5,98:1 e 10,06:1. A linha de projeção em `ouro` tem 2,54:1 no claro (abaixo de 3:1), mas não é a única pista: o rótulo em texto e o tracejado das barras dizem o mesmo. No escuro, 8,56:1.
 - **Movimento.** Nenhuma animação de entrada, com ou sem `prefers-reduced-motion`: as barras aparecem prontas (veja [Gráficos e dados](../13-graficos-e-dados.md#princípios)).
@@ -127,7 +125,7 @@ Cálculo sugerido (o texto acima é o que a pessoa lê sobre ele):
 ## Comportamento responsivo
 
 - Largura fluida (100% do cartão), altura fixa de 240px.
-- Com barras de 22px, seis meses pedem cerca de 380px de largura útil (6 colunas de 56px + eixo de 44px). Num celular de 360px sobram 280px: as barras afinam até caber (cerca de 15px cada), com 22px como máximo (`maxBarSize`). Não deixe a barra passar abaixo de 12px: com menos de 240px de largura útil, mostre 2 meses reais e 2 projetados.
+- Com barras de 22px, seis meses pedem cerca de 380px de largura útil (6 colunas de 56px + eixo de 44px). Num celular de 360px sobram 280px: as barras afinam até caber (cerca de 15px cada), com 22px como máximo . Não deixe a barra passar abaixo de 12px: com menos de 240px de largura útil, mostre 2 meses reais e 2 projetados.
 - A legenda quebra em linhas (`flex-wrap`), nunca some.
 - O balão nunca sai do cartão: prenda-o dentro da área do gráfico.
 
@@ -168,8 +166,8 @@ Marcação do protótipo corrigida (eixo em "mil", "13º", legenda e tabela). Co
     <text x="304" y="28" class="proj-rotulo">Projeção</text>
   </svg>
   <div class="md-legend">
-    <span><i style="background: var(--grafico-renda)"></i>Renda</span>
-    <span><i style="background: var(--grafico-gasto)"></i>Gastos</span>
+    <span><i class="is-renda"></i>Renda</span>
+    <span><i class="is-gasto"></i>Gastos</span>
     <span><i class="is-projecao"></i>Projeção (inclui 13º)</span>
   </div>
   <p class="md-help">Estimativa com base nos últimos 3 meses e nas rendas já previstas, como o 13º.</p>
@@ -215,7 +213,7 @@ O texto dos eixos sobe de 13px (protótipo) para 14px, o piso de `caption`: nenh
 
 ## Implementação no app
 
-Base: Recharts (`ResponsiveContainer`, `BarChart`, `Bar`, `Cell`, `XAxis`, `YAxis`, `CartesianGrid`, `Tooltip`, `ReferenceLine`). O componente `chart` do shadcn/ui também usa Recharts e pode servir de contêiner, mas o balão e a legenda aqui são próprios. O código abaixo é uma sugestão: confira cada prop na versão instalada do Recharts.
+Base: **SVG próprio, desenhado no servidor** (`src/components/midas/month-chart.tsx`), sem biblioteca de gráficos. O desenho é simples (pares de barras, tracejado, grade, rótulos) e assim fica sem dependência, sem JavaScript para aparecer e dentro da CSP do Midas, que bloqueia `style=""` vindo do servidor.
 
 ```ts
 export interface MonthPoint {
@@ -241,67 +239,15 @@ export interface IncomeExpenseChartProps {
 }
 ```
 
-```tsx
-"use client";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-
-const compact = new Intl.NumberFormat("pt-BR", { notation: "compact" }); // 4000 → "4 mil"
-
-export function IncomeExpenseChart({ data, title, summary, projectionNote }: IncomeExpenseChartProps) {
-  const rows = data.map((d) => ({ ...d, label: monthAbbr(d.month), income: d.incomeCents / 100, expense: d.expenseCents / 100 }));
-  const firstProjected = rows.find((r) => r.projected);
-  const anim = { isAnimationActive: false }; // sem animação de entrada
-
-  return (
-    <section aria-labelledby="grafico-titulo" className="rounded-lg bg-superficie p-6 shadow-cartao">
-      <p className="m-0 text-caption font-semibold uppercase tracking-[0.06em] text-tinta-suave">Renda x gastos</p>
-      <h2 id="grafico-titulo" className="mt-1 mb-3 text-balance font-display text-heading lining-nums text-tinta">{title}</h2>
-
-      <div role="img" aria-label={summary} className="h-[240px] text-caption">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} barGap={6} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid vertical={false} stroke="var(--veio)" />
-            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "var(--tinta-suave)", fontSize: 14 }} />
-            <YAxis width={44} axisLine={false} tickLine={false} tickFormatter={(v: number) => compact.format(v)}
-                   tick={{ fill: "var(--tinta-suave)", fontSize: 14 }} />
-            <Tooltip content={<MonthTooltip />} cursor={{ fill: "var(--superficie-funda)" }} />
-            <Bar dataKey="income" name="Renda" radius={4} maxBarSize={22} {...anim}>
-              {rows.map((r) => (
-                <Cell key={r.month} fill={r.projected ? "var(--renda-fundo)" : "var(--grafico-renda)"}
-                      stroke={r.projected ? "var(--grafico-renda)" : "none"} strokeWidth={1.5}
-                      strokeDasharray={r.projected ? "4 3" : undefined} />
-              ))}
-            </Bar>
-            <Bar dataKey="expense" name="Gastos" radius={4} maxBarSize={22} {...anim}>
-              {rows.map((r) => (
-                <Cell key={r.month} fill={r.projected ? "var(--gasto-fundo)" : "var(--grafico-gasto)"}
-                      stroke={r.projected ? "var(--grafico-gasto)" : "none"} strokeWidth={1.5}
-                      strokeDasharray={r.projected ? "4 3" : undefined} />
-              ))}
-            </Bar>
-            {firstProjected && (
-              <ReferenceLine x={firstProjected.label} stroke="var(--grafico-projecao)" strokeWidth={2} strokeDasharray="5 4"
-                             label={{ value: "Projeção", position: "insideTopRight", fill: "var(--ouro-texto)", fontSize: 14 }} />
-            )}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <ChartLegend showProjection={!!firstProjected} thirteenth={rows.some((r) => r.projected && r.hasThirteenth)} />
-      {projectionNote && <p className="mt-2 mb-0 text-caption text-tinta-suave">{projectionNote}</p>}
-      <ChartTable rows={rows} /> {/* botão "Ver em tabela" + <table> da Referência HTML */}
-    </section>
-  );
-}
-```
-
 Notas:
 
-- **Cores por variável CSS.** `fill="var(--grafico-renda)"` funciona como atributo de apresentação do SVG e troca de tema sozinho com `data-theme="dark"`. Não copie valores hexadecimais para o componente.
-- **Linha entre colunas.** Num eixo de categorias, a `ReferenceLine` fica no centro da coluna indicada, não entre duas colunas como no protótipo. Aceite a linha sobre o primeiro mês projetado ou desenhe-a com um elemento SVG próprio; não dependa de prop que você não confirmou.
-- **`role="img"` no invólucro.** O SVG que o Recharts gera tem muitos elementos; o invólucro com `role="img"` e `aria-label` entrega o resumo em uma frase e esconde o resto. Por isso a navegação por teclado do Recharts, se ligada, não substitui a tabela.
-- **Balão (`MonthTooltip`).** Recebe `active` e `payload` do `Tooltip`; leia a linha em `payload[0].payload`. Fundo `superficie`, borda `veio`, `radius-md`, `sombra-cartao`, padding `space-3`; título do mês em `label`, valores em `amount` com sinal e cor da série.
-- **Dados.** Os valores chegam em centavos e viram reais só para desenhar. O título, o `summary` e a nota são montados no servidor com as mesmas regras de arredondamento.
+- **Geometria no servidor.** `niceTicks(max)` (em `src/lib/finance/chart.ts`) devolve 4 ou 5 marcas a partir de zero; cada barra vira um `<rect>` com `x`, `y`, `width`, `height` e `rx="4"` calculados num `viewBox` fixo. O SVG usa `width="100%"` e `preserveAspectRatio="none"` só na camada das barras; o texto dos eixos fica em HTML posicionado com classes, para não distorcer.
+- **Sem estilo em linha.** Posições e tamanhos são atributos do SVG (a CSP não os bloqueia). Cores por classe (`fill-grafico-renda`, `stroke-grafico-gasto`) ou atributo `fill="var(--grafico-renda)"`, que troca de tema sozinho. Nunca hexadecimais.
+- **Projeção.** `<rect>` com preenchimento `renda-fundo`/`gasto-fundo`, `stroke-dasharray="4 3"` e `vector-effect="non-scaling-stroke"` (o tracejado não estica). A linha de projeção é um `<line>` com `stroke-dasharray="5 4"`, entre o último mês real e o primeiro projetado.
+- **Balão.** Botões transparentes por coluna, sobrepostos ao SVG, abrem um Tooltip ou Popover do shadcn/ui no foco, toque ou hover. É a única parte com JavaScript.
+- **Tabela.** "Ver em tabela" é um Collapsible do shadcn/ui com `aria-expanded`; a tabela já vem pronta do servidor.
+- **`role="img"` no SVG** com o `summary` como `aria-label`; os botões do balão ficam fora dele.
+- **Dados.** Os valores chegam em centavos. O título, o `summary` e a nota são montados no servidor com as regras de arredondamento.
 - **`monthAbbr`.** Devolve "Jul", "Ago", "Set"… de uma lista fixa (sem ponto).
 
 ## Faça e evite

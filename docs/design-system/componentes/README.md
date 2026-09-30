@@ -2,7 +2,12 @@
 
 Cada componente tem uma página com o que ele faz, quando usar e quando não usar, anatomia, variantes, estados, medidas, tokens, conteúdo, acessibilidade, comportamento responsivo, código (HTML de referência, CSS e sugestão em React com Tailwind) e uma tabela de faça e evite.
 
-As classes `md-*` vêm do protótipo do design system (`bundle.css`). No app, elas viram componentes React em `src/components/midas/`, construídos sobre shadcn/ui quando fizer sentido e sempre com os tokens de [14-tokens.md](../14-tokens.md).
+As classes `md-*` vêm do protótipo do design system (`bundle.css`). No app, elas viram componentes React:
+
+- **`src/components/midas/`**: componentes de domínio do Midas (os desta lista).
+- **`src/components/ui/`**: peças de base, incluindo as do shadcn/ui (Button com `cva` e `asChild`, Dialog, Collapsible, Tooltip, Popover, Switch, Skeleton), sempre com os tokens de [14-tokens.md](../14-tokens.md).
+
+Usamos shadcn/ui onde ele não esbarra no design system. Ficam **nativos**, como pedem as páginas deles: chips e rádios (CategoryChip, SegmentedToggle, Shortcuts, CategoryIconPicker, RadioCards), o MoneyInput, o aviso "Anotado" do GoldenTouch, a confirmação de exclusão na própria tela e o menu da conta. Nenhum componente usa `style=""` renderizado no servidor: a CSP bloqueia.
 
 ## Ações
 
@@ -17,6 +22,7 @@ As classes `md-*` vêm do protótipo do design system (`bundle.css`). No app, el
 | [SegmentedToggle](segmented-toggle.md) | Alternador Gasto/Renda no topo do formulário. |
 | [MoneyInput](money-input.md) | Campo grande de valor em reais, primeiro passo do lançamento. |
 | [CategoryChip](category-chip.md) | Pílulas de categoria, segundo passo do lançamento. |
+| [Shortcuts](shortcuts.md) | Atalhos que preenchem categoria e descrição com um toque. |
 | [GoldenTouch](golden-touch.md) | O toque de ouro: onda, reflexo e aviso "Anotado" ao salvar. |
 
 ## Painel
@@ -27,6 +33,22 @@ As classes `md-*` vêm do protótipo do design system (`bundle.css`). No app, el
 | [TransactionRow](transaction-row.md) | Linha de um gasto ou renda nas listas. |
 | [IncomeExpenseChart](income-expense-chart.md) | Barras de renda e gastos por mês, com a projeção. |
 | [Achievement](achievement.md) | Conquista do mês, com louros, quando o mês fecha positivo. |
+| [Bar](bar.md) | Barra fina de proporção (saldo, limites, categorias, passos). |
+
+## Planejamento e calculadoras
+
+| Componente | O que é |
+| --- | --- |
+| [ExpectedIncomeRow](expected-income-row.md) | Renda prevista das calculadoras, com "Recebi" e "Não recebi". |
+| [RadioCards](radio-cards.md) | Escolhas grandes, com ajuda, das calculadoras e do "Monte seu mês". |
+
+## Estrutura e configurações
+
+| Componente | O que é |
+| --- | --- |
+| [TaskHeader](task-header.md) | Topo das telas de tarefa: "Voltar", título e passos. |
+| [CategoryIconPicker](category-icon-picker.md) | Grade de ícones para personalizar categorias. |
+| [PasswordConfirm](password-confirm.md) | Diálogo que pede a senha antes de baixar os dados. |
 
 ## Mensagens
 

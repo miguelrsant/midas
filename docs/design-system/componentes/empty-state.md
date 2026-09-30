@@ -100,8 +100,7 @@ Regras:
 | Mês atual sem lançamentos | Outubro começa *aqui*. | Anote o primeiro gasto do mês e o Midas passa a mostrar para onde vai o seu dinheiro. | Adicionar gasto |
 | Mês atual sem lançamentos, já com renda anotada | Falta só o *primeiro gasto*. | Com os gastos anotados, o painel mostra quanto sobra até o fim do mês. | Adicionar gasto |
 | Mês passado sem lançamentos | Agosto ficou em branco. | Se lembrar de algum gasto ou renda de agosto, anote aqui e o gráfico do ano fica completo. | Adicionar lançamento em agosto |
-| Primeira vez no app | Tudo começa *aqui*. | Anote sua renda do mês e depois o primeiro gasto. Com isso, o Midas mostra quanto sobra. | Adicionar renda |
-| Primeira vez, pessoa com apelido | Boas-vindas ao Midas, Ana. | Anote sua renda do mês e depois o primeiro gasto. Com isso, o Midas mostra quanto sobra. | Adicionar renda |
+| Primeira vez no app (painel) | Tudo pronto para *começar*. | Comece anotando quanto você recebe por mês. Assim o Midas mostra quanto sobra. | Adicionar minha renda (primário, abre "Monte seu mês") e Anotar um gasto (secundário) |
 | Categoria sem gastos no mês | Nada em Restaurante em setembro. | Quando você anotar um gasto nessa categoria, ele aparece aqui, com o total do mês. | Adicionar gasto em Restaurante |
 | Categoria de renda sem entradas | Nenhum freelance em setembro. | Quando entrar um pagamento de freelance, anote aqui e ele entra na conta do mês. | Adicionar renda de Freelance |
 | Calculadora de 13º nunca usada | Seu 13º *sem mistério*. | Informe o salário e os meses trabalhados. O Midas calcula as duas parcelas e pode anotar cada uma como renda. | Calcular 13º salário |

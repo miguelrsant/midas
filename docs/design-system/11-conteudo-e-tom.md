@@ -215,9 +215,21 @@ Os termos trabalhistas aparecem com uma explicação curta na primeira vez, em `
 | FGTS | "Um dinheiro que a empresa deposita todo mês numa conta no seu nome." |
 | Multa de 40% do FGTS | "Na demissão sem justa causa, a empresa paga 40% do que foi depositado no seu FGTS." |
 | Descontos | "INSS e Imposto de Renda, que saem do valor bruto." |
+| Salário bruto | "O valor antes dos descontos, como aparece no contracheque." |
+| Salário líquido | "O que cai na sua conta depois do INSS e do Imposto de Renda." |
+| Dependentes | "Filhos e outras pessoas que você pode declarar no Imposto de Renda. Cada um diminui o imposto." |
+| Venda de 10 dias | "Você pode trocar 10 dos 30 dias de férias por dinheiro. Esse valor não tem desconto." |
+| Férias vencidas | "Um ano inteiro de trabalho sem tirar as férias desse ano." |
+| Acordo com a empresa | "Quando vocês combinam a saída: o aviso pago e a multa do FGTS caem pela metade, e o seguro-desemprego não vale." |
+| Saque-aniversário | "Se você escolheu sacar parte do FGTS todo ano no seu aniversário, na demissão só pode sacar a multa." |
+| Saldo do FGTS para fins rescisórios | "Aparece no app do FGTS. Inclui o que você já sacou, porque a multa é calculada sobre tudo que foi depositado." |
+| Seguro-desemprego | "Um valor pago pelo governo por alguns meses a quem foi dispensado sem justa causa." |
+| Redução do Imposto de Renda de 2026 | "Desde 2026, quem ganha até R$ 5.000 por mês não paga Imposto de Renda no salário, e quem ganha até R$ 7.350 paga menos." |
 
 - O resultado sempre se chama **estimativa** e vem com o aviso "É uma estimativa. Confira os valores com o RH ou o sindicato."
 - A tabela de cálculo (INSS, IRRF, regras de cada tipo de saída) mostra de onde veio cada número e o ano da tabela usada: "Tabela do INSS de 2026".
+- Quando a data passa da última tabela conhecida: "Usamos as tabelas de 2026, as mais recentes que o Midas conhece." Antes da primeira: "O Midas calcula a partir de 2025."
+- Sem direito ou fora do escopo, nunca um número inventado: uma frase que explica ("Na justa causa, não há 13º nem férias proporcionais.").
 
 ## Textos para acessibilidade
 

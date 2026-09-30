@@ -6,24 +6,24 @@
 **Última atualização**: 2026-09-30
 **Encarregado**: pendente designação (G01)
 
-**Etapa do produto**: fundação + autenticação (Next.js 16 na Vercel gru1; Postgres no Neon aws-sa-east-1; Better Auth com e-mail e senha). Lançamentos, calculadoras e limites vêm na próxima etapa e já estão previstos no mapa.
+**Etapa do produto**: fundação + autenticação em uso (Next.js 16 na Vercel gru1; Postgres no Neon aws-sa-east-1; Better Auth com e-mail e senha). Núcleo do produto (lançamentos, fixos, limites, categorias próprias, calculadoras e rendas previstas) planejado, com RIPD v1 aguardando aprovação.
 
 > Registros técnicos de apoio, gerados com o plugin `lgpd-skills`. Não são aconselhamento jurídico.
 
 ## Pipeline atual
 - [x] F0 — Setup
-- [x] F1 — Legal basis (atividades atuais; parte sensível de A010 pendente — G07)
-- [x] F2 — Data mapping (v1, com atividades da próxima etapa)
-- [ ] F3 — Consent schema — N/A por ora (nenhum tratamento baseado em consentimento); reavaliar se a RIPD escolher Art. 11, I para lançamentos
+- [x] F1 — Legal basis (A001–A014; parte sensível no Art. 11, II, "d"; revisão jurídica — G21)
+- [x] F2 — Data mapping (v2, com A013 e A014 e as tabelas planejadas)
+- [ ] F3 — Consent schema — N/A (a RIPD escolheu Art. 11, II, "d"); reavaliar se a revisão jurídica (G21) pedir consentimento
 - [ ] F4 — Política de privacidade v1 ⏸ CHECKPOINT (G03)
-- [ ] F5 — DSAR / "Seus dados" (G14, próxima etapa)
+- [~] F5 — DSAR / "Seus dados": fluxo em `dsar/workflow.md`; implementação junto com os lançamentos (G14)
 - [ ] F6 — Audit logging (parcial: `securityEvent` sem IP; encadeamento pendente — G16)
-- [ ] F7 — Encryption & keys (G13, G17)
-- [x] F8 — Retention & erasure (v1 proposta; aprovação pendente — G15)
+- [~] F7 — Encryption & keys: decisão em `encryption.md` (G17); pendências do Neon e do `BETTER_AUTH_SECRET`
+- [x] F8 — Retention & erasure (v2 proposta, com as tabelas novas e o runbook de restauração; aprovação pendente — G15)
 - [ ] F9 — Incident response (G05)
-- [ ] F10 — ROPA ⏸ CHECKPOINT (G06)
+- [x] F10 — ROPA v1.0 ⏸ revisão pendente (G06)
 - [ ] F11 — Encarregado (G01)
-- [ ] F12 — RIPD dos lançamentos ⏸ CHECKPOINT (G07, obrigatória antes da próxima etapa)
+- [x] F12 — RIPD dos lançamentos v1 ⏸ aprovação do controlador pendente (G07)
 - [ ] F13 — ECA Digital: decisão de idade mínima (G04; recomendação 18 anos)
 - [x] F14 — Vendor audit + DPA + transferências (fichas criadas; DPAs e cláusulas "a verificar" — G08)
 - [ ] F15 — Relatório final
@@ -69,3 +69,20 @@ Ver `.lgpd/gaps.md` (18 itens; P0: G01, G02, G03, G04, G05, G08-Google, G13).
 
 ## Próximo passo
 Miguel revisa estes registros e decide G02 (quem é o controlador), G04 (idade mínima) e G08 (e-mail). Depois: F4 — política de privacidade v1 com `lgpd-privacy-policy` (⏸ checkpoint, revisão jurídica), e F12 — RIPD dos lançamentos antes de começar a próxima etapa.
+
+## F12 — RIPD ✓ (v1, aguarda aprovação)
+- 1 RIPD produzida: `RIPD/ripd-lancamentos.md` (A010–A014)
+- 12 riscos identificados: 11 mitigados, 1 pendente (R12, transferência internacional — G08); risco residual aceito: categoria, valor e data em claro
+- Base legal da parte sensível: Art. 11, II, "d" (revisão jurídica — G21)
+
+## F10 — ROPA ✓ (v1.0)
+- `ROPA.md` com 14 atividades como controlador, 0 como operador
+- Revisão semestral: 2027-03-30
+
+## F7 — Encryption (decisão)
+- Texto livre do núcleo do produto cifrado na aplicação (AES-256-GCM, AAD por linha, chaves por ambiente com rotação) — `encryption.md`
+
+## Próximo
+- Aprovar a RIPD (merge do PR de docs) → PR de fundações e de lançamentos
+- Política de privacidade v2 (rascunho) quando as telas estiverem prontas
+- Artefatos novos: `RIPD/ripd-lancamentos.md`, `RIPD/INDEX.md`, `ROPA.md`, `encryption.md`, `dsar/workflow.md`

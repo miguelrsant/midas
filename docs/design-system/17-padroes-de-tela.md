@@ -2,7 +2,7 @@
 
 Esta página junta os componentes em telas: a estrutura do app, a navegação e o desenho de cada tela principal. Cada tela responde **uma pergunta** ([Princípios](01-principios.md#2-uma-pergunta-por-tela)). Os desenhos em texto mostram a ordem e a hierarquia, não medidas exatas: as medidas estão nos componentes.
 
-> O app ainda não foi construído. Estes padrões são a referência para a primeira versão; ajustes que surgirem na construção e nos testes com pessoas voltam para esta página.
+> Estes padrões são a referência da primeira versão. Ajustes que surgirem na construção e nos testes com pessoas voltam para esta página.
 
 ## Mapa do app
 
@@ -18,16 +18,22 @@ Esta página junta os componentes em telas: a estrutura do app, a navegação e 
 | Resumo do mês | `/resumo/[aaaa-mm]` | "Como foi o mês?" |
 | Planejamento | `/planejamento` | "Como vão ficar os próximos meses?" |
 | Rendas e gastos fixos | `/planejamento/fixos` | "O que entra e sai todo mês?" |
-| Limites por categoria | `/planejamento/limites` | "Quanto quero gastar com cada coisa?" |
+| Adicionar ou editar fixo | `/planejamento/fixos/novo` (`?modelo=aluguel`, `?tipo=renda`), `/planejamento/fixos/[id]` | "O que se repete e quando?" |
+| Monte seu mês | `/comecar` | "O que entra e sai todo mês?" (primeiro acesso) |
+| Limites por categoria | `/planejamento/limites`, `/planejamento/limites/[categoria]` | "Quanto quero gastar com cada coisa?" |
 | Calculadoras | `/calculadoras` | "Quanto vou receber?" |
-| Férias, 13º, Rescisão | `/calculadoras/ferias`, `/calculadoras/decimo-terceiro`, `/calculadoras/rescisao` | "Quanto vou receber de…?" |
+| Férias, 13º, Rescisão, Salário líquido, Seguro-desemprego | `/calculadoras/ferias`, `/calculadoras/decimo-terceiro`, `/calculadoras/rescisao`, `/calculadoras/salario-liquido`, `/calculadoras/seguro-desemprego` | "Quanto vou receber de…?" |
 | Seus dados | `/seus-dados` | "O que o Midas guarda e como eu apago?" |
+| Conta apagada | `/conta-apagada` (pública) | "Minha conta foi mesmo apagada?" |
 | Configurações | `/configuracoes` | "Como eu ajusto o app?" |
+| Suas categorias | `/configuracoes/categorias`, `/configuracoes/categorias/nova` (`?tipo=renda`), `/configuracoes/categorias/[id]` | "Como deixo as categorias do meu jeito?" |
 | Ajuda | `/ajuda` | "Como faço…?" |
 | Sobre | `/sobre` | "O que é o Midas?" |
 | Política de privacidade, Termos de uso | `/privacidade`, `/termos` | |
 
-O mês exibido fica na URL (`?mes=2026-09`), para o botão Voltar do navegador e os links funcionarem como esperado.
+O mês exibido fica na URL (`?mes=2026-09`), para o botão Voltar do navegador e os links funcionarem como esperado. Em Início e Lançamentos, a troca de mês vai do primeiro mês com dados até o **mês atual**: lançamento não tem data futura, e os meses seguintes são assunto do Planejamento.
+
+**Nada de dado financeiro na URL.** A URL leva só mês, ano, passo e ids aleatórios. Valor, salário, respostas de calculadora e termos de busca ficam na tela, nunca no endereço (ele vai para o histórico e para os logs).
 
 ## Estrutura do app
 
@@ -58,7 +64,7 @@ O mês exibido fica na URL (`?mes=2026-09`), para o botão Voltar do navegador e
 
 ### Telas de tarefa
 
-Adicionar, editar e os passos das calculadoras são páginas próprias (com rota), não janelas por cima:
+Adicionar, editar, "Monte seu mês", fixos, limites, categorias e os passos das calculadoras são páginas próprias (com rota), não janelas por cima:
 
 - No topo, o link **"Voltar"** (`chevron-left` + texto) e o título da tarefa.
 - O botão Voltar do navegador e do celular fazem o mesmo que o "Voltar" da tela.
@@ -131,6 +137,8 @@ Quanto foi?
 │ − R$  127,90                 │              ← MoneyInput (foco ao abrir)
 └──────────────────────────────┘
 Use vírgula para os centavos.
+Atalhos
+(Café) (Almoço) (Ônibus e metrô) (Farmácia) (Gasolina) (Mais ⌄)   ← Shortcuts
 Categoria
 (🛒 Mercado) (🍴 Restaurante) (🚗 Transporte)
 (⌂ Moradia) (🧾 Contas) (♡ Saúde) (Mais ⌄)    ← CategoryChips
@@ -140,15 +148,18 @@ Descrição (opcional)
 └──────────────────────────────┘
 Quando?
 (Hoje) (Ontem) (Outro dia)
+[ ] Repete todo mês
 [        Salvar gasto        ]                ← primário grande + toque de ouro
 ```
 
 1. **Tipo** ([SegmentedToggle](componentes/segmented-toggle.md)): Gasto já marcado. Trocar para Renda muda o título ("Adicionar renda"), o rótulo do valor ("Quanto entrou?"), as categorias e o botão ("Salvar renda").
 2. **Valor** ([MoneyInput](componentes/money-input.md)): recebe o foco ao abrir, com teclado numérico. É o único campo obrigatório.
-3. **Categoria** ([CategoryChip](componentes/category-chip.md)): seis mais usadas e "Mais". Opcional: sem escolha, vai para "Outros".
-4. **Descrição** (opcional): campo de texto, até 60 caracteres.
-5. **Quando?**: três opções em chips de escolha única, com "Hoje" marcado. "Outro dia" mostra um campo de data nativo (`<input type="date">`).
-6. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta para a tela de onde a pessoa veio, com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
+3. **Atalhos** ([Shortcuts](componentes/shortcuts.md)): gastos comuns prontos, logo abaixo do valor. Um toque preenche categoria e descrição de uma vez; o valor continua com a pessoa. Opcional.
+4. **Categoria** ([CategoryChip](componentes/category-chip.md)): seis mais usadas e "Mais". Opcional: sem escolha, vai para "Outros".
+5. **Descrição** (opcional): campo de texto, até 60 caracteres.
+6. **Quando?**: três opções em chips de escolha única, com "Hoje" marcado. "Outro dia" mostra um campo de data nativo (`<input type="date">`) que vai de 10 anos atrás **até hoje**: data futura não existe em lançamento. Para anotar algo que ainda vai acontecer, a pessoa usa um fixo ("só uma vez") no Planejamento. Quem chega de um mês passado ("Adicionar lançamento em agosto") já encontra "Outro dia" marcado com o último dia daquele mês.
+7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, a partir do mês seguinte, e liga este lançamento a ele. O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10."
+8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta para a tela de onde a pessoa veio, com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
 
 Regras:
 
@@ -162,7 +173,9 @@ Regras:
 
 - Título "Lançamentos" e o mês no topo (troca de mês do `AppHeader`).
 - Linha de totais do mês: "Entrou + R$ 6.200,00 · Saiu − R$ 4.357,90".
-- Filtros em chips de escolha única: **Todos**, **Gastos**, **Rendas**. Busca por descrição (ícone `search`), com o texto "Buscar lançamento".
+- Filtros em chips de escolha única: **Todos**, **Gastos**, **Rendas**. Busca por descrição (ícone `search`), com o texto "Buscar lançamento". A busca filtra na própria tela, sobre o mês aberto; o termo não vai para a URL nem para o servidor.
+- Rendas previstas das calculadoras **não** aparecem aqui; elas ficam no Planejamento até "Recebi".
+- Lançamentos que vieram de um fixo mostram "Fixo" na meta ("Moradia · Fixo").
 - Lista agrupada por dia, com cabeçalho de dia ("Hoje", "Ontem", "Sábado, 26 de setembro") e o total do dia à direita. Dentro de um dia, a linha mostra só a categoria na meta, porque a data já está no cabeçalho.
 - Botão primário "Adicionar gasto" no topo da lista.
 - Busca ou filtro sem resultado: frase simples e saída, sem ilustração: "Nenhum lançamento com “farmácia” em setembro." + "Limpar busca".
@@ -172,6 +185,7 @@ Regras:
 
 - Mesmo formulário do lançamento novo, preenchido. Título "Editar gasto" ou "Editar renda".
 - Botão primário "Salvar alterações". Sem toque de ouro: a confirmação é só o aviso "Alterado: Mercado do bairro, − R$ 132,90".
+- Se o lançamento veio de um fixo, uma nota diz "Veio do fixo “Aluguel”. Mudar aqui vale só para este mês." com o link "Ver o fixo".
 - No fim da tela, "Excluir lançamento" ([Button](componentes/button.md) de perigo). Ao tocar, a confirmação aparece no mesmo lugar: "Excluir “Mercado do bairro”, − R$ 127,90? Não dá para desfazer." com "Excluir lançamento" e "Manter lançamento".
 
 ## Resumo do mês
@@ -185,6 +199,8 @@ Regras:
 5. Comparação com o mês anterior, em frases: "Você gastou R$ 180 a menos com restaurante do que em agosto."
 6. Os cinco maiores gastos do mês.
 
+Abrir o resumo de um mês fechado marca a conquista daquele mês como vista (em todos os aparelhos).
+
 ## Planejamento
 
 **Pergunta:** "Como vão ficar os próximos meses?"
@@ -192,26 +208,82 @@ Regras:
 1. Título-conclusão do ano: "2026 deve fechar com R$ 14.200 de sobra." (ou, sem acento, "Novembro pode fechar no vermelho.").
 2. Gráfico do ano (janeiro a dezembro): meses reais sólidos, meses futuros projetados, com o 13º e as férias previstas aparecendo nos meses em que caem.
 3. Tabela "Mês a mês" com Entrou, Saiu e Sobrou para cada mês, marcando "(projeção)".
-4. **Rendas previstas** (das calculadoras): "13º salário, 1ª parcela · até 30 nov · + R$ 2.700" com a etiqueta "prevista" e o botão "Recebi" quando a data chegar.
-5. **Fixos:** rendas e gastos que se repetem ("Salário, todo dia 5, + R$ 5.400,00"; "Aluguel, todo dia 10, − R$ 1.650,00"), com "Adicionar renda fixa" e "Adicionar gasto fixo". Fixos entram sozinhos na lista no dia marcado, e a pessoa pode ajustar o valor daquele mês.
+4. **Rendas previstas** (das calculadoras, [ExpectedIncomeRow](componentes/expected-income-row.md)): "13º salário, 1ª parcela · até 30 nov · + R$ 2.700" com a etiqueta "prevista", "Recebi" e "Não recebi".
+5. **Fixos:** rendas e gastos que se repetem ("Salário, todo dia 5, + R$ 5.400,00"; "Aluguel, todo dia 10, − R$ 1.650,00"; "Geladeira, 3 de 10, − R$ 250,00"), com "Adicionar renda fixa" e "Adicionar gasto fixo" e o link "Ver todos os fixos". Fixos entram sozinhos na lista no dia marcado, e a pessoa pode ajustar o valor daquele mês editando o lançamento.
 6. **Limites por categoria:** barras de limite ([Categorias](15-categorias.md#limites-por-categoria)) e "Definir um limite".
-7. A nota da projeção: "Estimativa com base nos últimos 3 meses, nos fixos e nas rendas já previstas."
+7. A nota da projeção: "Estimativa com base nos últimos 3 meses, nos fixos e nas rendas já previstas." ([Gráficos e dados](13-graficos-e-dados.md#projeção-como-é-calculada-e-como-é-explicada)).
+
+O ano fica na URL (`?ano=2026`). O ano seguinte pode ser aberto enquanto houver meses projetados nele (até 12 meses à frente).
+
+### Rendas e gastos fixos
+
+**Pergunta:** "O que entra e sai todo mês?" (`/planejamento/fixos`)
+
+- Duas seções, "Rendas fixas" e "Gastos fixos", cada uma com a soma do mês ("Todo mês: − R$ 3.100,00") e a lista de fixos: ícone da categoria, nome, "todo dia 10" ou "3 de 10 parcelas" ou "só em 15 de dezembro", e o valor.
+- "Adicionar gasto fixo" (primário) e "Adicionar renda fixa" (secundário).
+- Estado vazio: "Nenhum fixo *ainda*." / "Aluguel, contas e salário entram sozinhos no dia marcado." / "Adicionar gasto fixo".
+
+**Adicionar fixo** (`/planejamento/fixos/novo`, tela de tarefa):
+
+```
+‹ Voltar                   Adicionar gasto fixo
+Comece por um modelo
+(Aluguel) (Condomínio) (Luz) (Água) (Internet) (Celular) (Mais ⌄)   ← fixos prontos
+Quanto é?            [ − R$  1.650,00 ]
+Categoria            (chips, como no lançamento)
+Nome (opcional)      [ Aluguel ]
+Que dia?             [ 10 ⌄ ]                  ← select nativo, 1 a 31
+Repete               (Todo mês) (Por alguns meses) (Só uma vez)
+Quantos meses?       [ 10 ]                    ← só em "Por alguns meses"
+A primeira vez entra em 10 de outubro.
+[      Salvar gasto fixo      ]
+```
+
+- **Fixos prontos** ([15-categorias](15-categorias.md), `src/lib/presets.ts`): um toque preenche categoria, nome e um dia sugerido; o valor fica com a pessoa. Com `?modelo=aluguel`, a tela já abre preenchida.
+- **Que dia?**: dias 29, 30 e 31 caem no último dia dos meses mais curtos, e a tela avisa: "Em meses com menos dias, entra no último dia."
+- **Repete**: "Todo mês" (sem fim); "Por alguns meses" (parcelas: de 2 a 120 meses; "Quantos meses?"); "Só uma vez" (um gasto ou renda futura: pede o mês).
+- **Primeira vez**: a frase "A primeira vez entra em 10 de outubro." sempre diz a data. Se o dia deste mês já passou, a tela pergunta: "Já anotou o de setembro?" com "Já anotei" (começa no mês que vem) e "Anotar agora" (cria o de setembro também). Criar um fixo nunca preenche meses passados.
+- Salvar confirma no aviso: "Aluguel entra todo dia 10." Sem toque de ouro.
+
+**Editar fixo** (`/planejamento/fixos/[id]`): o mesmo formulário. Mudanças valem **dali para a frente**; lançamentos já anotados não mudam. "Parar este fixo" (perigo, com confirmação na tela: "Parar “Aluguel”? O que já foi anotado continua na lista.").
+
+### Monte seu mês
+
+**Pergunta:** "O que entra e sai todo mês?" (`/comecar`, tela de tarefa com passos, destino de "Adicionar minha renda" no primeiro acesso)
+
+1. **Quanto você recebe por mês?** MoneyInput + "Que dia cai?" + a opção "Minha renda muda todo mês" (pula para o passo 2 sem criar renda fixa). Link "Não sabe o líquido? Calcule pelo salário bruto" para a calculadora de salário líquido.
+2. **Quais destes gastos você tem todo mês?** Caixas de seleção grandes com os fixos prontos (Aluguel, Condomínio, Luz, Água, Gás, Internet, Celular, Plano de saúde, Escola ou faculdade, Academia, Streaming, Transporte, Parcela de compra). "Nenhum destes" é válido.
+3. **Quanto é e que dia vence?** Uma linha por gasto escolhido: nome, valor e dia.
+4. **Algum já aconteceu este mês?** Para os que já passaram do dia: marcar os que já foram pagos, para o Midas anotar agora.
+5. **Confira** com "Alterar" em cada item e "Salvar meu mês".
+
+Ao salvar, volta ao Início com o aviso "Seu mês está montado." Cada passo tem "Pular".
+
+### Limites por categoria
+
+**Pergunta:** "Quanto quero gastar com cada coisa?" (`/planejamento/limites`)
+
+- Lista das categorias com limite, com a barra ([Bar](componentes/bar.md)) e a frase ("R$ 360 de R$ 400 em setembro"), da mais perto do limite para a mais longe; embaixo, "Definir um limite".
+- `/planejamento/limites/[categoria]`: "Quanto você quer gastar com Restaurante por mês?" (MoneyInput), "Salvar limite" e, se já existe, "Remover limite" (perigo, confirmação na tela). "Definir um limite" abre antes a escolha da categoria de gasto (chips).
+- Estado vazio: "Nenhum limite *ainda*." / "Escolha uma categoria e o Midas avisa quando o gasto chegar a 90%." / "Definir um limite".
 
 ## Calculadoras
 
-**Pergunta:** "Quanto vou receber?" É o diferencial do Midas: transformar férias, 13º e rescisão em números que entram no planejamento do ano.
+**Pergunta:** "Quanto vou receber?" É o diferencial do Midas: transformar férias, 13º, rescisão, salário líquido e seguro-desemprego em números que entram no planejamento do ano.
 
 ### Tela inicial
 
-Três cartões, um por calculadora, cada um com título, uma frase que explica o termo e o botão "Calcular":
+Cinco cartões, um por calculadora, cada um com título, uma frase que explica o termo e o botão "Calcular":
 
 | Calculadora | Frase do cartão |
 | --- | --- |
 | Férias | "Veja quanto você recebe nas férias, com o terço a mais." |
 | 13º salário | "Veja o valor das duas parcelas e quando cada uma cai." |
 | Rescisão | "Veja uma estimativa do que você recebe quando o contrato termina." |
+| Salário líquido | "Veja quanto do salário bruto cai na sua conta, depois do INSS e do Imposto de Renda." |
+| Seguro-desemprego | "Veja quantas parcelas e de quanto, se você foi dispensado ou dispensada sem justa causa." |
 
-Abaixo, "Suas últimas contas", com as estimativas já feitas e a data.
+Abaixo, "Suas últimas contas": só as contas que a pessoa **adicionou ao planejamento**, com o tipo, o valor principal, a data e "Apagar esta conta". A calculadora roda no aparelho; uma conta que não foi adicionada ao planejamento não é guardada.
 
 ### Passo a passo
 
@@ -241,7 +313,11 @@ Perguntas sugeridas:
 | --- | --- |
 | Férias | Salário bruto · Média de horas extras e adicionais (opcional) · Quantos dias de férias e se vai vender 10 dias · Quando começam |
 | 13º salário | Salário bruto · Desde quando trabalha na empresa (para os meses do ano) · Média de horas extras e adicionais (opcional) · Número de dependentes (para o Imposto de Renda) |
-| Rescisão | Salário bruto · Data de entrada e data de saída · Como foi a saída · Aviso prévio (trabalhado, pago ou dispensado) · Férias vencidas · Saldo do FGTS (opcional, para estimar a multa) |
+| Rescisão | Salário bruto · Data de entrada e último dia de trabalho · Como foi a saída · Aviso prévio (trabalhado, pago em dinheiro ou dispensado; não aparece em justa causa e fim de contrato) · Férias vencidas (nenhuma, 1 período ou 2) · FGTS: saldo para fins rescisórios (opcional) e adesão ao saque-aniversário · Número de dependentes |
+| Salário líquido | Salário bruto · Número de dependentes · Outros descontos do contracheque (opcional: vale-transporte, plano de saúde) · Que dia o salário cai (só para "Adicionar ao planejamento") |
+| Seguro-desemprego | Como foi a saída (só dispensa sem justa causa tem direito; as outras respostas explicam e encerram) · Último dia de trabalho · Salários dos 3 últimos meses (com "Foi o mesmo nos três") · Meses com carteira assinada nos últimos 3 anos · Quantas vezes já pediu o seguro e se faz mais de 16 meses desde o último |
+
+As férias e o 13º também perguntam o **número de dependentes** (para o Imposto de Renda). As respostas ficam só na memória da tela; a URL leva apenas o passo (`?passo=3`). Da rescisão sem justa causa, o resultado oferece "Ver o seguro-desemprego", que abre a calculadora com as respostas que já servem.
 
 ### Resultado
 
@@ -266,8 +342,21 @@ até 13 de dezembro
 - O valor principal usa `display-xl` e sempre vem com "cerca de" e a data prevista.
 - A tabela "De onde vem esse valor" mostra cada parcela com sinal, em `amount`, e o total.
 - O aviso de estimativa ([Notice](componentes/notice.md)) é obrigatório, com o ano das tabelas usadas.
-- "Adicionar ao planejamento" cria as rendas previstas (13º em duas parcelas; férias na data; rescisão na data de pagamento) e confirma: "Férias adicionadas ao planejamento de dezembro."
+- "Adicionar ao planejamento" cria as rendas previstas (13º em duas parcelas; férias na data; rescisão na data de pagamento e, separado, o saque do FGTS; seguro-desemprego em uma prevista por parcela) e confirma: "Férias adicionadas ao planejamento de dezembro." No salário líquido, cria ou atualiza o fixo "Salário": "Seu salário entra todo dia 5."
+- O servidor refaz a conta a partir das respostas; o resultado mostrado nunca é aceito como veio do aparelho.
 - Sem toque de ouro aqui: ele é só para lançamentos.
+
+Resultados de cada calculadora:
+
+| Calculadora | Título | Valor principal | "De onde vem esse valor" |
+| --- | --- | --- | --- |
+| Férias | "Suas férias, *em números*." | "Você deve receber cerca de R$ 3.874,00 até 13 de dezembro" | Férias (N dias), Um terço a mais, Venda de 10 dias e o terço dela (se houver), INSS, Imposto de Renda, Você recebe. Nota: "O salário do mês das férias vem menor, porque parte dele foi paga adiantada." |
+| 13º salário | "Seu 13º, *parte por parte*." | "Você deve receber cerca de R$ 5.400,00 em duas parcelas" | 1ª parcela (até 30 de novembro, sem descontos); 13º integral (N meses de 12), INSS do 13º, Imposto de Renda do 13º, 1ª parcela já paga, 2ª parcela (até 20 de dezembro) |
+| Rescisão | "Sua rescisão, *explicada*." | Dois blocos: "A empresa paga cerca de R$ X até 10 de outubro" e "FGTS para sacar na Caixa: cerca de R$ Y" | Empresa: Saldo de salário (N dias), Aviso prévio (N dias, trabalhado ou pago), 13º proporcional (N/12), Férias vencidas + 1/3, Férias proporcionais (N/12) + 1/3, Desconto do aviso não cumprido, INSS, Imposto de Renda. FGTS: saldo informado ou estimado, depósito da rescisão, multa de 40% ou 20%, quanto pode sacar |
+| Salário líquido | "Seu salário, *no bolso*." | "Cai na sua conta cerca de R$ 4.498,49 por mês" | Salário bruto, INSS, Imposto de Renda (com a redução de 2026, quando houver), Outros descontos, Você recebe |
+| Seguro-desemprego | "Seu seguro, *mês a mês*." | "Cerca de 4 parcelas de R$ 2.080,00" | Média dos salários, Faixa da tabela, Valor da parcela, Número de parcelas e datas estimadas (a 1ª cerca de 37 dias depois da saída; depois, a cada 30) |
+
+Situações sem direito ou fora do escopo mostram um [Notice](componentes/notice.md) de informação e nenhum número inventado: "Na justa causa, não há 13º nem férias proporcionais." / "Só quem é dispensado sem justa causa tem direito ao seguro-desemprego." / "Saída antes do fim do contrato de experiência ainda não é calculada pelo Midas."
 
 ## Seus dados
 
@@ -279,10 +368,14 @@ A tela dos direitos da pessoa, descrita em [Privacidade na interface](16-privaci
 | --- | --- |
 | Aparência | Tema: "Claro", "Escuro", "Automático" (rádios, com Claro marcado de início). "Ocultar valores" (liga e desliga o modo discreto). |
 | Conta | "Como você quer que o Midas te chame?", e-mail, "Trocar senha". |
-| Lançamentos | "Categorias no formulário" (esconder as que a pessoa não usa, se o app permitir). |
+| Lançamentos | "Suas categorias": link para `/configuracoes/categorias` (criar categorias, trocar nome e ícone, esconder do formulário; veja [Categorias](15-categorias.md#personalização)). |
 | Sobre | Versão, "Sobre o Midas", "Ajuda". |
 
 Cada mudança vale na hora e confirma com um aviso curto ("Tema escuro ativado."); não há botão "Salvar configurações".
+
+## Conta apagada
+
+Tela pública (`/conta-apagada`), depois de apagar a conta: o selo pequeno, "Sua conta foi apagada." em `display-lg`, "Obrigado por ter usado o Midas." e um parágrafo curto: "Cópias de segurança são apagadas em até 7 dias. Enviamos uma confirmação para o seu e-mail." Link "Voltar para o início" (que leva à entrada). Não depende de sessão e não mostra dado nenhum da conta.
 
 ## Sobre
 

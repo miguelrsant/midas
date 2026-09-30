@@ -1,6 +1,6 @@
 # Mapa de Dados — Midas
 
-**Versão**: v1
+**Versão**: v2 (núcleo do produto: A013 e A014, tabelas planejadas)
 **Data**: 2026-09-30
 **Owner global**: Miguel (controlador); encarregado pendente de designação ([gaps.md](./gaps.md))
 **Skill**: `lgpd-data-mapping` (F2, Pipeline A, greenfield)
@@ -29,10 +29,12 @@
 | A006 | Limite de tentativas | 7º, IX | Não | Não | em uso |
 | A007 | Eventos de segurança | 7º, IX | Não | Não | em uso |
 | A008 | Operação e logs técnicos | 7º, IX | Não | Não | em uso |
-| A009 | Direitos do titular ("Seus dados") | 7º, II | Pode conter | Não | próxima etapa |
-| A010 | Lançamentos, gráficos e projeção | 7º, V + Art. 11 a decidir | **Potencial (saúde)** | **Sim (provável)** | próxima etapa |
-| A011 | Calculadoras trabalhistas | 7º, V | Não | Não | próxima etapa |
-| A012 | Limites por categoria | 7º, V | Potencial | Avaliar na RIPD de A010 | próxima etapa |
+| A009 | Direitos do titular ("Seus dados") | 7º, II | Pode conter | Não | a implementar |
+| A010 | Lançamentos, gráficos e projeção | 7º, V + 11, II, "d" | **Potencial (saúde)** | **Sim** (RIPD v1) | a implementar |
+| A011 | Calculadoras trabalhistas | 7º, V | Não | Coberto pela RIPD | a implementar |
+| A012 | Limites por categoria | 7º, V + 11, II, "d" | Potencial | Coberto pela RIPD | a implementar |
+| A013 | Categorias próprias e personalização | 7º, V + 11, II, "d" | Potencial | Coberto pela RIPD | a implementar |
+| A014 | Fixos, rendas previstas e preferências | 7º, V + 11, II, "d" | Potencial | Coberto pela RIPD | a implementar |
 
 Teste de alto risco (Res. CD/ANPD nº 2/2022, Art. 4º, critério geral **e** específico): A001 a A008 não têm critério específico (sem sensível, sem menores, sem decisão automatizada, sem tecnologia emergente). A010 atende o específico (dado sensível potencial) e, por serem dados financeiros confidenciais, pode "afetar significativamente interesses e direitos" (critério geral) → tratar como alto risco e fazer RIPD (Art. 38).
 
@@ -198,83 +200,109 @@ Teste de alto risco (Res. CD/ANPD nº 2/2022, Art. 4º, critério geral **e** es
 | RIPD | N/A |
 | Owner | Miguel |
 
-## Próxima etapa (previstas)
+## Núcleo do produto (a implementar, RIPD v1 aprovada no merge)
 
-### A009 — Direitos do titular ("Seus dados") — próxima etapa
+> Tabelas planejadas no plano do núcleo do produto. Todas têm `userId` com `ON DELETE CASCADE` e entram na exportação de "Seus dados". Texto livre é cifrado na aplicação (AES-256-GCM, ver [encryption.md](./encryption.md)). Risco e salvaguardas em [RIPD/ripd-lancamentos.md](./RIPD/ripd-lancamentos.md).
+
+### A009 — Direitos do titular ("Seus dados")
 
 | Campo | Valor |
 |---|---|
 | Slug | a009-direitos-do-titular |
-| Finalidade | Acessar, corrigir, baixar (JSON e CSV), ver aparelhos e apagar a conta (Art. 18, I, II, III, V, VI, VII) |
+| Finalidade | Acessar, corrigir, baixar (JSON completo e CSV de lançamentos), ver aparelhos e apagar a conta (Art. 18, I, II, III, V, VI, VII) |
 | Base legal | Art. 7º, II ([detalhes](./legal-basis.md#a009)) |
-| Dados | Todos os dados da conta |
-| Sistemas | Postgres; arquivo de exportação gerado na hora, não guardado |
-| Operadores | Neon, Vercel; Google (e-mail de confirmação de exclusão, sem dado financeiro) |
-| Retenção | Exportação: não guardada. Exclusão: ver [retention.md](./retention.md) |
-| Segurança | Pede a senha de novo; prazo de resposta de 15 dias (Art. 19, II) atendido por autosserviço |
+| Dados | Todos os dados da conta; `security_event` ganha o tipo `DATA_EXPORTED`; `deleted_account` guarda só o id da conta apagada e a data |
+| Sistemas | Postgres; arquivo de exportação gerado na hora no servidor e baixado pelo navegador, nunca guardado |
+| Operadores | Neon, Vercel; Google (e-mail de confirmação de exclusão, enviado depois da exclusão, sem dado financeiro) |
+| Retenção | Exportação: não guardada. `deleted_account`: até o fim da janela do PITR (7 dias) + margem de 1 dia |
+| Segurança | Reautenticação com senha e limite por conta (`pwcheck`); exclusão numa transação; fluxo em [dsar/workflow.md](./dsar/workflow.md) |
 | Alto risco? | Não |
 | Owner | Miguel |
 
-### A010 — Lançamentos, gráficos e projeção — próxima etapa
+### A010 — Lançamentos, gráficos e projeção
 
 | Campo | Valor |
 |---|---|
 | Slug | a010-lancamentos |
 | Finalidade | Mostrar o mês, gráficos por mês e categoria e a projeção (estimativa) só para a própria pessoa |
-| Base legal | Art. 7º, V + **Art. 11 a decidir** ([detalhes](./legal-basis.md#a010)) |
+| Base legal | Art. 7º, V; parte sensível: Art. 11, II, "d" ([detalhes](./legal-basis.md#a010)) |
 | Categorias de titulares | Usuários |
 | Sensíveis? | **Potencial**: categoria Saúde e descrição livre podem revelar dado de saúde (Art. 5º, II; Art. 11) |
-| Dados | Valor (centavos), tipo (renda/gasto, fixo/variável), categoria, data, descrição opcional |
-| Fonte | Coletado do titular |
-| Sistemas | Postgres (tabela a criar) |
+| Dados | `entry`: id (UUID gerado no aparelho), tipo (renda/gasto), valor em centavos, categoria (id pronto ou `u-<uuid>`), data (sem hora), descrição opcional **cifrada**, vínculo com fixo e mês da ocorrência |
+| Fonte | Coletado do titular; ocorrências de fixos geradas pelo sistema no dia marcado |
+| Sistemas | Postgres (`entry`) |
 | Operadores | Neon, Vercel |
 | Transferência intl. | Potencial (idem A001) |
-| Retenção | Enquanto a conta existir; apagados com ela |
-| Segurança | Confidencial: filtro por `userId` da sessão em toda consulta; fora de logs e e-mails; sem inferência ou perfil; decisão de criptografia de coluna na F7 |
-| Alto risco? | **Sim (provável)** — Res. 2/2022, Art. 4º |
-| RIPD | **Pendente, antes do código**: `.lgpd/RIPD/ripd-lancamentos.md` (checkpoint) |
+| Retenção | Enquanto a conta existir ou até a pessoa excluir; exclusão física |
+| Segurança | Filtro por `userId` da sessão em toda consulta; descrição cifrada com AAD por linha; busca feita no navegador; fora de logs, e-mails e URLs; sem inferência ou perfil |
+| Alto risco? | **Sim** — Res. 2/2022, Art. 4º |
+| RIPD | [ripd-lancamentos.md](./RIPD/ripd-lancamentos.md) |
 | Owner | Miguel |
 
-### A011 — Calculadoras trabalhistas — próxima etapa
+### A011 — Calculadoras trabalhistas
 
 | Campo | Valor |
 |---|---|
 | Slug | a011-calculadoras |
-| Finalidade | Estimar rescisão, férias e 13º e criar rendas previstas |
+| Finalidade | Estimar férias, 13º, rescisão, salário líquido e seguro-desemprego e criar rendas previstas no planejamento |
 | Base legal | Art. 7º, V ([detalhes](./legal-basis.md#a011)) |
 | Categorias de titulares | Usuários |
-| Sensíveis? | Não (financeiro e trabalhista confidencial) |
-| Dados | Salário, datas (admissão, saída, férias), tipo de saída, resultado e rendas previstas geradas |
+| Sensíveis? | Não |
+| Dados | Respostas (salário bruto, média de extras, datas de admissão, saída e férias, tipo de saída, aviso prévio, férias vencidas, número de dependentes, saldo do FGTS opcional, adesão ao saque-aniversário, pedidos anteriores de seguro-desemprego) e resultado: `calculation` com tudo **cifrado** num só campo |
 | Fonte | Coletado do titular |
-| Sistemas | Postgres (tabela a criar) |
+| Sistemas | Cálculo no aparelho; Postgres (`calculation`) só quando a pessoa toca em "Adicionar ao planejamento" |
 | Operadores | Neon, Vercel |
-| Transferência intl. | Potencial (idem A001) |
-| Retenção | Enquanto a conta existir ou até a pessoa apagar |
-| Segurança | Mesmo tratamento confidencial de A010; sem empregador, CPF ou CTPS |
-| Alto risco? | Não isoladamente; incluir no escopo da RIPD de A010 |
+| Retenção | Enquanto a conta existir ou até a pessoa apagar a conta de calculadora |
+| Segurança | Sem empregador, CPF, CTPS, PIS ou nome de dependentes; respostas nunca na URL; servidor recalcula e ignora totais do cliente |
+| Alto risco? | Não isoladamente; coberto pela RIPD de A010 |
 | Owner | Miguel |
 
-### A012 — Limites por categoria — próxima etapa
+### A012 — Limites por categoria
 
 | Campo | Valor |
 |---|---|
 | Slug | a012-limites |
-| Finalidade | Aviso ao chegar a 90% do limite |
-| Base legal | Art. 7º, V ([detalhes](./legal-basis.md#a012)) |
-| Sensíveis? | Potencial (limite em Saúde) |
-| Dados | Categoria, valor do limite, mês |
-| Sistemas | Postgres (tabela a criar) |
-| Operadores | Neon, Vercel |
-| Retenção | Enquanto a conta existir |
-| Alto risco? | Avaliar na RIPD de A010 |
+| Finalidade | Avisar quando o gasto de uma categoria chega a 90% do limite mensal definido pela pessoa |
+| Base legal | Art. 7º, V; parte sensível: Art. 11, II, "d" |
+| Dados | `category_limit`: categoria, valor mensal |
+| Retenção | Enquanto a conta existir ou até a pessoa remover |
+| Segurança | Como A010; aviso só na tela, nunca por e-mail |
+| Alto risco? | Coberto pela RIPD de A010 |
+| Owner | Miguel |
+
+### A013 — Categorias próprias e personalização
+
+| Campo | Valor |
+|---|---|
+| Slug | a013-categorias-proprias |
+| Finalidade | Criar categorias com nome e ícone, trocar nome e ícone das prontas e escondê-las do formulário |
+| Base legal | Art. 7º, V; parte sensível: Art. 11, II, "d" (um nome ou ícone como "remédio" pode revelar saúde) |
+| Dados | `user_category`: tipo, id da categoria pronta ajustada (se for ajuste), nome e ícone **cifrados juntos**, escondida |
+| Retenção | Enquanto a conta existir; ao apagar uma categoria, os lançamentos e fixos dela vão para "Outros" |
+| Segurança | Como A010; no máximo 30 por pessoa; ícones guardados como chaves próprias do Midas |
+| Alto risco? | Coberto pela RIPD de A010 |
+| Owner | Miguel |
+
+### A014 — Fixos, rendas previstas e preferências do planejamento
+
+| Campo | Valor |
+|---|---|
+| Slug | a014-fixos-e-previstas |
+| Finalidade | Anotar sozinho, no dia marcado, rendas e gastos que se repetem (inclusive parcelas e "só uma vez"); mostrar rendas previstas das calculadoras até a pessoa confirmar "Recebi"; lembrar se o resumo do mês já foi visto |
+| Base legal | Art. 7º, V; parte sensível: Art. 11, II, "d" |
+| Dados | `recurring`: tipo, valor, categoria, descrição **cifrada**, dia do mês, mês inicial e final, próxima ocorrência. `expected_income`: categoria, chave do rótulo, valor, data prevista, conta de calculadora de origem. `user_preference`: último mês de resumo aberto |
+| Fonte | Coletado do titular ou gerado pelas calculadoras a pedido dele |
+| Retenção | Enquanto a conta existir; "Recebi" transforma a prevista em lançamento e apaga a prevista; "Não recebi" apaga |
+| Segurança | Como A010; ocorrências criadas de forma idempotente, sem agendador externo |
+| Alto risco? | Coberto pela RIPD de A010 |
 | Owner | Miguel |
 
 ## Checklist de qualidade
 
 - [x] Toda tabela com FK para `user` está coberta (`account`, `session`, `securityEvent`; `verification` e `rateLimit` sem FK também cobertas)
 - [x] Toda integração de terceiro está listada (Vercel, Neon, Google, HIBP; GitHub sem dados de titulares)
-- [x] Toda atividade tem base legal explícita (A010: parte sensível pendente de decisão)
-- [x] Atividades de alto risco flagadas (A010)
+- [x] Toda atividade tem base legal explícita (A010, A012–A014: parte sensível no Art. 11, II, "d")
+- [x] Atividades de alto risco flagadas (A010; A011–A014 cobertas pela mesma RIPD)
 - [ ] Atividades com menores flagadas — depende da decisão de idade mínima (G04)
 - [x] Retenção definida (itens "a verificar" dependem dos operadores)
 

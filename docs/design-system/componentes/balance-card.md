@@ -135,7 +135,7 @@ Não há hover, foco nem estado pressionado: o cartão não é interativo.
 - **Mês sem renda, com gastos.** Saldo negativo ("Faltou"), Entrou `R$ 0,00`, sem barra, frase "Anote sua renda para ver quanto já foi gasto."
 - **Mês sem nada.** `R$ 0,00` em tudo, sem barra, a mesma frase de renda. A lista abaixo mostra o [EmptyState](empty-state.md).
 - **Centavos.** Some em centavos inteiros; o saldo é `renda − gasto` calculado em centavos, nunca em ponto flutuante.
-- **Mês futuro.** O seletor de mês não chega a meses futuros; projeções ficam no [gráfico](income-expense-chart.md).
+- **Mês futuro.** A troca de mês não chega a meses futuros; projeções ficam no [gráfico](income-expense-chart.md) e no Planejamento.
 
 ## Referência HTML
 
@@ -155,7 +155,7 @@ Marcação do protótipo já corrigida (barra decorativa, sinais escondidos, ids
       <dd class="md-out"><span aria-hidden="true">− </span>R$ 4.357,90</dd>
     </div>
   </dl>
-  <div class="md-meter" aria-hidden="true"><span style="width: 70%"></span></div>
+  <div class="md-meter" aria-hidden="true"><span class="w-[70%]"></span></div>
   <p class="md-help md-meter-frase">Você usou 70% do que entrou este mês.</p>
 </section>
 
@@ -264,9 +264,7 @@ export function BalanceCard({ monthName, isCurrentMonth, incomeCents, expenseCen
         </div>
       </dl>
       {pct !== null && (
-        <div aria-hidden="true" className="mt-4 h-2 overflow-hidden rounded-pill bg-superficie-funda">
-          <span className="block h-full rounded-[inherit] bg-ouro" style={{ width: `${Math.min(pct, 100)}%` }} />
-        </div>
+        <Bar percent={pct} tone="ouro" className="mt-4" />
       )}
       <p className="mt-2 mb-0 text-caption text-tinta-suave">{sentence}</p>
     </section>
@@ -286,6 +284,7 @@ function SignedValue({ cents, sign }: { cents: number; sign: "+" | "−" }) {
 
 Notas:
 
+- A barra é o componente [Bar](bar.md): a largura vem de uma classe pronta (`w-[70%]`), nunca de `style=""`, que a CSP do Midas bloqueia quando vem do servidor.
 - As regras de largura usam container queries do Tailwind v4 (`@container` no cartão, variantes `@[340px]:` e `@[360px]:`), que medem a largura útil do cartão. O saldo só desce para 34/40 quando passa de `R$ 100.000,00` e falta largura.
 - `formatMoney(cents, { sign: "never" })` devolve `R$ 1.842,10` com espaço inseparável (U+00A0).
 - O id `saldo-titulo` só pode existir uma vez por página; se o cartão for reutilizado, gere o id com `useId()`.
