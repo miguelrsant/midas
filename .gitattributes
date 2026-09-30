@@ -1,0 +1,7 @@
+# Fim de linha LF em todo texto, inclusive em checkouts no Windows e no WSL.
+# Com CRLF, `. ./.env.development` na CI importa valores com `\r` e quebra a DATABASE_URL.
+* text=auto eol=lf
+
+*.png binary
+*.webp binary
+*.woff2 binary
