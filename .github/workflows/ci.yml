@@ -15,7 +15,7 @@ concurrency:
 jobs:
   checks:
     name: Lint, tipos, testes e build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     services:
@@ -37,9 +37,9 @@ jobs:
         ports: ["1025:1025", "8025:8025"]
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -68,7 +68,7 @@ jobs:
           pnpm exec playwright install --with-deps chromium
           pnpm test:e2e
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
