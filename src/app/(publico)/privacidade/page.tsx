@@ -32,8 +32,10 @@ export default function PrivacyPage() {
       <p>CPF, RG, telefone, endereço, data de nascimento, dados de banco ou cartão, localização.</p>
       <h2>Cookies</h2>
       <p>
-        Só o cookie de sessão, necessário para você continuar conectado. Sem analytics, sem anúncios
-        e sem rastreadores.
+        Só dois, e os dois são necessários. O de sessão, para você continuar conectado. O de
+        aparelho, que lembra que você já entrou por este navegador: assim, se alguém errar sua senha
+        muitas vezes, quem fica bloqueado é essa pessoa, não você. Sem analytics, sem anúncios e sem
+        rastreadores.
       </p>
       <h2>Com quem compartilhamos</h2>
       <p>

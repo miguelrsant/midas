@@ -121,7 +121,7 @@ O Midas trata dados pessoais e precisa seguir a **LGPD (Lei 13.709/2018)** desde
 - **Finalidade:** os dados servem para mostrar as finanças da própria pessoa. Nunca para perfilar, pontuar, vender ou anunciar.
 - **Dado sensível:** lançamentos podem revelar saúde (categoria Saúde, descrições como "farmácia"). Trate **todo lançamento como confidencial**: só a dona ou o dono vê, fora de logs e de e-mails.
 - **Direitos do titular (art. 18)** na própria interface: acessar, corrigir, baixar (JSON e CSV) e apagar a conta. Veja [Privacidade na interface](docs/design-system/16-privacidade-na-interface.md).
-- **Sem rastreadores:** só o cookie de sessão; sem analytics de terceiros, pixels ou fontes de outros domínios. Se um dia entrar um cookie não essencial, só com consentimento.
+- **Sem rastreadores:** só cookies estritamente necessários (o de sessão e o de aparelho, que protege a entrada contra bloqueio por terceiros); sem analytics de terceiros, pixels ou fontes de outros domínios. Se um dia entrar um cookie não essencial, só com consentimento.
 - **Transparência:** política de privacidade em linguagem simples, com versão e data, e contato do encarregado.
 - **Operadores** (hospedagem, envio de e-mail) listados em "Seus dados" e na política, com contrato adequado e atenção a transferência internacional.
 - **Incidentes** seguem um plano escrito; a comunicação à ANPD e aos titulares tem prazo (Resolução CD/ANPD nº 15/2024).
@@ -175,4 +175,15 @@ O plugin tem um maestro, **`lgpd-audit`**, que escolhe o caminho (para o Midas, 
 1. Leia a página do design system e a seção de LGPD que tocam a tarefa antes de programar.
 2. Siga as convenções e as regras de segurança acima; na dúvida, escolha a opção que coleta menos e expõe menos.
 3. Rode lint, checagem de tipos e testes antes de abrir um PR.
+   Se o PR toca autenticação, dados pessoais, e-mail, configuração ou dependências, rode também o agente de revisão de segurança ([.claude/agents/security-reviewer.md](.claude/agents/security-reviewer.md)): ele pensa como quem ataca e só relata achados confirmados.
 4. Se uma decisão mudar o design system, atualize os docs no mesmo PR. Se mudar o tratamento de dados, atualize `.lgpd/` no mesmo PR.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

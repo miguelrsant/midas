@@ -8,7 +8,7 @@ import { PASSWORD_MESSAGES } from "./password-rules";
 
 export const AUTH_MESSAGES = {
   invalidCredentials: "E-mail ou senha incorretos.",
-  tooManyAttempts: "Muitas tentativas. Espere 15 minutos e tente de novo.",
+  tooManyAttempts: "Muitas tentativas. Espere 1 hora e tente de novo.",
   network: "Não foi possível conectar. Confira a internet e tente de novo.",
   server: "Não deu para salvar agora. Tente de novo em alguns instantes.",
   emailNotVerified:

@@ -3,7 +3,9 @@
     "lgpd-skills": {
       "source": {
         "source": "github",
-        "repo": "goul4rt/lgpd-skills"
+        "repo": "goul4rt/lgpd-skills",
+        "ref": "main",
+        "sha": "d85d79abeeb37cb99fc0785e735a9ca790698a77"
       }
     }
   },

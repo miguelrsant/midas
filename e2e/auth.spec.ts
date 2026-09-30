@@ -27,12 +27,17 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByRole("button", { name: "Entrar" }).click();
 }
 
+/** Cadastra, confirma pelo link (que não faz entrar) e entra com a senha. */
 async function createVerifiedAccount(page: Page, email: string) {
   await signUp(page, email);
   await expect(page.getByText("Enviamos um link para")).toBeVisible();
   const text = await waitForEmail(email, "Confirme seu e-mail no Midas");
   await page.goto(extractLink(text, "verify-email"));
   await expect(page.getByRole("heading", { name: /Conta confirmada/ })).toBeVisible();
+  expect(await findSessionsByEmail(email)).toHaveLength(0);
+  await page.getByRole("link", { name: "Entrar" }).click();
+  await signIn(page, email, PASSWORD);
+  await expect(page).toHaveURL("/");
 }
 
 test.beforeEach(async () => {
@@ -61,8 +66,6 @@ test("quem não entrou vai para a entrada, voltando depois para onde estava", as
 test("cadastro, confirmação, entrada e saída", async ({ page }) => {
   const email = uniqueEmail("fluxo");
   await createVerifiedAccount(page, email);
-
-  await page.getByRole("link", { name: "Ir para o início" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Ana.");
 
   await page.getByRole("button", { name: "Sua conta" }).click();
@@ -178,7 +181,7 @@ test("muitas tentativas de entrada são bloqueadas", async ({ page }) => {
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
   }
   await signIn(page, email, "mais uma tentativa errada");
-  await expect(page.getByText("Muitas tentativas. Espere 15 minutos")).toBeVisible();
+  await expect(page.getByText("Muitas tentativas. Espere 1 hora")).toBeVisible();
 });
 
 for (const path of ["/entrar", "/criar-conta", "/recuperar-senha", "/privacidade"]) {

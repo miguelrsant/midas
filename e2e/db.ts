@@ -16,6 +16,7 @@ async function query(sql: string, params: unknown[] = []) {
 /** Cada teste começa sem contadores de tentativas (todos saem do mesmo IP). */
 export async function resetRateLimits() {
   await query('DELETE FROM "rate_limit"');
+  await query('DELETE FROM "throttle"');
 }
 
 export async function findSessionsByEmail(email: string) {

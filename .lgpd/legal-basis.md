@@ -97,10 +97,10 @@ Regras aplicadas (skill `lgpd-legal-basis`): autenticação e conta usam execuç
 ## Atividade: A006 — Limite de tentativas
 
 - **Finalidade**: impedir ataques de força bruta e abuso em entrar, cadastrar e recuperar senha.
-- **Dados tratados**: IP + rota, contador, início da janela (`rateLimit`).
+- **Dados tratados**: IP + rota, contador, início da janela (`rateLimit`); contadores por HMAC do e-mail, por aparelho conhecido e por conta na troca de senha (`throttle`); cookie de aparelho `midas.device` (HMAC do e-mail + número aleatório, assinado).
 - **Sensíveis?**: Não.
 - **Base legal**: Art. 7º, IX — legítimo interesse, com Art. 10, II (proteção do titular) e regra de ouro 6 da skill (prevenção a fraude com dado comum).
-- **Justificativa**: o IP é o sinal mínimo para limitar tentativas sem CAPTCHA e sem cadastro extra. Consentimento não serve, pois o atacante não consentiria.
+- **Justificativa**: o IP é o sinal mínimo para limitar tentativas sem CAPTCHA e sem cadastro extra. Consentimento não serve, pois o atacante não consentiria. O cookie de aparelho protege a própria titular: sem ele, qualquer pessoa trancaria a entrada dela errando a senha de propósito. É estritamente necessário, não identifica ninguém fora do Midas e não serve para entrar, então dispensa consentimento.
 - **LIA**: **pendente** — `.lgpd/lia/a006-limite-de-tentativas.md` (a criar com `assets/lia-template.md`; exige aprovação humana). Ver [gaps.md](./gaps.md).
 - **Retenção**: janela de contagem de 15 min a 1 h; registros apagados 1 dia após a última requisição pela limpeza interna do app (em segundo plano após login e cadastro, no máximo 1 vez por hora por instância) ou pelo script `pnpm db:limpeza`.
 - **Revogação possível?**: oposição (Art. 18, § 2º) avaliada caso a caso; na prática a janela expira antes.

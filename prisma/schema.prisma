@@ -120,3 +120,15 @@ model SecurityEvent {
   @@index([createdAt])
   @@map("security_event")
 }
+
+/// Contadores do próprio Midas: e-mails por destinatário e no total, e tentativas de
+/// entrada por conta (src/lib/throttle.ts). A chave nunca leva o e-mail em claro, só
+/// um HMAC com BETTER_AUTH_SECRET. Vida curta: apagado pela limpeza quando vence.
+model Throttle {
+  key       String   @id @db.VarChar(100)
+  count     Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("throttle")
+}

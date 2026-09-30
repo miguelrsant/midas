@@ -77,7 +77,7 @@ A verificação contra senhas vazadas pode usar uma lista local de senhas comuns
 
 - Erro de login genérico: "E-mail ou senha incorretos." Nunca diga qual dos dois.
 - Recuperação sempre com a mesma resposta: "Se esse e-mail tiver conta no Midas, você vai receber um link em alguns minutos." O link vale uma vez só e expira em 30 minutos.
-- Muitas tentativas: "Muitas tentativas. Espere 15 minutos e tente de novo."
+- Muitas tentativas: "Muitas tentativas. Espere 1 hora e tente de novo."
 - Sem CAPTCHA de imagens: a proteção contra robôs é o limite de tentativas no servidor.
 - E-mails de segurança (senha trocada, conta apagada) em linguagem simples e **sem nenhum dado financeiro**. O Midas não manda e-mail de propaganda.
 
@@ -123,9 +123,11 @@ Para quem abre o app em público (no ônibus, no trabalho), um botão "Ocultar v
 
 ## Cookies e rastreamento
 
-- O Midas usa **só o cookie de sessão**, estritamente necessário para a pessoa continuar conectada (`HttpOnly`, `Secure`, `SameSite=Lax`).
+- O Midas usa **só dois cookies, os dois estritamente necessários** (`HttpOnly`, `Secure`, `SameSite=Lax`):
+  - o **de sessão**, para a pessoa continuar conectada;
+  - o **de aparelho** (`midas.device`, só em `/api/auth`, 1 ano), que lembra que a pessoa já entrou por aquele navegador. Guarda um HMAC do e-mail e um número aleatório, nunca o e-mail. Serve só para que alguém que erre a senha de outra pessoa de propósito não tranque a entrada dela no aparelho de sempre (OWASP, "Device Cookies").
 - **Sem analytics de terceiros, pixels, mapas de calor ou gravação de sessão.** Sem fontes, scripts ou imagens de outros domínios: tudo é servido pelo próprio app.
-- Com só o cookie de sessão, não há banner de cookies. Se um dia entrar qualquer cookie não essencial, ele só é ativado depois de um consentimento livre, com o botão "Recusar" tão visível quanto "Aceitar", seguindo o guia orientativo da ANPD sobre cookies.
+- Com só cookies estritamente necessários, não há banner de cookies. Se um dia entrar qualquer cookie não essencial, ele só é ativado depois de um consentimento livre, com o botão "Recusar" tão visível quanto "Aceitar", seguindo o guia orientativo da ANPD sobre cookies.
 
 ## Mudanças futuras que exigem revisão
 
