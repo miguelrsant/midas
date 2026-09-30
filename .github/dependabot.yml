@@ -20,3 +20,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  # As actions e as imagens ficam presas por SHA/digest (um projeto aberto não pode
+  # depender de uma tag que alguém mova); o Dependabot atualiza o SHA e o comentário.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
