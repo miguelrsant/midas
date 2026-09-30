@@ -14,11 +14,13 @@
 Precisa de **Node 24**, **pnpm** (via `corepack enable`) e **Docker**.
 
 ```bash
-docker compose up -d          # Postgres e Mailpit, só em 127.0.0.1
 pnpm install
-pnpm db:migrate               # cria as tabelas
-pnpm dev                      # http://localhost:3000
+pnpm dev                      # sobe Postgres e Mailpit, aplica as migrações e abre http://localhost:3000
 ```
+
+O `pnpm dev` e os testes sobem o Docker sozinhos (`docker compose up -d --wait`, só em 127.0.0.1). Para desligar: `pnpm services:stop`.
+
+> **WSL com Docker Desktop:** se o Postgres não subir com `error mounting … 01-init.sql`, recrie o container (os dados ficam no volume): `docker compose up -d --force-recreate postgres`.
 
 Não é preciso criar nenhum `.env`: o `.env.development` versionado já aponta para o Docker, só com valores falsos de localhost. Os e-mails (confirmação, recuperação de senha) aparecem no Mailpit, em <http://localhost:8025>.
 
@@ -28,9 +30,10 @@ Para usar serviços reais na sua máquina (um banco no Neon, o Gmail), crie um `
 
 | Comando | O que faz |
 | --- | --- |
-| `pnpm dev` | App em modo de desenvolvimento |
+| `pnpm dev` | Sobe o Docker, aplica as migrações e abre o app em modo de desenvolvimento |
+| `pnpm services:up`, `services:stop`, `services:down` | Liga, para ou remove o Postgres e o Mailpit (o `down` mantém os dados) |
 | `pnpm lint`, `pnpm typecheck`, `pnpm format:check` | Qualidade do código |
-| `pnpm test` | Testes unitários e de integração (usa o banco `midas_test` do Docker) |
+| `pnpm test` | Sobe o Docker e roda os testes unitários e de integração (banco `midas_test`) |
 | `pnpm build && pnpm test:e2e` | Testes de ponta a ponta com Playwright (rode `pnpm exec playwright install chromium` uma vez). Com o `pnpm dev` aberto na 3000, use `E2E_PORT=3100 pnpm test:e2e` |
 | `pnpm db:migrate` | Cria uma migração nova a partir do `prisma/schema.prisma` |
 | `pnpm db:limpeza` | Apaga dados vencidos (sessões, tokens, contadores, contas não confirmadas) |

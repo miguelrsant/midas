@@ -52,7 +52,8 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
+      # No CI o Postgres e o Mailpit vêm dos services acima, não do docker compose.
+      - run: pnpm exec vitest run
 
       - name: Auditoria de dependências (produção)
         run: pnpm audit --prod --audit-level high
@@ -66,7 +67,7 @@ jobs:
       - name: Testes de ponta a ponta
         run: |
           pnpm exec playwright install --with-deps chromium
-          pnpm test:e2e
+          pnpm exec playwright test
 
       - uses: actions/upload-artifact@v7
         if: failure()
