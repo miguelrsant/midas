@@ -2,6 +2,9 @@
 node_modules/
 .pnpm-store/
 
+# Vercel
+.vercel/
+
 # Next.js
 .next/
 out/
@@ -9,10 +12,16 @@ build/
 next-env.d.ts
 *.tsbuildinfo
 
+# Prisma Client gerado
+src/generated/
+
 # Ambiente e segredos: nunca versionar
 .env
 .env.*
 !.env.example
+# Valores falsos de localhost (Docker), seguros para versionar
+!.env.development
+!.env.test
 *.pem
 *.key
 
