@@ -189,6 +189,15 @@ test("13º no planejamento e Recebi", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Recebi: 13º salário, 1ª parcela", exact: true }),
   ).toHaveCount(0);
+
+  // A conta guardada abre de novo, do jeito que foi feita.
+  await page.goto("/calculadoras");
+  await page
+    .getByRole("link", { name: /Ver a conta/ })
+    .first()
+    .click();
+  await expect(page.getByRole("heading", { name: "1ª parcela, até 30 de novembro" })).toBeVisible();
+  await expectNoAxeViolations(page);
   expect(csp).toEqual([]);
 });
 

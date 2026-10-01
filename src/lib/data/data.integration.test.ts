@@ -15,7 +15,12 @@ import {
 } from "./categories";
 import { createEntry, deleteEntry, entryFacts, getEntry, updateEntry } from "./entries";
 import { loadOverview } from "./overview";
-import { addCalculationToPlan, listExpectedIncomes, receiveExpectedIncome } from "./planning";
+import {
+  addCalculationToPlan,
+  getCalculation,
+  listExpectedIncomes,
+  receiveExpectedIncome,
+} from "./planning";
 import {
   createRecurring,
   createRecurringWithinLimit,
@@ -322,6 +327,24 @@ describe("calculadoras e rendas previstas", () => {
     ).toBe(false);
     expect((await getEntry(a, entryId))?.categoryId).toBe("ferias");
     expect(await listExpectedIncomes(a)).toHaveLength(0);
+  });
+});
+
+describe("ver a conta", () => {
+  it("só a dona abre a conta guardada, decifrada", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const id = randomUUID();
+    const result = { headlineCents: 123, headlineNote: "x", sections: [], payments: [], notes: [] };
+    await addCalculationToPlan(
+      a,
+      id,
+      "VACATION",
+      { input: {}, result: result as never, engineVersion: 1 },
+      [],
+    );
+    expect((await getCalculation(a, id))?.data?.result.headlineCents).toBe(123);
+    expect(await getCalculation(b, id)).toBeNull();
   });
 });
 

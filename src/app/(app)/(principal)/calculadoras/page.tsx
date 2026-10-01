@@ -4,12 +4,12 @@ import Link from "next/link";
 
 import { Money } from "@/components/midas/money";
 import { buttonClasses } from "@/components/ui/button";
-import type { CalculatorKind } from "@/generated/prisma/client";
 import { requireUser } from "@/lib/auth/dal";
 import { listCalculations } from "@/lib/data/planning";
 import { formatShortDate } from "@/lib/dates";
 
 import { DeleteCalculation } from "./delete-calculation";
+import { CALCULATOR_NAMES } from "@/lib/labor/kinds";
 
 export const metadata: Metadata = { title: "Calculadoras" };
 
@@ -46,13 +46,7 @@ const CARDS: Array<{ href: Route; title: string; text: string; Icon: typeof Calc
   },
 ];
 
-const KIND_NAMES: Record<CalculatorKind, string> = {
-  VACATION: "Férias",
-  THIRTEENTH: "13º salário",
-  TERMINATION: "Rescisão",
-  NET_SALARY: "Salário líquido",
-  UNEMPLOYMENT: "Seguro-desemprego",
-};
+const KIND_NAMES = CALCULATOR_NAMES;
 
 /** "Quanto vou receber?" (docs/design-system/17-padroes-de-tela.md#calculadoras) */
 export default async function CalculatorsPage() {
@@ -106,6 +100,14 @@ export default async function CalculatorsPage() {
                   Feita em {formatShortDate(c.createdAt)}
                   {c.data ? ` · ${c.data.result.headlineNote}` : ""}
                 </span>
+                {c.data ? (
+                  <Link
+                    href={`/calculadoras/conta/${c.id}` as Route}
+                    className={buttonClasses({ variant: "secondary" })}
+                  >
+                    Ver a conta<span className="md-sr"> de {KIND_NAMES[c.kind]}</span>
+                  </Link>
+                ) : null}
                 <DeleteCalculation
                   id={c.id}
                   label={KIND_NAMES[c.kind].toLocaleLowerCase("pt-BR")}

@@ -310,7 +310,7 @@ Cinco cartões, um por calculadora, cada um com título, uma frase que explica o
 | Salário líquido | "Veja quanto do salário bruto cai na sua conta, depois do INSS e do Imposto de Renda." |
 | Seguro-desemprego | "Veja quantas parcelas e de quanto, se você foi dispensado ou dispensada sem justa causa." |
 
-Abaixo, "Suas últimas contas": só as contas que a pessoa **adicionou ao planejamento**, com o tipo, o valor principal, a data e "Apagar esta conta". A calculadora roda no aparelho; uma conta que não foi adicionada ao planejamento não é guardada.
+Abaixo, "Suas últimas contas": só as contas que a pessoa **adicionou ao planejamento**, com o tipo, o valor principal, a data, "Ver a conta" e "Apagar esta conta". "Ver a conta" (`/calculadoras/conta/[id]`) mostra o resultado guardado, linha por linha, do jeito que foi feito; para mudar algo, a pessoa refaz a conta. A calculadora roda no aparelho; uma conta que não foi adicionada ao planejamento não é guardada.
 
 ### Passo a passo
 
