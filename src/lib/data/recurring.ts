@@ -181,7 +181,7 @@ export interface RecurringInput {
   dayOfMonth: number;
   startMonth: MonthKey;
   repeat: RepeatMode;
-  /** Só no adiantamento: o fixo do salário (do mesmo dono, conferido aqui). */
+  /** Só no adiantamento: o fixo do salário (o banco recusa o de outra pessoa). */
   salaryId?: string | null;
 }
 

@@ -416,6 +416,24 @@ describe("salário dividido", () => {
     expect(await listRecurring(b)).toHaveLength(0);
   });
 
+  it("o banco recusa adiantamento ligado ao salário de outra conta", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const saved = await saveSalary(a, null, [plan[1]!], "Salário");
+    await expect(
+      createRecurring(b, {
+        kind: "income",
+        amountCents: 100,
+        categoryId: "salario",
+        description: null,
+        dayOfMonth: 20,
+        startMonth: current,
+        repeat: { mode: "monthly" },
+        salaryId: saved!.salary.id,
+      }),
+    ).rejects.toThrow();
+  });
+
   it("os dois contam no teto de fixos", async () => {
     const a = await makeUser("a");
     await createRecurringWithinLimit(

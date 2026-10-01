@@ -201,15 +201,16 @@ model Recurring {
   endMonth         String?     @db.Char(7)
   /// Próxima ocorrência ainda não anotada; nulo = terminou.
   nextOccurrenceOn DateTime?   @db.Date
-  /// Só no adiantamento: o fixo do salário a que ele pertence. Os dois se editam e se
-  /// apagam juntos; apagar o salário apaga o adiantamento.
+  /// Só no adiantamento: o fixo do salário a que ele pertence, sempre da mesma pessoa
+  /// (chave composta com userId). Apagar o salário apaga o adiantamento.
   salaryId         String?     @db.Uuid
-  salary           Recurring?  @relation("SalaryAdvance", fields: [salaryId], references: [id], onDelete: Cascade)
+  salary           Recurring?  @relation("SalaryAdvance", fields: [salaryId, userId], references: [id, userId], onDelete: Cascade)
   advances         Recurring[] @relation("SalaryAdvance")
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   entries          Entry[]
 
+  @@unique([id, userId])
   @@index([userId, nextOccurrenceOn])
   @@index([salaryId])
   @@map("recurring")
