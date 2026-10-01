@@ -177,6 +177,7 @@ Regras:
 
 **Pergunta:** "Onde eu gastei?"
 
+- **No mês atual, o que ainda vai chegar:** abaixo dos lançamentos, a seção "Ainda vai chegar em outubro" lista, em ordem de data, os fixos que ainda não chegaram ao dia (etiqueta "fixo", "dia 20") e as rendas previstas (etiqueta "prevista", "até 18 out" ou "era até"), com borda tracejada. Tocar abre o fixo ou o planejamento. Filtros e busca valem para ela também. No topo, embaixo de "Entrou · Saiu": "Ainda vai entrar + R$ … · Ainda vai sair − R$ …". O Início mostra o mesmo no cartão de saldo, no bloco "Até o fim de outubro".
 - Título "Lançamentos" e o mês no topo (troca de mês do `AppHeader`).
 - Linha de totais do mês: "Entrou + R$ 6.200,00 · Saiu − R$ 4.357,90".
 - Filtros em chips de escolha única: **Todos**, **Gastos**, **Rendas**. Busca por descrição (ícone `search`), com o texto "Buscar lançamento". A busca filtra na própria tela, sobre o mês aberto; o termo não vai para a URL nem para o servidor.

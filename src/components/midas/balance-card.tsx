@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Clock } from "lucide-react";
 
 import { cn } from "@/lib/cn";
 import { type MonthKey, monthName } from "@/lib/dates";
@@ -73,11 +73,6 @@ export function BalanceCard({
           </dt>
           <dd className="font-mono text-[1.1875rem]/[1.625rem] font-medium">
             <Money cents={incomeCents} kind="income" />
-            {hasPending && pending!.incomeCents > 0 ? (
-              <span className="block font-sans text-caption font-normal text-tinta-suave">
-                deve entrar mais <Money cents={pending!.incomeCents} />
-              </span>
-            ) : null}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-2 @[340px]:block">
@@ -87,11 +82,6 @@ export function BalanceCard({
           </dt>
           <dd className="font-mono text-[1.1875rem]/[1.625rem] font-medium">
             <Money cents={expenseCents} kind="expense" />
-            {hasPending && pending!.expenseCents > 0 ? (
-              <span className="block font-sans text-caption font-normal text-tinta-suave">
-                deve sair mais <Money cents={pending!.expenseCents} />
-              </span>
-            ) : null}
           </dd>
         </div>
       </dl>
@@ -103,13 +93,47 @@ export function BalanceCard({
         </p>
       )}
       {hasPending ? (
-        <p className="mt-1 text-body text-tinta">
-          {estimate >= 0
-            ? "Até o fim do mês, devem sobrar cerca de "
-            : "Até o fim do mês, podem faltar cerca de "}
-          <span className="md-valor">{formatWholeMoney(Math.abs(estimate))}</span>
-          <span className="md-oculto">R$&nbsp;•••••</span>.
-        </p>
+        <div
+          role="group"
+          aria-labelledby="saldo-ate-o-fim"
+          className="mt-4 rounded-md bg-superficie-funda/70 p-4"
+        >
+          <h3 id="saldo-ate-o-fim" className="md-eyebrow">
+            Até o fim de {monthName(month)}
+          </h3>
+          <dl className="mt-2 flex flex-col gap-2">
+            {pending!.incomeCents > 0 ? (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="flex items-center gap-2 text-body text-tinta">
+                  <Clock aria-hidden="true" className="size-5 text-renda" strokeWidth={1.75} />
+                  Ainda vai entrar
+                </dt>
+                <dd className="font-mono text-amount">
+                  <Money cents={pending!.incomeCents} kind="income" />
+                </dd>
+              </div>
+            ) : null}
+            {pending!.expenseCents > 0 ? (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="flex items-center gap-2 text-body text-tinta">
+                  <Clock aria-hidden="true" className="size-5 text-gasto" strokeWidth={1.75} />
+                  Ainda vai sair
+                </dt>
+                <dd className="font-mono text-amount">
+                  <Money cents={pending!.expenseCents} kind="expense" />
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          <p className="mt-3 border-t border-veio pt-3 text-body font-semibold text-tinta">
+            {estimate >= 0 ? "Deve sobrar cerca de " : "Pode faltar cerca de "}
+            <span className="md-valor">{formatWholeMoney(Math.abs(estimate))}</span>
+            <span className="md-oculto">R$&nbsp;•••••</span>.
+          </p>
+          <p className="mt-1 text-caption text-tinta-suave">
+            Conta os fixos que ainda não chegaram ao dia e as rendas previstas.
+          </p>
+        </div>
       ) : null}
     </section>
   );
