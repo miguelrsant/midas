@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type Category, findCategory } from "@/lib/categories";
 import { type DateOnly, formatDayHeading, formatEntryDate } from "@/lib/dates";
 import type { EntryView } from "@/lib/data/entries";
+import type { Upcoming } from "@/lib/finance/upcoming";
 
 import { CategoryIcon } from "./category-icon";
 import { Highlightable } from "./golden-touch";
@@ -126,10 +127,13 @@ export function DayGroups({
   entries,
   categories,
   today,
+  backTo,
 }: {
   entries: readonly RowEntry[];
   categories: readonly Category[];
   today: DateOnly;
+  /** Tela para onde o "Voltar" da edição leva. */
+  backTo?: string;
 }) {
   const days = new Map<DateOnly, RowEntry[]>();
   for (const entry of entries) {
@@ -168,6 +172,7 @@ export function DayGroups({
                   categories={categories}
                   today={today}
                   hideDate
+                  backTo={backTo}
                 />
               ))}
             </ul>
@@ -176,4 +181,29 @@ export function DayGroups({
       })}
     </div>
   );
+}
+
+/**
+ * O que ainda vai cair no mês, como linhas da lista (etiqueta "vai cair"). Prevista
+ * atrasada fica em "Hoje", com a etiqueta "atrasada".
+ */
+export function upcomingRows(items: readonly Upcoming[], today: DateOnly): RowEntry[] {
+  return items.map((u) => ({
+    id: u.key,
+    kind: u.kind,
+    amountCents: u.amountCents,
+    categoryId: u.categoryId,
+    description: u.title,
+    date: u.late ? today : u.date,
+    recurringId: u.source === "fixo" ? u.id : null,
+    future: {
+      href: u.source === "fixo" ? `/planejamento/fixos/${u.id}` : "/planejamento",
+      late: u.late,
+    },
+  }));
+}
+
+/** Lançamentos e o que vai cair, do dia mais novo para o mais velho (no mesmo dia, o real antes). */
+export function mergeByDay(real: readonly RowEntry[], future: readonly RowEntry[]): RowEntry[] {
+  return [...real, ...future].sort((a, b) => b.date.localeCompare(a.date));
 }

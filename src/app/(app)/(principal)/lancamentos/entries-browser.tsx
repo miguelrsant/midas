@@ -4,7 +4,12 @@ import { Search } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
 import { ChoiceChips } from "@/components/midas/choices";
-import { DayGroups, type RowEntry } from "@/components/midas/transaction-list";
+import {
+  DayGroups,
+  mergeByDay,
+  type RowEntry,
+  upcomingRows,
+} from "@/components/midas/transaction-list";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { type Category, findCategory } from "@/lib/categories";
@@ -131,23 +136,7 @@ export function EntriesBrowser({
       </div>
       {visible.length + visibleUpcoming.length > 0 ? (
         <DayGroups
-          entries={[
-            ...visible,
-            ...visibleUpcoming.map((u): RowEntry => ({
-              id: u.key,
-              kind: u.kind,
-              amountCents: u.amountCents,
-              categoryId: u.categoryId,
-              description: u.title,
-              // Prevista atrasada fica em "Hoje", com a etiqueta "atrasada".
-              date: u.late ? today : u.date,
-              recurringId: u.source === "fixo" ? u.id : null,
-              future: {
-                href: u.source === "fixo" ? `/planejamento/fixos/${u.id}` : "/planejamento",
-                late: u.late,
-              },
-            })),
-          ].sort((a, b) => b.date.localeCompare(a.date))}
+          entries={mergeByDay(visible, upcomingRows(visibleUpcoming, today))}
           categories={categories}
           today={today}
         />

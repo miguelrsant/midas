@@ -8,7 +8,7 @@ import { CategoryDonut } from "@/components/midas/category-donut";
 import { DiscreetToggle } from "@/components/midas/discreet-mode";
 import { MonthChart } from "@/components/midas/month-chart";
 import { MonthSwitcher } from "@/components/midas/month-switcher";
-import { TransactionList } from "@/components/midas/transaction-list";
+import { DayGroups, mergeByDay, upcomingRows } from "@/components/midas/transaction-list";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
@@ -31,6 +31,8 @@ import {
   summarySentence,
 } from "@/lib/finance/phrases";
 import { monthPoints } from "@/lib/finance/projection";
+import { upcomingThisMonth } from "@/lib/finance/upcoming";
+import { paymentLabel } from "@/lib/labor/types";
 import { longDate, salutation } from "@/lib/greeting";
 import { formatMoney, formatWholeMoney, roundToHundredReais } from "@/lib/money";
 import { MaskedText } from "@/components/midas/masked-text";
@@ -205,6 +207,14 @@ export default async function DashboardPage({
   const showChart = points.some((p) => p.incomeCents + p.expenseCents > 0);
   const here = isCurrent ? "/" : `/?mes=${month}`;
   const monthExpenses = totalsByCategory(overview.facts, "expense", month);
+  // Como em Lançamentos: no mês atual, também o que ainda vai cair.
+  const upcoming = isCurrent
+    ? upcomingThisMonth(
+        recurrings,
+        expected.map((e) => ({ ...e, label: paymentLabel(e.labelKey) })),
+        today,
+      )
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -258,40 +268,6 @@ export default async function DashboardPage({
         </Button>
       </div>
 
-      <section aria-labelledby="ultimos" className="rounded-lg bg-superficie p-4 shadow-cartao">
-        <div className="flex items-center justify-between gap-2 px-2 pb-2">
-          <h2 id="ultimos" className="md-eyebrow">
-            Últimos lançamentos
-          </h2>
-          <Link
-            href={(isCurrent ? "/lancamentos" : `/lancamentos?mes=${month}`) as Route}
-            className={buttonClasses({ variant: "ghost" })}
-          >
-            Ver todos
-          </Link>
-        </div>
-        {entries.length > 0 ? (
-          <TransactionList entries={entries} categories={categories} today={today} backTo={here} />
-        ) : (
-          <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
-            <p className="font-display text-heading text-tinta">
-              {isCurrent ? (
-                <>
-                  {monthLabel(month)} começa <em className="md-acento">aqui</em>.
-                </>
-              ) : (
-                `${monthLabel(month)} ficou em branco.`
-              )}
-            </p>
-            <p className="max-w-[34ch] text-tinta-suave">
-              {isCurrent
-                ? "Anote o primeiro gasto do mês e o Midas passa a mostrar para onde vai o seu dinheiro."
-                : `Se lembrar de algum gasto ou renda de ${monthName(month)}, anote e o gráfico do ano fica completo.`}
-            </p>
-          </div>
-        )}
-      </section>
-
       {showChart ? (
         <MonthChart
           headingId="grafico-inicio"
@@ -313,6 +289,45 @@ export default async function DashboardPage({
           </p>
         </section>
       )}
+
+      <section aria-labelledby="ultimos">
+        <div className="flex items-center justify-between gap-2 px-2 pb-2">
+          <h2 id="ultimos" className="md-eyebrow">
+            Lançamentos de {monthName(month)}
+          </h2>
+          <Link
+            href={(isCurrent ? "/lancamentos" : `/lancamentos?mes=${month}`) as Route}
+            className={buttonClasses({ variant: "ghost" })}
+          >
+            Ver todos
+          </Link>
+        </div>
+        {entries.length + upcoming.length > 0 ? (
+          <DayGroups
+            entries={mergeByDay(entries, upcomingRows(upcoming, today))}
+            categories={categories}
+            today={today}
+            backTo={here}
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-2 rounded-lg bg-superficie px-4 py-6 text-center shadow-cartao">
+            <p className="font-display text-heading text-tinta">
+              {isCurrent ? (
+                <>
+                  {monthLabel(month)} começa <em className="md-acento">aqui</em>.
+                </>
+              ) : (
+                `${monthLabel(month)} ficou em branco.`
+              )}
+            </p>
+            <p className="max-w-[34ch] text-tinta-suave">
+              {isCurrent
+                ? "Anote o primeiro gasto do mês e o Midas passa a mostrar para onde vai o seu dinheiro."
+                : `Se lembrar de algum gasto ou renda de ${monthName(month)}, anote e o gráfico do ano fica completo.`}
+            </p>
+          </div>
+        )}
+      </section>
 
       {monthExpenses.size > 0 ? (
         <CategoryDonut

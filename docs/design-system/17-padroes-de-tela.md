@@ -117,8 +117,8 @@ Ordem dos blocos:
 3. [Achievement](componentes/achievement.md), só nos primeiros dias do mês seguinte a um mês com sobra. Nesses dias, a conquista fica com o mármore, e o cartão de saldo fica liso.
 4. [BalanceCard](componentes/balance-card.md).
 5. Botão primário grande **"Adicionar gasto"** e, abaixo, o secundário **"Adicionar renda"**. No celular, os dois ocupam a largura toda.
-6. Últimos lançamentos: até 5 [TransactionRow](componentes/transaction-row.md) e o link "Ver todos".
-7. [IncomeExpenseChart](componentes/income-expense-chart.md) do mês atual (o real até hoje mais o que ainda deve entrar e sair) e dos cinco meses seguintes, projetados.
+6. [IncomeExpenseChart](componentes/income-expense-chart.md) do mês atual (o real até hoje mais o que ainda deve entrar e sair) e dos cinco meses seguintes, projetados. Vem antes da lista: é a primeira resposta para "como vai o meu dinheiro".
+7. "Lançamentos de outubro": os 5 últimos lançamentos e, no mês atual, o que ainda vai cair, separados por dia, com a etiqueta "vai cair", igual à tela de Lançamentos; e o link "Ver todos".
 8. [CategoryDonut](componentes/category-donut.md) com os gastos do mês escolhido por categoria, quando houver gasto, e o link "Ver o resumo de setembro".
 
 Estados:
