@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Achievement, shouldShowAchievement } from "@/components/midas/achievement";
 import { BalanceCard } from "@/components/midas/balance-card";
+import { CategoryDonut } from "@/components/midas/category-donut";
 import { DiscreetToggle } from "@/components/midas/discreet-mode";
 import { MonthChart } from "@/components/midas/month-chart";
 import { MonthSwitcher } from "@/components/midas/month-switcher";
@@ -18,7 +19,8 @@ import { listLimits } from "@/lib/data/limits";
 import { resolveMonth } from "@/lib/data/months";
 import { loadContext, loadOverview } from "@/lib/data/overview";
 import { lastSummaryOpened } from "@/lib/data/planning";
-import { addMonths, monthName, monthOf, parseDate } from "@/lib/dates";
+import { addMonths, monthName, parseDate } from "@/lib/dates";
+import { totalsByCategory } from "@/lib/finance/breakdown";
 import { pickLimitNotice } from "@/lib/finance/limits";
 import {
   assessMonth,
@@ -108,12 +110,7 @@ export default async function DashboardPage({
   let notice: ReactNode = null;
   if (isCurrent) {
     const limits = await listLimits(user.id);
-    const spent = new Map<string, number>();
-    for (const e of overview.facts) {
-      if (e.kind === "expense" && monthOf(e.date) === current) {
-        spent.set(e.categoryId, (spent.get(e.categoryId) ?? 0) + e.amountCents);
-      }
-    }
+    const spent = totalsByCategory(overview.facts, "expense", current);
     const limitPick = pickLimitNotice(
       [...limits.entries()].map(([categoryId, limitCents]) => ({
         categoryId,
@@ -198,6 +195,7 @@ export default async function DashboardPage({
   const points = monthPoints(projection, chartMonths, today);
   const showChart = points.some((p) => p.incomeCents + p.expenseCents > 0);
   const here = isCurrent ? "/" : `/?mes=${month}`;
+  const monthExpenses = totalsByCategory(overview.facts, "expense", month);
 
   return (
     <div className="flex flex-col gap-6">
@@ -296,6 +294,23 @@ export default async function DashboardPage({
           </p>
         </section>
       )}
+
+      {monthExpenses.size > 0 ? (
+        <CategoryDonut
+          headingId="categorias-inicio"
+          totals={monthExpenses}
+          categories={categories}
+          month={month}
+          footer={
+            <Link
+              href={`/resumo/${month}` as Route}
+              className={buttonClasses({ variant: "ghost" })}
+            >
+              Ver o resumo de {monthName(month)}
+            </Link>
+          }
+        />
+      ) : null}
     </div>
   );
 }

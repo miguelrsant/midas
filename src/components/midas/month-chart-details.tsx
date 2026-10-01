@@ -1,12 +1,12 @@
 "use client";
 
-import { Collapsible } from "radix-ui";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { cn } from "@/lib/cn";
 import { monthAbbr } from "@/lib/dates";
 
 import type { ChartMonth, ChartSide } from "./month-chart";
+import { TableToggle } from "./table-toggle";
 
 /** "entrou R$ 6.200 (fixa R$ 5.400 · variável R$ 800); deve entrar mais R$ 300" */
 function spoken(verb: "entrou" | "saiu", s: ChartSide) {
@@ -39,7 +39,6 @@ export function MonthChartDetails({
   firstProjected: number;
 }) {
   const [active, setActive] = useState<number | null>(null);
-  const tableId = useId();
   const cols = `grid-cols-${Math.min(12, Math.max(1, months.length))}`;
   return (
     <>
@@ -103,56 +102,47 @@ export function MonthChartDetails({
           </span>
         ))}
       </div>
-      <Collapsible.Root className="mt-3">
-        <Collapsible.Trigger
-          aria-controls={tableId}
-          className="inline-flex min-h-11 items-center rounded-md px-3 text-label text-ouro-texto hover:bg-superficie-funda focus-visible:outline-2 focus-visible:outline-foco data-[state=closed]:[&>.aberto]:hidden data-[state=open]:[&>.fechado]:hidden"
-        >
-          <span className="fechado">Ver em tabela</span>
-          <span className="aberto">Esconder tabela</span>
-        </Collapsible.Trigger>
-        <Collapsible.Content id={tableId}>
-          <table className="mt-2 w-full text-left text-caption">
-            <caption className="md-sr">Renda e gastos por mês</caption>
-            <thead>
-              <tr className="border-b border-veio text-tinta-suave">
-                <th scope="col" className="py-2 font-semibold">
-                  Mês
+      <TableToggle>
+        <table className="mt-2 w-full text-left text-caption">
+          <caption className="md-sr">Renda e gastos por mês</caption>
+          <thead>
+            <tr className="border-b border-veio text-tinta-suave">
+              <th scope="col" className="py-2 font-semibold">
+                Mês
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Entrou
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Saiu
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Resultado
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {months.map((m) => (
+              <tr key={m.month} className="border-b border-veio last:border-b-0">
+                <th scope="row" className="py-2 align-top font-normal text-tinta">
+                  {m.label}
                 </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Entrou
-                </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Saiu
-                </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Resultado
-                </th>
+                <td className="py-2 text-right align-top tabular-nums">
+                  <span className="block whitespace-nowrap text-renda">{m.income.total}</span>
+                  <Breakdown s={m.income} verb="entrar" />
+                </td>
+                <td className="py-2 text-right align-top tabular-nums">
+                  <span className="block whitespace-nowrap text-gasto">{m.expense.total}</span>
+                  <Breakdown s={m.expense} verb="sair" />
+                </td>
+                <td className="py-2 text-right align-top whitespace-nowrap text-tinta tabular-nums">
+                  {m.balance}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {months.map((m) => (
-                <tr key={m.month} className="border-b border-veio last:border-b-0">
-                  <th scope="row" className="py-2 align-top font-normal text-tinta">
-                    {m.label}
-                  </th>
-                  <td className="py-2 text-right align-top tabular-nums">
-                    <span className="block whitespace-nowrap text-renda">{m.income.total}</span>
-                    <Breakdown s={m.income} verb="entrar" />
-                  </td>
-                  <td className="py-2 text-right align-top tabular-nums">
-                    <span className="block whitespace-nowrap text-gasto">{m.expense.total}</span>
-                    <Breakdown s={m.expense} verb="sair" />
-                  </td>
-                  <td className="py-2 text-right align-top whitespace-nowrap text-tinta tabular-nums">
-                    {m.balance}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Collapsible.Content>
-      </Collapsible.Root>
+            ))}
+          </tbody>
+        </table>
+      </TableToggle>
     </>
   );
 }

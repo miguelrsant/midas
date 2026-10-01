@@ -33,7 +33,8 @@ Usamos shadcn/ui onde ele não esbarra no design system. Ficam **nativos**, como
 | [TransactionRow](transaction-row.md) | Linha de um gasto ou renda nas listas. |
 | [IncomeExpenseChart](income-expense-chart.md) | Barras de renda e gastos por mês, com a projeção. |
 | [Achievement](achievement.md) | Conquista do mês, com louros, quando o mês fecha positivo. |
-| [Bar](bar.md) | Barra fina de proporção (saldo, limites, categorias, passos). |
+| [CategoryDonut](category-donut.md) | Rosca dos gastos do mês por categoria, com a legenda ao lado. |
+| [Bar](bar.md) | Barra fina de proporção (saldo, limites, passos). |
 
 ## Planejamento e calculadoras
 

@@ -11,6 +11,7 @@ import { findCategory } from "@/lib/categories";
 import { listLimits } from "@/lib/data/limits";
 import { loadOverview } from "@/lib/data/overview";
 import { addMonths, monthOf, todayInSaoPaulo } from "@/lib/dates";
+import { totalsByCategory } from "@/lib/finance/breakdown";
 import { chartSummary, monthLabel, projectionNote } from "@/lib/finance/phrases";
 import { monthPoints } from "@/lib/finance/projection";
 import { paymentLabel } from "@/lib/labor/types";
@@ -45,11 +46,7 @@ export default async function PlanningPage() {
         : "Anote sua renda para ver quanto deve sobrar.";
 
   const limits = await listLimits(user.id);
-  const spent = new Map<string, number>();
-  for (const f of overview.facts) {
-    if (f.kind === "expense" && monthOf(f.date) === current)
-      spent.set(f.categoryId, (spent.get(f.categoryId) ?? 0) + f.amountCents);
-  }
+  const spent = totalsByCategory(overview.facts, "expense", current);
   const note = projectionNote(projection.reference, {
     hasFixed: recurrings.length > 0,
     hasExpected: expected.length > 0,

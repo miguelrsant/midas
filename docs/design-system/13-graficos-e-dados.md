@@ -5,8 +5,8 @@ Um gráfico do Midas existe para responder uma pergunta, e a resposta vem **escr
 ## Princípios
 
 1. **Título é conclusão.** "Dezembro deve fechar com R$ 6.300 de sobra", não "Renda x gastos 2026". O nome do gráfico vai no sobretítulo.
-2. **Poucos tipos, sempre os mesmos.** Barras verticais para meses, barras horizontais para categorias. Nada além disso sem um bom motivo.
-3. **Duas cores de dado.** `grafico-renda` e `grafico-gasto`, mais `grafico-projecao` para marcar o futuro. Categorias não ganham cores.
+2. **Poucos tipos, sempre os mesmos.** Barras verticais para meses, uma rosca para os gastos do mês por categoria, barras horizontais para progresso e limites. Nada além disso sem um bom motivo.
+3. **Duas cores de dado nos meses.** `grafico-renda` e `grafico-gasto`, mais `grafico-projecao` para marcar o futuro. Só a rosca por categoria usa a paleta de fatias (`grafico-cat-1` a `grafico-cat-5` e `grafico-cat-outros`), pela posição: categorias não têm cor fixa.
 4. **Projeção nunca parece fato.** Meses projetados têm preenchimento claro, contorno tracejado, rótulo "Projeção" e uma nota que diz de onde vem a estimativa.
 5. **Fixa embaixo, variável em cima.** Cada barra de mês empilha duas camadas da mesma série: a parte fixa (fixos e rendas previstas) cheia, embaixo, e a variável hachurada, em cima. A hachura é textura, não cor nova.
 6. **Tudo também em texto.** Título-conclusão, `aria-label` com o resumo e tabela com os mesmos dados.
@@ -17,18 +17,22 @@ Um gráfico do Midas existe para responder uma pergunta, e a resposta vem **escr
 | Pergunta | Gráfico | Onde | Componente |
 | --- | --- | --- | --- |
 | "Como vão os próximos meses?" | Barras verticais de renda e gasto por mês, do mês atual em diante, com a parte fixa e a variável empilhadas e os meses seguintes projetados | Painel, Planejamento | [IncomeExpenseChart](componentes/income-expense-chart.md) |
-| "Onde eu gastei?" | Barras horizontais por categoria, da maior para a menor | Resumo do mês, Lançamentos | Barras por categoria (abaixo) |
+| "Onde eu gastei?" | Rosca por categoria, com a legenda ao lado | Início (mês escolhido), Resumo do mês | [CategoryDonut](componentes/category-donut.md) |
 | "Quanto já usei do que entrou?" | Barra de progresso simples | Cartão de saldo | [BalanceCard](componentes/balance-card.md) |
 | "Quanto falta para o limite?" | Barra de progresso por categoria | Planejamento | Barra de limite (abaixo) |
 
-### Barras por categoria
+### Rosca por categoria
 
-- Uma linha por categoria: ícone e nome à esquerda, valor em `amount` à direita, barra embaixo ocupando a largura.
-- Barra em `gasto` (ou `renda`, na lista de rendas) sobre trilha `superficie-funda`, 8px de altura, cantos `radius-pill`. O comprimento é proporcional à maior categoria do mês (que ganha a barra cheia).
-- Ordem: do maior valor para o menor. "Outros" vai sempre por último, mesmo se for grande.
-- Mostre as cinco maiores e um botão "Ver todas as categorias".
-- Porcentagem do total em `caption` ao lado do valor: "38%".
+Decisão de 2026-10-01: a pessoa pediu para ver "quanto foi em transporte, em comida…" num desenho de pizza. A rosca substitui as barras por categoria, com regras que compensam o ponto fraco dela (ângulos são difíceis de comparar):
+
+- **Até seis fatias.** Com até 6 categorias no mês, todas aparecem; com mais, as cinco maiores e "Outros", que junta as menores e a categoria Outros da pessoa. "Outros" vai sempre por último, em `grafico-cat-outros`.
+- **Da maior para a menor**, começando no topo, em sentido horário. A cor vai pela posição: a maior é sempre `grafico-cat-1`. Assim, seis cores bastam para qualquer número de categorias, e a pessoa nunca precisa decorar "a cor do Mercado".
+- **Legenda obrigatória ao lado** (embaixo, no celular), na mesma ordem: amostra de cor, ícone, nome, valor e porcentagem. **A legenda é a informação**; a rosca é o desenho. Nunca se lê uma fatia só pela cor.
+- **2px de espaço** entre as fatias, na cor da superfície, para separar vizinhas mesmo para quem não distingue as cores.
+- **Total no centro**: "Saiu" e o valor, com o modo discreto valendo.
+- Porcentagens arredondadas para baixo ("38%"). Uma fatia só fecha o círculo.
 - Título-conclusão: "Mercado levou a maior parte de setembro: R$ 1.230."
+- "Ver em tabela" lista **todas** as categorias, inclusive as que foram juntadas em "Outros".
 
 ### Barra de limite por categoria
 
@@ -51,6 +55,7 @@ Um gráfico do Midas existe para responder uma pergunta, e a resposta vem **escr
 | Grade | `veio`, 1px, só linhas horizontais | |
 | Eixos e legenda | `tinta-suave`, `caption` (14px) | |
 | Coluna em foco | faixa `superficie-funda` atrás do par de barras | |
+| Fatias da rosca | `grafico-cat-1` a `grafico-cat-5` pela posição, `grafico-cat-outros` (= `borda`) para "Outros"; trilha `superficie-funda` | Cada tema tem os seus tons, conferidos juntos: 3:1 ou mais sobre `superficie`, separação para daltonismo entre vizinhas acima do piso, com espaço e legenda |
 
 Renda fica sempre **à esquerda** do gasto no mesmo mês, e a legenda segue a mesma ordem: "Renda", "Gastos", "Fixa" (quadrado cheio), "Variável" (quadrado hachurado, classe `md-hachura`) e "Projeção".
 
@@ -138,7 +143,7 @@ Todo gráfico tem um botão "Ver em tabela" (`md-btn-ghost`, com `aria-expanded`
 
 ## Implementação
 
-- **SVG próprio, desenhado no servidor**, para os gráficos de meses (sem biblioteca de gráficos: nada a baixar, sem JavaScript para desenhar e sem conflito com a política de segurança de conteúdo). As barras por categoria e as barras de progresso usam o componente [Bar](componentes/bar.md).
+- **SVG próprio, desenhado no servidor**, para os gráficos de meses (sem biblioteca de gráficos: nada a baixar, sem JavaScript para desenhar e sem conflito com a política de segurança de conteúdo). A rosca por categoria também é SVG desenhado no servidor (arcos com `stroke-dasharray` e `stroke-dashoffset` em atributo, num círculo de perímetro 100). As barras de progresso usam o componente [Bar](componentes/bar.md).
 - **Nada de `style=""`**: a CSP do Midas bloqueia estilo em linha vindo do servidor. Larguras e alturas saem de classes prontas (`w-[37%]`, geradas no `globals.css`) ou de atributos do SVG (`width`, `height`, `y`).
 - As marcas do eixo saem de `niceTicks()` (4 ou 5 valores "redondos" a partir de zero), em `src/lib/finance/chart.ts`.
 - Cores sempre por variável CSS (`fill="var(--grafico-renda)"`), para trocarem com o tema. Nunca hexadecimais no componente.
@@ -150,9 +155,9 @@ Todo gráfico tem um botão "Ver em tabela" (`md-btn-ghost`, com `aria-expanded`
 
 | Evite | Por quê | Use |
 | --- | --- | --- |
-| Pizza e rosca | Ângulos são difíceis de comparar, e muitas fatias exigem muitas cores. | Barras horizontais por categoria. |
+| Pizza cheia, ou rosca com mais de seis fatias, sem legenda ou sem espaço entre fatias | Ângulos são difíceis de comparar, e muitas fatias exigem muitas cores. | A [rosca por categoria](#rosca-por-categoria), com as regras dela. |
 | Gráfico de linha para renda e gasto mensais | Sugere continuidade entre meses que são totais separados. | Barras por mês. |
-| Barras empilhadas com várias categorias | Só a primeira camada tem base comum; as outras não se comparam. | Barras por categoria. A única pilha permitida é a de **duas camadas da mesma série** (fixa embaixo, variável em cima) no gráfico de meses: a parte fixa, que é a que a pessoa planeja, fica com a base comum. |
+| Barras empilhadas com várias categorias | Só a primeira camada tem base comum; as outras não se comparam. | A rosca por categoria. A única pilha permitida é a de **duas camadas da mesma série** (fixa embaixo, variável em cima) no gráfico de meses: a parte fixa, que é a que a pessoa planeja, fica com a base comum. |
 | 3D, sombras, gradientes nas barras | Distorcem valores e poluem. | Barras chapadas. |
 | Dois eixos de valores | Induzem a comparações falsas. | Dois gráficos. |
 | Eixo que não começa em zero | Exagera diferenças. | Eixo a partir de zero. |

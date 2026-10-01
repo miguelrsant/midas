@@ -119,6 +119,7 @@ Ordem dos blocos:
 5. Botão primário grande **"Adicionar gasto"** e, abaixo, o secundário **"Adicionar renda"**. No celular, os dois ocupam a largura toda.
 6. Últimos lançamentos: até 5 [TransactionRow](componentes/transaction-row.md) e o link "Ver todos".
 7. [IncomeExpenseChart](componentes/income-expense-chart.md) do mês atual (o real até hoje mais o que ainda deve entrar e sair) e dos cinco meses seguintes, projetados.
+8. [CategoryDonut](componentes/category-donut.md) com os gastos do mês escolhido por categoria, quando houver gasto, e o link "Ver o resumo de setembro".
 
 Estados:
 
@@ -199,7 +200,7 @@ Regras:
 1. Título display: "Setembro de 2026".
 2. Se o mês fechou com sobra: a [conquista](componentes/achievement.md). Se não, o resumo em fatos: "Setembro fechou com R$ 210 a menos. Quer ver onde dá para ajustar?"
 3. Entrou, saiu e sobrou (ou faltou), no formato do cartão de saldo, sem mármore.
-4. Gastos por categoria: barras horizontais da maior para a menor, com valor e porcentagem ([Gráficos e dados](13-graficos-e-dados.md#barras-por-categoria)). Título-conclusão: "Mercado levou a maior parte de setembro: R$ 1.230."
+4. Gastos por categoria: [rosca](componentes/category-donut.md) com até seis fatias e a legenda com valor e porcentagem ([Gráficos e dados](13-graficos-e-dados.md#rosca-por-categoria)). Título-conclusão: "Mercado levou a maior parte de setembro: R$ 1.230."
 5. Comparação com o mês anterior, em frases: "Você gastou R$ 180 a menos com restaurante do que em agosto."
 6. Os cinco maiores gastos do mês.
 
