@@ -11,6 +11,7 @@ import { TaskHeader } from "@/components/midas/task-header";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { runAction, signInHref } from "@/lib/actions/client";
+import { HOME } from "@/lib/navigation";
 import { LaborInputError } from "@/lib/labor/errors";
 import type { LaborResult } from "@/lib/labor/types";
 
@@ -75,7 +76,6 @@ export function CalculatorWizard<A extends Record<string, unknown>, I>({
   const [index, setIndex] = useState(0); // steps.length = revisão, +1 = resultado
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const [added, setAdded] = useState(false);
   const [calcId, setCalcId] = useState(() => crypto.randomUUID());
   const [serverError, setServerError] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -99,7 +99,6 @@ export function CalculatorWizard<A extends Record<string, unknown>, I>({
       setDraft(draftKey, next);
       return next;
     });
-    setAdded(false);
   };
 
   function next() {
@@ -132,14 +131,14 @@ export function CalculatorWizard<A extends Record<string, unknown>, I>({
     const response = await runAction(() =>
       addToPlanAction({ id: calcId, kind, input: toInput(answers) }),
     );
-    setBusy(false);
     if (!response.ok) {
+      setBusy(false);
       if (response.code === "session_expired") return router.push(signInHref() as Route);
       setServerError(response.message);
       return;
     }
-    setAdded(true);
     announce(response.data.message);
+    router.push(HOME);
   }
 
   const onBack = () => {
@@ -224,15 +223,7 @@ export function CalculatorWizard<A extends Record<string, unknown>, I>({
                   {serverError}
                 </Notice>
               ) : null}
-              {added ? (
-                <Notice tone="info" role="status">
-                  <strong>Pronto.</strong> Veja no{" "}
-                  <Link href="/planejamento" className="md-link">
-                    Planejamento
-                  </Link>
-                  .
-                </Notice>
-              ) : kind === "NET_SALARY" || result.payments.length > 0 ? (
+              {kind === "NET_SALARY" || result.payments.length > 0 ? (
                 <Button
                   size="lg"
                   fullWidth

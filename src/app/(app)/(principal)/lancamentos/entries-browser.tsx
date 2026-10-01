@@ -4,11 +4,17 @@ import { Search } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
 import { ChoiceChips } from "@/components/midas/choices";
-import { DayGroups, type RowEntry } from "@/components/midas/transaction-list";
+import {
+  DayGroups,
+  mergeByDay,
+  type RowEntry,
+  upcomingRows,
+} from "@/components/midas/transaction-list";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { type Category, findCategory } from "@/lib/categories";
 import type { DateOnly } from "@/lib/dates";
+import type { Upcoming } from "@/lib/finance/upcoming";
 
 type Filter = "todos" | "gastos" | "rendas";
 
@@ -21,12 +27,15 @@ const normalize = (text: string) =>
  */
 export function EntriesBrowser({
   entries,
+  upcoming,
   categories,
   today,
   monthName,
   isCurrent,
 }: {
   entries: RowEntry[];
+  /** Mês atual: fixos e rendas previstas que ainda vão chegar. */
+  upcoming: Upcoming[];
   categories: Category[];
   today: DateOnly;
   monthName: string;
@@ -36,18 +45,21 @@ export function EntriesBrowser({
   const [query, setQuery] = useState("");
   const searchId = useId();
 
-  const visible = useMemo(() => {
+  const matches = useMemo(() => {
     const q = normalize(query.trim());
-    return entries.filter((e) => {
+    return (e: { kind: string; categoryId: string; text: string | null }) => {
       if (filter === "gastos" && e.kind !== "expense") return false;
       if (filter === "rendas" && e.kind !== "income") return false;
       if (!q) return true;
-      const text = `${e.description ?? ""} ${findCategory(categories, e.categoryId).name}`;
-      return normalize(text).includes(q);
-    });
-  }, [entries, filter, query, categories]);
+      return normalize(`${e.text ?? ""} ${findCategory(categories, e.categoryId).name}`).includes(
+        q,
+      );
+    };
+  }, [filter, query, categories]);
+  const visible = entries.filter((e) => matches({ ...e, text: e.description }));
+  const visibleUpcoming = upcoming.filter((u) => matches({ ...u, text: u.title }));
 
-  if (entries.length === 0) {
+  if (entries.length === 0 && upcoming.length === 0) {
     return (
       <EmptyState
         title={
@@ -101,7 +113,7 @@ export function EntriesBrowser({
         </span>
       </div>
       <div role="status">
-        {visible.length === 0 ? (
+        {visible.length === 0 && visibleUpcoming.length === 0 ? (
           <div className="flex flex-col items-start gap-3 py-4">
             <p className="text-body text-tinta">
               {shownQuery
@@ -122,8 +134,12 @@ export function EntriesBrowser({
           </div>
         ) : null}
       </div>
-      {visible.length > 0 ? (
-        <DayGroups entries={visible} categories={categories} today={today} />
+      {visible.length + visibleUpcoming.length > 0 ? (
+        <DayGroups
+          entries={mergeByDay(visible, upcomingRows(visibleUpcoming, today))}
+          categories={categories}
+          today={today}
+        />
       ) : null}
     </div>
   );

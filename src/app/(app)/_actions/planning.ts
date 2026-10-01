@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { refresh } from "next/cache";
 import { z } from "zod";
 
@@ -12,8 +14,9 @@ import { dismissExpectedIncome, receiveExpectedIncome } from "@/lib/data/plannin
 import {
   createRecurringWithinLimit,
   deleteRecurring,
-  getRecurring,
+  getSalaryGroup,
   type RecurringInput,
+  saveSalary,
   updateRecurring,
 } from "@/lib/data/recurring";
 import {
@@ -30,8 +33,11 @@ import {
 import { db } from "@/lib/db";
 import { DESCRIPTION_MAX_LENGTH } from "@/lib/entry";
 import { MAX_INSTALLMENTS, type RepeatMode } from "@/lib/finance/recurring";
+import { planSalary, type SalaryPayment } from "@/lib/finance/salary";
+import { netSalaryFromGross } from "@/lib/labor/calculators";
+import { MAX_SALARY_CENTS } from "@/lib/labor/schemas";
 import { paymentLabel } from "@/lib/labor/types";
-import { formatSigned, MAX_CENTS } from "@/lib/money";
+import { formatMoney, formatSigned, MAX_CENTS } from "@/lib/money";
 
 /** Planejamento: fixos, limites e rendas previstas (docs/design-system/17-padroes-de-tela.md#planejamento). */
 
@@ -57,6 +63,69 @@ const repeat = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("once") }).strict(),
 ]);
 const month = z.string().refine(isMonthKey, "Escolha um mês válido.");
+const day = z.number().int().min(1).max(31);
+
+/**
+ * Opções do salário (só renda fixa na categoria Salário): o valor digitado é líquido ou
+ * bruto, e cai numa data só ou dividido em adiantamento e resto. O bruto vira líquido
+ * aqui no servidor e é descartado: nunca é gravado nem vai para log ou resposta.
+ */
+const salaryOptions = z
+  .object({
+    amountIs: z.enum(["net", "gross"]),
+    split: z
+      .object({ advancePercent: z.number().int().min(1).max(99), advanceDay: day })
+      .strict()
+      .nullable(),
+  })
+  .strict()
+  .nullable()
+  .default(null);
+type SalaryOptions = z.infer<typeof salaryOptions>;
+
+type SalaryProblem = { field: "amountCents" | "salary"; message: string };
+
+/** Líquido e forma de pagamento; o bruto não sai desta função. */
+function resolveSalary(
+  amountCents: number,
+  options: NonNullable<SalaryOptions>,
+  today: string,
+): { netCents: number; payment: SalaryPayment } | SalaryProblem {
+  let netCents = amountCents;
+  if (options.amountIs === "gross") {
+    if (amountCents > MAX_SALARY_CENTS)
+      return {
+        field: "amountCents",
+        message: "Esse valor parece alto demais. Confira os números.",
+      };
+    netCents = netSalaryFromGross(amountCents, today).netCents;
+    if (netCents < 1)
+      return { field: "amountCents", message: "Com esse bruto, não sobra líquido." };
+  }
+  const payment: SalaryPayment = options.split
+    ? { mode: "split", ...options.split }
+    : { mode: "single" };
+  return { netCents, payment };
+}
+
+function salaryMessage(
+  items: ReadonlyArray<{ role: string; amountCents: number; dayOfMonth: number }>,
+  name: string,
+  fromGross: boolean,
+) {
+  const advance = items.find((i) => i.role === "advance");
+  const salary = items.find((i) => i.role === "salary")!;
+  if (advance)
+    return `${name}: ${formatMoney(advance.amountCents)} no dia ${advance.dayOfMonth} e ${formatMoney(salary.amountCents)} no dia ${salary.dayOfMonth}.`;
+  const base = `${name} entra todo dia ${salary.dayOfMonth}.`;
+  return fromGross
+    ? `${base} Cai na conta cerca de ${formatMoney(salary.amountCents)} por mês.`
+    : base;
+}
+
+function salaryAllowed(kind: string, categoryId: string) {
+  return kind === "income" && categoryId === "salario";
+}
 
 const recurringSchema = z
   .object({
@@ -64,9 +133,10 @@ const recurringSchema = z
     amountCents: amount,
     categoryId: z.string().max(40).nullable(),
     description,
-    dayOfMonth: z.number().int().min(1).max(31),
+    dayOfMonth: day,
     startMonth: month,
     repeat,
+    salary: salaryOptions,
   })
   .strict();
 
@@ -98,11 +168,39 @@ export async function createRecurringAction(
     if (!(await isUsableCategory(user.id, categoryId, input.kind))) {
       return { ...fail("invalid"), fields: { categoryId: "Escolha uma categoria da lista." } };
     }
+    const name = input.description ?? findCategory(await loadCategories(user.id), categoryId).name;
+
+    if (input.salary) {
+      if (!salaryAllowed(input.kind, categoryId) || input.repeat.mode !== "monthly")
+        return { ...fail("invalid"), fields: { salary: "Essa opção é só para o salário." } };
+      const today = todayInSaoPaulo();
+      const resolved = resolveSalary(input.amountCents, input.salary, today);
+      if ("field" in resolved)
+        return { ...fail("invalid"), fields: { [resolved.field]: resolved.message } };
+      const plan = planSalary(resolved.netCents, input.dayOfMonth, resolved.payment, today);
+      if (!plan.ok)
+        return {
+          ...fail("invalid"),
+          fields: { amountCents: "Valor pequeno demais para dividir." },
+        };
+      // Numa data só, vale a resposta de "Já anotou o deste mês?" (o mês inicial da tela).
+      const items =
+        resolved.payment.mode === "single"
+          ? plan.items.map((i) => ({ ...i, startMonth: input.startMonth }))
+          : plan.items;
+      const saved = await saveSalary(user.id, null, items, input.description);
+      if (!saved) return fail("limit", "Você chegou ao máximo de 100 fixos.");
+      refresh();
+      return ok({
+        id: saved.salary.id,
+        message: salaryMessage(items, name, input.salary.amountIs === "gross"),
+      });
+    }
+
     const created = (
       await createRecurringWithinLimit(user.id, [{ input: { ...input, categoryId } }])
     )?.[0];
     if (!created) return fail("limit", "Você chegou ao máximo de 100 fixos.");
-    const name = input.description ?? findCategory(await loadCategories(user.id), categoryId).name;
     refresh();
     return ok({
       id: created.id,
@@ -124,8 +222,10 @@ export async function updateRecurringAction(
     if (!id.success) return fail("not_found");
     const parsed = updateSchema.strict().safeParse(raw);
     if (!parsed.success) return invalid(parsed.error);
-    const current = await getRecurring(user.id, id.data);
-    if (!current) return fail("not_found");
+    const group = await getSalaryGroup(user.id, id.data);
+    if (!group) return fail("not_found");
+    // Editar o adiantamento é editar o salário dele: os dois andam juntos.
+    const current = group.salary;
     const input = parsed.data;
     if (input.endMonth !== null && input.endMonth < current.startMonth) {
       return {
@@ -137,7 +237,33 @@ export async function updateRecurringAction(
     if (!(await isUsableCategory(user.id, categoryId, input.kind))) {
       return { ...fail("invalid"), fields: { categoryId: "Escolha uma categoria da lista." } };
     }
-    const updated = await updateRecurring(user.id, id.data, { ...input, categoryId });
+    if (input.salary || group.advance) {
+      if (!input.salary || !salaryAllowed(input.kind, categoryId) || input.endMonth !== null)
+        return { ...fail("invalid"), fields: { salary: "Essa opção é só para o salário." } };
+      const today = todayInSaoPaulo();
+      const resolved = resolveSalary(input.amountCents, input.salary, today);
+      if ("field" in resolved)
+        return { ...fail("invalid"), fields: { [resolved.field]: resolved.message } };
+      const plan = planSalary(resolved.netCents, input.dayOfMonth, resolved.payment, today);
+      if (!plan.ok)
+        return {
+          ...fail("invalid"),
+          fields: { amountCents: "Valor pequeno demais para dividir." },
+        };
+      const saved = await saveSalary(user.id, current.id, plan.items, input.description);
+      if (!saved) return fail("limit", "Você chegou ao máximo de 100 fixos.");
+      refresh();
+      return ok({ message: "Salário alterado. Vale dali para a frente." });
+    }
+
+    const updated = await updateRecurring(user.id, current.id, {
+      kind: input.kind,
+      amountCents: input.amountCents,
+      categoryId,
+      description: input.description,
+      dayOfMonth: input.dayOfMonth,
+      endMonth: input.endMonth,
+    });
     if (!updated) return fail("not_found");
     refresh();
     return ok({ message: "Fixo alterado. Vale dali para a frente." });
@@ -235,7 +361,7 @@ export async function dismissExpectedAction(
 const starterSchema = z
   .object({
     income: z
-      .object({ amountCents: amount, dayOfMonth: z.number().int().min(1).max(31) })
+      .object({ amountCents: amount, dayOfMonth: day, salary: salaryOptions })
       .strict()
       .nullable(),
     expenses: z
@@ -272,19 +398,39 @@ export async function saveStarterPlanAction(
     const startFor = (day: number, include: boolean) =>
       clampDay(current, day) >= today || include ? current : addMonths(current, 1);
 
-    const items: Array<{ input: RecurringInput }> = [];
+    const items: Array<{ input: RecurringInput; id?: string }> = [];
     if (income) {
-      items.push({
-        input: {
-          kind: "income",
-          amountCents: income.amountCents,
-          categoryId: "salario",
-          description: "Salário",
-          dayOfMonth: income.dayOfMonth,
-          startMonth: startFor(income.dayOfMonth, false),
-          repeat: { mode: "monthly" },
-        },
-      });
+      const resolved = resolveSalary(
+        income.amountCents,
+        income.salary ?? { amountIs: "net", split: null },
+        today,
+      );
+      if ("field" in resolved) return { ...fail("invalid"), fields: { income: resolved.message } };
+      const plan = planSalary(resolved.netCents, income.dayOfMonth, resolved.payment, today);
+      if (!plan.ok)
+        return { ...fail("invalid"), fields: { income: "Valor pequeno demais para dividir." } };
+      const salaryId = randomUUID();
+      // O salário primeiro: o adiantamento aponta para ele.
+      const ordered = [
+        ...plan.items.filter((i) => i.role === "salary"),
+        ...plan.items.filter((i) => i.role === "advance"),
+      ];
+      for (const item of ordered) {
+        const isSalary = item.role === "salary";
+        items.push({
+          id: isSalary ? salaryId : undefined,
+          input: {
+            kind: "income",
+            amountCents: item.amountCents,
+            categoryId: "salario",
+            description: isSalary ? "Salário" : "Adiantamento",
+            dayOfMonth: item.dayOfMonth,
+            startMonth: item.startMonth,
+            repeat: { mode: "monthly" },
+            salaryId: isSalary ? null : salaryId,
+          },
+        });
+      }
     }
     for (const e of expenses) {
       const repeatMode: RepeatMode = e.installments

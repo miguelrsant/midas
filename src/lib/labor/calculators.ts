@@ -7,7 +7,7 @@ import {
   monthOf,
   parseDate,
 } from "@/lib/dates";
-import { formatWholeMoney, MAX_CENTS, mulDivRound } from "@/lib/money";
+import { formatMoney, formatWholeMoney, MAX_CENTS, mulDivRound } from "@/lib/money";
 
 import { LaborInputError } from "./errors";
 import { inssFor } from "./inss";
@@ -55,6 +55,11 @@ const minus = (label: string, cents: number, note?: string): ResultLine => ({
   note,
 });
 const total = (label: string, cents: number): ResultLine => ({ label, cents, sign: "=" });
+
+/** "Você trabalhou 5 meses" / "Você trabalhou 1 mês" (cada mês com 15 dias ou mais). */
+function monthsText(months: number) {
+  return `Você trabalhou ${months} ${months === 1 ? "mês" : "meses"}`;
+}
 
 function taxNote(reduction: number): string | undefined {
   return reduction > 0 ? "Com a redução do Imposto de Renda de 2026." : undefined;
@@ -137,23 +142,31 @@ export function calculateThirteenth(input: ThirteenthInput): LaborResult {
 
   return guard({
     headlineCents: first + second,
-    headlineNote: "em duas parcelas",
+    headlineNote: `em duas vezes: ${formatMoney(first)} até 30 de novembro e ${formatMoney(second)} até 20 de dezembro`,
     sections: [
       {
         title: "1ª parcela, até 30 de novembro",
         lines: [
-          plus(`Metade do 13º (${months} de 12 meses)`, first, "Sem descontos."),
-          total("Você recebe", first),
+          plus(
+            "Metade do seu 13º",
+            first,
+            `${monthsText(months)} este ano. A 1ª parcela vem sem descontos.`,
+          ),
+          total("Cai na conta", first),
         ],
       },
       {
         title: "2ª parcela, até 20 de dezembro",
         lines: [
-          plus(`13º integral (${months} de 12 meses)`, whole),
-          minus("1ª parcela já paga", first),
-          minus("INSS do 13º", inss.cents),
-          minus("Imposto de Renda do 13º", irrf.cents, taxNote(irrf.reductionCents)),
-          total("Você recebe", second),
+          plus("Seu 13º inteiro", whole, `${months} de 12 avos do salário.`),
+          minus("Menos a 1ª parcela", first, "Já veio em novembro."),
+          minus("INSS", inss.cents, "Os descontos do 13º vêm todos na 2ª parcela."),
+          minus(
+            "Imposto de Renda",
+            irrf.cents,
+            irrf.cents === 0 ? "Nesse valor, não há imposto." : taxNote(irrf.reductionCents),
+          ),
+          total("Cai na conta", second),
         ],
       },
     ],
@@ -422,6 +435,25 @@ export function calculateNetSalary(input: NetSalaryInput): LaborResult {
     tableYear: yearOf(inss.table.validFrom),
     outdated: inss.outdated || irrf.outdated,
   });
+}
+
+/**
+ * Líquido de um salário bruto, para a renda fixa "Salário" quando a pessoa digita o bruto:
+ * sem dependentes e sem outros descontos (a calculadora de salário líquido detalha).
+ * O bruto só serve para esta conta; quem chama não guarda o bruto.
+ */
+export function netSalaryFromGross(
+  grossCents: number,
+  today: DateOnly,
+): { netCents: number; outdated: boolean } {
+  const result = calculateNetSalary({
+    grossCents,
+    dependents: 0,
+    otherDiscountsCents: 0,
+    referenceDate: today,
+    payDay: 5,
+  });
+  return { netCents: result.headlineCents, outdated: result.outdated };
 }
 
 // ——— Seguro-desemprego (Lei 7.998/1990, com a Lei 13.134/2015) ———

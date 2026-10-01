@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { runAction, signInHref } from "@/lib/actions/client";
 import { addDays, type DateOnly, formatDayMonthShort } from "@/lib/dates";
 import { formatAmount, MONEY_ERRORS, readMoney } from "@/lib/money";
+import { HOME } from "@/lib/navigation";
 
 import { CategoryIcon } from "./category-icon";
 import { ChoiceChips } from "./choices";
@@ -63,6 +64,7 @@ export function ExpectedIncomeRow({
       return;
     }
     announce(result.data.message);
+    router.push(HOME);
   }
 
   async function dismiss() {

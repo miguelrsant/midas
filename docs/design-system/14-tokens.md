@@ -13,7 +13,7 @@ Os tokens são as decisões do design system em forma de dados: cores, fontes, t
 
 | Grupo | Tokens | Utilitários Tailwind |
 | --- | --- | --- |
-| Cores | `marmore`, `superficie`, `superficie-funda`, `veio`, `borda`, `tinta`, `tinta-suave`, `ouro`, `sobre-ouro`, `ouro-texto`, `mogno`, `primario`, `primario-hover`, `sobre-primario`, `renda`, `renda-fundo`, `gasto`, `gasto-fundo`, `alerta`, `veu`, `brilho`, `foco`, `grafico-renda`, `grafico-gasto`, `grafico-projecao` | `bg-*`, `text-*`, `border-*`, `fill-*`, `stroke-*`, `outline-*`, `ring-*` com o nome do token: `bg-superficie`, `text-tinta-suave`, `border-borda`, `fill-ouro`, `outline-foco` |
+| Cores | `marmore`, `superficie`, `superficie-funda`, `veio`, `borda`, `tinta`, `tinta-suave`, `ouro`, `sobre-ouro`, `ouro-texto`, `mogno`, `primario`, `primario-hover`, `sobre-primario`, `renda`, `renda-fundo`, `gasto`, `gasto-fundo`, `alerta`, `veu`, `brilho`, `foco`, `grafico-renda`, `grafico-gasto`, `grafico-projecao`, `grafico-cat-1` a `grafico-cat-5`, `grafico-cat-outros` | `bg-*`, `text-*`, `border-*`, `fill-*`, `stroke-*`, `outline-*`, `ring-*` com o nome do token: `bg-superficie`, `text-tinta-suave`, `border-borda`, `fill-ouro`, `outline-foco` |
 | Fontes | `display`, `classica`, `sans`, `mono` | `font-display`, `font-classica`, `font-sans`, `font-mono` |
 | Tipos | `display-xl`, `display-lg`, `heading`, `title`, `body`, `label`, `caption`, `amount` | `text-display-xl`, `text-display-lg`, `text-heading`, `text-title`, `text-body`, `text-label`, `text-caption`, `text-amount` (tamanho + entrelinha, e peso onde houver) |
 | Espaço | `space-1` (4), `space-2` (8), `space-3` (12), `space-4` (16), `space-6` (24), `space-8` (32), `space-12` (48) | Escala padrão do Tailwind: `p-1`, `gap-2`, `mt-3`, `px-4`, `p-6`, `gap-8`, `min-h-12` |
@@ -67,6 +67,13 @@ O bloco abaixo é o começo do `src/app/globals.css` do app. Ele define os token
   --grafico-renda: var(--renda);
   --grafico-gasto: var(--gasto);
   --grafico-projecao: var(--ouro);
+  /* Fatias da rosca por categoria, pela posição (a maior é a 1). */
+  --grafico-cat-1: #2a78d6;
+  --grafico-cat-2: #c4520f;
+  --grafico-cat-3: #138a60;
+  --grafico-cat-4: #a87200;
+  --grafico-cat-5: #c2477a;
+  --grafico-cat-outros: var(--borda);
 
   --sombra-cartao: 0 1px 2px rgba(43, 31, 22, 0.06), 0 8px 24px rgba(43, 31, 22, 0.06);
   --folha-de-ouro: linear-gradient(135deg, #ecd58f 0%, #c9a04d 38%, #a97f31 62%, #dcbb6c 100%);
@@ -104,6 +111,12 @@ O bloco abaixo é o começo do `src/app/globals.css` do app. Ele define os token
   --brilho: rgba(214, 178, 99, 0.28);
   --foco: #e2c27a;
 
+  --grafico-cat-1: #3987e5;
+  --grafico-cat-2: #d95926;
+  --grafico-cat-3: #199e70;
+  --grafico-cat-4: #c98500;
+  --grafico-cat-5: #d55181;
+
   --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.5);
   --textura: url("/texturas/marmore-portoro.webp");
 }
@@ -113,7 +126,7 @@ O tema claro é o padrão, inclusive sem JavaScript: o Portoro só vale com `dat
 
 **Por que não `light-dark()`?** A função CSS `light-dark()` evitaria a repetição, mas só funciona a partir do Safari 17.5, e parte do público usa iPhones mais antigos. O piso de navegadores do app é o do Tailwind v4 (Safari 16.4, Chrome 111, Firefox 128).
 
-**Por que as variáveis de gráfico não se repetem no escuro?** `--grafico-renda: var(--renda)` é resolvida onde é usada, então acompanha o `--renda` do tema sem precisar ser redeclarada.
+**Por que as variáveis de gráfico não se repetem no escuro?** `--grafico-renda: var(--renda)` é resolvida onde é usada, então acompanha o `--renda` do tema sem precisar ser redeclarada. As cores das fatias (`grafico-cat-1` a `grafico-cat-5`) são a exceção: cada tema tem os seus tons, escolhidos juntos e conferidos com o validador de paleta (faixa de luminosidade, croma, separação para daltonismo entre fatias vizinhas e contraste de 3:1 ou mais sobre `superficie`). Na rosca, a separação entre fatias vizinhas fica entre 7,6 e 8,4 (ΔE OKLab) para protanopia; por isso as fatias têm 2px de espaço entre si e a legenda com nome e porcentagem é obrigatória.
 
 ### 3. Tokens ligados ao Tailwind
 
@@ -151,6 +164,12 @@ O tema claro é o padrão, inclusive sem JavaScript: o Portoro só vale com `dat
   --color-grafico-renda: var(--grafico-renda);
   --color-grafico-gasto: var(--grafico-gasto);
   --color-grafico-projecao: var(--grafico-projecao);
+  --color-grafico-cat-1: var(--grafico-cat-1);
+  --color-grafico-cat-2: var(--grafico-cat-2);
+  --color-grafico-cat-3: var(--grafico-cat-3);
+  --color-grafico-cat-4: var(--grafico-cat-4);
+  --color-grafico-cat-5: var(--grafico-cat-5);
+  --color-grafico-cat-outros: var(--grafico-cat-outros);
 
   --shadow-cartao: var(--sombra-cartao);
 

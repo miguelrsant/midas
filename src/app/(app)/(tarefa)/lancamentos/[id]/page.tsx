@@ -6,12 +6,19 @@ import { requireUser } from "@/lib/auth/dal";
 import { getEntry } from "@/lib/data/entries";
 import { loadFormCategories } from "@/lib/data/form-categories";
 import { monthOf, todayInSaoPaulo } from "@/lib/dates";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 import { EntryForm } from "../entry-form";
 
 export const metadata: Metadata = { title: "Editar lançamento" };
 
-export default async function EditEntryPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditEntryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ de?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
@@ -25,7 +32,12 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
       mode="edit"
       today={today}
       categories={categories}
-      backHref={(month === monthOf(today) ? "/lancamentos" : `/lancamentos?mes=${month}`) as Route}
+      backHref={
+        safeRedirectPath(
+          (await searchParams).de,
+          month === monthOf(today) ? "/lancamentos" : `/lancamentos?mes=${month}`,
+        ) as Route
+      }
       initial={entry}
     />
   );

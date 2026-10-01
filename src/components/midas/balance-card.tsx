@@ -1,27 +1,37 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Clock } from "lucide-react";
 
 import { cn } from "@/lib/cn";
 import { type MonthKey, monthName } from "@/lib/dates";
 import { balanceSentence } from "@/lib/finance/phrases";
-import { floorPercent, formatMoney } from "@/lib/money";
+import { floorPercent, formatMoney, formatWholeMoney } from "@/lib/money";
 
 import { Bar } from "./bar";
 import { Money } from "./money";
 
-/** Cartão de saldo do mês (docs/design-system/componentes/balance-card.md). */
+/**
+ * Cartão de saldo do mês (docs/design-system/componentes/balance-card.md). No mês atual,
+ * `pending` traz o que ainda deve entrar e sair até o fim do mês (fixos que ainda não
+ * chegaram ao dia, rendas previstas): sem isso, quem só cadastrou fixos veria R$ 0,00.
+ */
 export function BalanceCard({
   month,
   isCurrentMonth,
   incomeCents,
   expenseCents,
   plain = false,
+  pending,
 }: {
   month: MonthKey;
   isCurrentMonth: boolean;
   incomeCents: number;
   expenseCents: number;
   plain?: boolean;
+  pending?: { incomeCents: number; expenseCents: number };
 }) {
+  const hasPending = Boolean(pending && pending.incomeCents + pending.expenseCents > 0);
+  const estimate = pending
+    ? incomeCents + pending.incomeCents - (expenseCents + pending.expenseCents)
+    : 0;
   const balance = incomeCents - expenseCents;
   const negative = balance < 0;
   const big = Math.abs(balance) >= 10_000_000;
@@ -76,9 +86,55 @@ export function BalanceCard({
         </div>
       </dl>
       {pct !== null ? <Bar percent={pct} className="mt-4" /> : null}
-      <p className="mt-2 text-caption text-tinta-suave">
-        {balanceSentence(incomeCents, expenseCents, month, isCurrentMonth)}
-      </p>
+      {/* Com a renda a caminho, "Anote sua renda" confundiria: fica só a estimativa. */}
+      {hasPending && incomeCents === 0 && pending!.incomeCents > 0 ? null : (
+        <p className="mt-2 text-caption text-tinta-suave">
+          {balanceSentence(incomeCents, expenseCents, month, isCurrentMonth)}
+        </p>
+      )}
+      {hasPending ? (
+        <div
+          role="group"
+          aria-labelledby="saldo-ate-o-fim"
+          className="mt-4 rounded-md bg-superficie-funda/70 p-4"
+        >
+          <h3 id="saldo-ate-o-fim" className="md-eyebrow">
+            Até o fim de {monthName(month)}
+          </h3>
+          <dl className="mt-2 flex flex-col gap-2">
+            {pending!.incomeCents > 0 ? (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="flex items-center gap-2 text-body text-tinta">
+                  <Clock aria-hidden="true" className="size-5 text-renda" strokeWidth={1.75} />
+                  Ainda vai entrar
+                </dt>
+                <dd className="font-mono text-amount">
+                  <Money cents={pending!.incomeCents} kind="income" />
+                </dd>
+              </div>
+            ) : null}
+            {pending!.expenseCents > 0 ? (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="flex items-center gap-2 text-body text-tinta">
+                  <Clock aria-hidden="true" className="size-5 text-gasto" strokeWidth={1.75} />
+                  Ainda vai sair
+                </dt>
+                <dd className="font-mono text-amount">
+                  <Money cents={pending!.expenseCents} kind="expense" />
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          <p className="mt-3 border-t border-veio pt-3 text-body font-semibold text-tinta">
+            {estimate >= 0 ? "Deve sobrar cerca de " : "Pode faltar cerca de "}
+            <span className="md-valor">{formatWholeMoney(Math.abs(estimate))}</span>
+            <span className="md-oculto">R$&nbsp;•••••</span>.
+          </p>
+          <p className="mt-1 text-caption text-tinta-suave">
+            Conta os fixos que ainda não chegaram ao dia e as rendas previstas.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1,12 +1,36 @@
 "use client";
 
-import { Collapsible } from "radix-ui";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { cn } from "@/lib/cn";
 import { monthAbbr } from "@/lib/dates";
 
-import type { ChartMonth } from "./month-chart";
+import type { ChartMonth, ChartSide } from "./month-chart";
+import { MaskedText } from "./masked-text";
+import { TableToggle } from "./table-toggle";
+
+/** "entrou R$ 6.200 (fixa R$ 5.400 · variável R$ 800); deve entrar mais R$ 300" */
+function spoken(verb: "entrou" | "saiu", s: ChartSide) {
+  const more = verb === "entrou" ? "deve entrar mais" : "deve sair mais";
+  return `${verb} ${s.total}${s.split ? ` (${s.split})` : ""}${s.pending ? `; ${more} ${s.pending}` : ""}`;
+}
+
+function Breakdown({ s, verb }: { s: ChartSide; verb: "entrar" | "sair" }) {
+  return (
+    <>
+      {s.split ? (
+        <span className="block text-caption text-tinta-suave">
+          <MaskedText text={s.split} />
+        </span>
+      ) : null}
+      {s.pending ? (
+        <span className="block text-caption text-tinta-suave">
+          deve {verb} mais <MaskedText text={s.pending} />
+        </span>
+      ) : null}
+    </>
+  );
+}
 
 /**
  * Parte interativa do gráfico: um botão transparente por mês abre o balão (foco, toque
@@ -20,7 +44,6 @@ export function MonthChartDetails({
   firstProjected: number;
 }) {
   const [active, setActive] = useState<number | null>(null);
-  const tableId = useId();
   const cols = `grid-cols-${Math.min(12, Math.max(1, months.length))}`;
   return (
     <>
@@ -37,7 +60,7 @@ export function MonthChartDetails({
           <div key={m.month} className="relative">
             <button
               type="button"
-              aria-label={`${m.label}: entrou ${m.income}, saiu ${m.expense}`}
+              aria-label={`${m.label}: ${spoken("entrou", m.income)}; ${spoken("saiu", m.expense)}`}
               aria-expanded={active === i}
               className={cn(
                 "absolute inset-0 rounded-sm focus-visible:outline-2 focus-visible:outline-foco",
@@ -53,7 +76,7 @@ export function MonthChartDetails({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "pointer-events-none absolute top-0 z-10 w-44 rounded-md border border-veio bg-superficie p-3 shadow-cartao",
+                  "pointer-events-none absolute top-0 z-10 w-56 rounded-md border border-veio bg-superficie p-3 shadow-cartao",
                   i === 0
                     ? "left-0"
                     : i === months.length - 1
@@ -62,8 +85,14 @@ export function MonthChartDetails({
                 )}
               >
                 <p className="text-label text-tinta">{m.label}</p>
-                <p className="text-amount text-renda">Entrou + {m.income}</p>
-                <p className="text-amount text-gasto">Saiu − {m.expense}</p>
+                <p className="text-amount text-renda">
+                  Entrou + <MaskedText text={m.income.total} />
+                </p>
+                <Breakdown s={m.income} verb="entrar" />
+                <p className="mt-1 text-amount text-gasto">
+                  Saiu − <MaskedText text={m.expense.total} />
+                </p>
+                <Breakdown s={m.expense} verb="sair" />
               </div>
             ) : null}
           </div>
@@ -82,54 +111,51 @@ export function MonthChartDetails({
           </span>
         ))}
       </div>
-      <Collapsible.Root className="mt-3">
-        <Collapsible.Trigger
-          aria-controls={tableId}
-          className="inline-flex min-h-11 items-center rounded-md px-3 text-label text-ouro-texto hover:bg-superficie-funda focus-visible:outline-2 focus-visible:outline-foco data-[state=closed]:[&>.aberto]:hidden data-[state=open]:[&>.fechado]:hidden"
-        >
-          <span className="fechado">Ver em tabela</span>
-          <span className="aberto">Esconder tabela</span>
-        </Collapsible.Trigger>
-        <Collapsible.Content id={tableId}>
-          <table className="mt-2 w-full text-left text-caption">
-            <caption className="md-sr">Renda e gastos por mês</caption>
-            <thead>
-              <tr className="border-b border-veio text-tinta-suave">
-                <th scope="col" className="py-2 font-semibold">
-                  Mês
+      <TableToggle>
+        <table className="mt-2 w-full text-left text-caption">
+          <caption className="md-sr">Renda e gastos por mês</caption>
+          <thead>
+            <tr className="border-b border-veio text-tinta-suave">
+              <th scope="col" className="py-2 font-semibold">
+                Mês
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Entrou
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Saiu
+              </th>
+              <th scope="col" className="py-2 text-right font-semibold">
+                Resultado
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {months.map((m) => (
+              <tr key={m.month} className="border-b border-veio last:border-b-0">
+                <th scope="row" className="py-2 align-top font-normal text-tinta">
+                  {m.label}
                 </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Entrou
-                </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Saiu
-                </th>
-                <th scope="col" className="py-2 text-right font-semibold">
-                  Resultado
-                </th>
+                <td className="py-2 text-right align-top tabular-nums">
+                  <span className="block whitespace-nowrap text-renda">
+                    <MaskedText text={m.income.total} />
+                  </span>
+                  <Breakdown s={m.income} verb="entrar" />
+                </td>
+                <td className="py-2 text-right align-top tabular-nums">
+                  <span className="block whitespace-nowrap text-gasto">
+                    <MaskedText text={m.expense.total} />
+                  </span>
+                  <Breakdown s={m.expense} verb="sair" />
+                </td>
+                <td className="py-2 text-right align-top whitespace-nowrap text-tinta tabular-nums">
+                  <MaskedText text={m.balance} />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {months.map((m) => (
-                <tr key={m.month} className="border-b border-veio last:border-b-0">
-                  <th scope="row" className="py-2 font-normal text-tinta">
-                    {m.label}
-                  </th>
-                  <td className="py-2 text-right whitespace-nowrap text-renda tabular-nums">
-                    {m.income}
-                  </td>
-                  <td className="py-2 text-right whitespace-nowrap text-gasto tabular-nums">
-                    {m.expense}
-                  </td>
-                  <td className="py-2 text-right whitespace-nowrap text-tinta tabular-nums">
-                    {m.balance}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Collapsible.Content>
-      </Collapsible.Root>
+            ))}
+          </tbody>
+        </table>
+      </TableToggle>
     </>
   );
 }

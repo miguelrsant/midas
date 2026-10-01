@@ -9,10 +9,23 @@ import { findCategory, otherCategory } from "@/lib/categories";
 import { isUsableCategory, loadCategories } from "@/lib/data/categories";
 import { createEntry, deleteEntry, getEntry, updateEntry } from "@/lib/data/entries";
 import { countRecurring, createRecurringWithinLimit } from "@/lib/data/recurring";
-import { addDays, isDateOnly, monthOf, parseDate, todayInSaoPaulo } from "@/lib/dates";
+import {
+  addDays,
+  isDateOnly,
+  monthLongTitle,
+  monthOf,
+  parseDate,
+  todayInSaoPaulo,
+} from "@/lib/dates";
 import { db } from "@/lib/db";
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
-import { firstMonthFor, RECURRING_LIMIT } from "@/lib/finance/recurring";
+import {
+  endMonthFor,
+  firstMonthFor,
+  MAX_INSTALLMENTS,
+  RECURRING_LIMIT,
+  type RepeatMode,
+} from "@/lib/finance/recurring";
 import { formatSigned, MAX_CENTS } from "@/lib/money";
 
 /**
@@ -39,7 +52,20 @@ const entrySchema = z
   })
   .strict();
 
-const createSchema = entrySchema.extend({ id: z.uuid(), repeatMonthly: z.boolean() }).strict();
+const createSchema = entrySchema
+  .extend({
+    id: z.uuid(),
+    repeatMonthly: z.boolean(),
+    /** Quantos meses, contando o do lançamento; null = sem fim. */
+    repeatCount: z
+      .number()
+      .int()
+      .min(2, "Digite de 2 a 120 meses.")
+      .max(MAX_INSTALLMENTS, "Digite de 2 a 120 meses.")
+      .nullable()
+      .default(null),
+  })
+  .strict();
 const idSchema = z.uuid();
 
 function checkDate(date: string, today: string) {
@@ -95,6 +121,15 @@ export async function createEntryAction(
       const day = parseDate(input.date).day;
       const sameMonth = monthOf(input.date) === monthOf(today);
       const startMonth = sameMonth ? monthOf(today) : firstMonthFor(day, today, false);
+      // "Por alguns meses": as parcelas contam o mês do lançamento (10 = este e mais 9).
+      // De um mês passado, o lançamento é a primeira vez, mas fica fora do fixo.
+      const remaining = input.repeatCount ? input.repeatCount - (sameMonth ? 0 : 1) : null;
+      const repeatMode: RepeatMode =
+        remaining === null
+          ? { mode: "monthly" }
+          : remaining === 1
+            ? { mode: "once" }
+            : { mode: "installments", count: remaining };
       const created = await createRecurringWithinLimit(user.id, [
         {
           input: {
@@ -104,7 +139,7 @@ export async function createEntryAction(
             description: input.description,
             dayOfMonth: day,
             startMonth,
-            repeat: { mode: "monthly" },
+            repeat: repeatMode,
           },
           firstAlreadyRecorded: sameMonth,
         },
@@ -115,7 +150,11 @@ export async function createEntryAction(
           data: { recurringId: created[0]!.id, occurrenceMonth: monthOf(input.date) },
         });
       }
-      if (created) message += `. Ele se repete todo dia ${day}.`;
+      const endMonth = endMonthFor(startMonth, repeatMode);
+      if (created)
+        message += endMonth
+          ? `. Ele se repete todo dia ${day} até ${monthLongTitle(endMonth).toLocaleLowerCase("pt-BR")}.`
+          : `. Ele se repete todo dia ${day}.`;
     }
 
     refresh();

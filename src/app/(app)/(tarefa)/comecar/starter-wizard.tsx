@@ -1,7 +1,6 @@
 "use client";
 
 import type { Route } from "next";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
 
@@ -9,12 +8,20 @@ import { saveStarterPlanAction } from "@/app/(app)/_actions/planning";
 import { CheckboxField } from "@/components/midas/checkbox-field";
 import { useAnnounce } from "@/components/midas/golden-touch";
 import { MoneyInput } from "@/components/midas/money-input";
+import {
+  DEFAULT_SALARY,
+  netOf,
+  SalaryOptions,
+  salaryPayload,
+  type SalaryState,
+} from "@/components/midas/salary-options";
 import { TaskHeader } from "@/components/midas/task-header";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { runAction, signInHref } from "@/lib/actions/client";
 import { type DateOnly, monthName } from "@/lib/dates";
 import { dayAlreadyPassed } from "@/lib/finance/recurring";
+import { splitSalary } from "@/lib/finance/salary";
 import { formatAmount, formatMoney, MONEY_ERRORS, readMoney } from "@/lib/money";
 import { RECURRING_PRESETS, type RecurringPreset } from "@/lib/presets";
 
@@ -42,6 +49,7 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
   const [step, setStep] = useState(1);
   const [incomeText, setIncomeText] = useState("");
   const [incomeDay, setIncomeDay] = useState(5);
+  const [salary, setSalary] = useState<SalaryState>(DEFAULT_SALARY);
   const [variableIncome, setVariableIncome] = useState(false);
   const [incomeError, setIncomeError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string[]>([]);
@@ -52,7 +60,9 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
   const headingRef = useRef<HTMLHeadingElement>(null);
   const passed = rows.filter((r) => dayAlreadyPassed(r.day, today));
   const incomeRead = readMoney(incomeText);
-  const incomeCents = incomeRead.ok ? incomeRead.cents : 0;
+  // O que cai na conta: com o bruto, o líquido calculado.
+  const incomeCents = netOf(incomeRead.ok ? incomeRead.cents : null, salary, today) ?? 0;
+  const incomeParts = salary.split ? splitSalary(incomeCents, salary.advancePercent) : null;
   // O passo 4 só existe se algum gasto já passou do dia neste mês.
   const skipHappened = passed.length === 0;
 
@@ -112,7 +122,10 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
     const income = variableIncome ? null : readMoney(incomeText);
     const result = await runAction(() =>
       saveStarterPlanAction({
-        income: income && income.ok ? { amountCents: income.cents, dayOfMonth: incomeDay } : null,
+        income:
+          income && income.ok
+            ? { amountCents: income.cents, dayOfMonth: incomeDay, salary: salaryPayload(salary) }
+            : null,
         expenses: rows.map((r) => {
           const read = readMoney(r.text);
           return {
@@ -185,7 +198,7 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
             <>
               <MoneyInput
                 id={`${id}-renda`}
-                label="Renda do mês (o que cai na conta)"
+                label={salary.amountIs === "gross" ? "Salário bruto do mês" : "Renda do mês"}
                 kind="income"
                 text={incomeText}
                 inputRef={incomeRef}
@@ -193,14 +206,20 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
                 error={incomeError}
                 onTextChange={setIncomeText}
               />
-              {daySelect(incomeDay, setIncomeDay, "Que dia cai?", `${id}-dia-renda`)}
-              <p className="text-caption text-tinta-suave">
-                Não sabe o líquido?{" "}
-                <Link href="/calculadoras/salario-liquido" className="md-link">
-                  Calcule pelo salário bruto
-                </Link>
-                .
-              </p>
+              <SalaryOptions
+                idBase={id}
+                amountCents={incomeRead.ok ? incomeRead.cents : null}
+                restDay={incomeDay}
+                today={today}
+                value={salary}
+                onChange={setSalary}
+                dayField={daySelect(
+                  incomeDay,
+                  setIncomeDay,
+                  salary.split ? "Dia do resto" : "Que dia cai?",
+                  `${id}-dia-renda`,
+                )}
+              />
             </>
           ) : null}
           <CheckboxField
@@ -369,7 +388,12 @@ export function StarterWizard({ today, month }: { today: DateOnly; month: string
           <dl className="flex flex-col divide-y divide-veio rounded-md border border-veio bg-superficie">
             <div className="flex items-center justify-between gap-3 p-4">
               <dt className="text-body text-tinta">
-                Renda{variableIncome ? "" : `, todo dia ${incomeDay}`}
+                Renda
+                {variableIncome
+                  ? ""
+                  : incomeParts
+                    ? `, dia ${salary.advanceDay} e dia ${incomeDay}`
+                    : `, todo dia ${incomeDay}`}
               </dt>
               <dd className="flex items-center gap-3">
                 <span className="text-amount">

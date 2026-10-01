@@ -18,6 +18,12 @@ import {
 import { ConfirmInline } from "@/components/midas/confirm-inline";
 import { useAnnounce } from "@/components/midas/golden-touch";
 import { MoneyInput } from "@/components/midas/money-input";
+import {
+  DEFAULT_SALARY,
+  SalaryOptions,
+  salaryPayload,
+  type SalaryState,
+} from "@/components/midas/salary-options";
 import { Shortcuts } from "@/components/midas/shortcuts";
 import { TaskHeader } from "@/components/midas/task-header";
 import { Button } from "@/components/ui/button";
@@ -37,7 +43,9 @@ import {
 } from "@/lib/dates";
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
 import { dayAlreadyPassed, MAX_INSTALLMENTS, type RepeatMode } from "@/lib/finance/recurring";
+import { SALARY_DAY } from "@/lib/finance/salary";
 import { formatAmount, MONEY_ERRORS, readMoney } from "@/lib/money";
+import { HOME } from "@/lib/navigation";
 import { findRecurringPreset, RECURRING_PRESETS } from "@/lib/presets";
 
 /** Adicionar ou editar um fixo (docs/design-system/17-padroes-de-tela.md#rendas-e-gastos-fixos). */
@@ -63,6 +71,10 @@ export function RecurringForm({
     dayOfMonth?: number;
     endMonth?: MonthKey | null;
     startMonth?: MonthKey;
+    /** Salário: opções já escolhidas (na edição de um salário dividido). */
+    salary?: SalaryState | null;
+    /** É um salário com adiantamento: parar apaga os dois. */
+    hasAdvance?: boolean;
   };
 }) {
   const router = useRouter();
@@ -84,6 +96,8 @@ export function RecurringForm({
   const [count, setCount] = useState("10");
   const [onceMonth, setOnceMonth] = useState<MonthKey>(addMonths(monthOf(today), 1));
   const [thisMonth, setThisMonth] = useState<"ja" | "agora" | null>(null);
+  const [dayChosen, setDayChosen] = useState(Boolean(preset));
+  const [salary, setSalary] = useState<SalaryState>(initial.salary ?? DEFAULT_SALARY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -93,7 +107,16 @@ export function RecurringForm({
   const back = "/planejamento/fixos" as Route;
 
   const current = monthOf(today);
-  const passed = dayAlreadyPassed(day, today);
+  // Salário: líquido ou bruto, e numa data só ou dividido (só renda fixa mensal em Salário).
+  const showSalary =
+    kind === "income" &&
+    categoryId === "salario" &&
+    (mode === "edit" ? !initial.endMonth : repeat === "monthly");
+  const split = showSalary && salary.split;
+  const typed = readMoney(amountText);
+  const typedCents = typed.ok ? typed.cents : null;
+  // Dividido, cada parte começa na sua próxima data: não há "Já anotou?".
+  const passed = !split && dayAlreadyPassed(day, today);
   const startMonth: MonthKey =
     repeat === "once"
       ? onceMonth
@@ -148,6 +171,7 @@ export function RecurringForm({
       categoryId,
       description: name.trim() || null,
       dayOfMonth: day,
+      salary: showSalary ? salaryPayload(salary) : null,
     };
     const result =
       mode === "new"
@@ -163,7 +187,7 @@ export function RecurringForm({
       return;
     }
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   async function stop() {
@@ -173,10 +197,40 @@ export function RecurringForm({
     setDeleting(false);
     if (!result.ok) return setFormError(result.message);
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   const months = Array.from({ length: 24 }, (_, i) => addMonths(current, i));
+
+  const dayField = (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={`${id}-dia`} className="text-label text-tinta">
+        {split ? "Dia do resto" : "Que dia?"}
+      </label>
+      <select
+        id={`${id}-dia`}
+        value={day}
+        onChange={(event) => {
+          setDay(Number(event.target.value));
+          setDayChosen(true);
+          setThisMonth(null);
+          setDirty(true);
+        }}
+        className="min-h-13 w-40 rounded-md border border-borda bg-superficie-funda px-4 text-body text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco"
+      >
+        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+          <option key={d} value={d}>
+            Dia {d}
+          </option>
+        ))}
+      </select>
+      {day >= 29 ? (
+        <p className="text-caption text-tinta-suave">
+          Em meses com menos dias, entra no último dia.
+        </p>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -214,6 +268,7 @@ export function RecurringForm({
               setName(p.label);
               setCategoryId(p.categoryId);
               setDay(p.day);
+              setDayChosen(true);
               if (p.installments) setRepeat("installments");
               setDirty(true);
               amountRef.current?.focus();
@@ -222,7 +277,13 @@ export function RecurringForm({
         ) : null}
         <MoneyInput
           id={`${id}-valor`}
-          label={kind === "income" ? "Quanto entra?" : "Quanto é?"}
+          label={
+            showSalary && salary.amountIs === "gross"
+              ? "Quanto é o salário bruto?"
+              : kind === "income"
+                ? "Quanto entra?"
+                : "Quanto é?"
+          }
           kind={kind}
           text={amountText}
           inputRef={amountRef}
@@ -242,6 +303,8 @@ export function RecurringForm({
           value={categoryId}
           onValueChange={(c) => {
             setCategoryId(c);
+            // Salário costuma cair no dia 5: vira o padrão, se a pessoa ainda não escolheu o dia.
+            if (mode === "new" && c === "salario" && !dayChosen) setDay(SALARY_DAY);
             setDirty(true);
           }}
         />
@@ -253,7 +316,7 @@ export function RecurringForm({
               Nome <span className="font-normal text-tinta-suave">(opcional)</span>
             </>
           }
-          help="Por exemplo: Aluguel."
+          help={kind === "income" ? "Por exemplo: Salário da loja." : "Por exemplo: Aluguel."}
           maxLength={DESCRIPTION_MAX_LENGTH}
           value={name}
           error={errors.description}
@@ -262,48 +325,40 @@ export function RecurringForm({
             setDirty(true);
           }}
         />
-        <div className="flex flex-col gap-1">
-          <label htmlFor={`${id}-dia`} className="text-label text-tinta">
-            Que dia?
-          </label>
-          <select
-            id={`${id}-dia`}
-            value={day}
-            onChange={(event) => {
-              setDay(Number(event.target.value));
-              setThisMonth(null);
+        {showSalary ? (
+          <SalaryOptions
+            idBase={id}
+            amountCents={typedCents}
+            restDay={day}
+            today={today}
+            value={salary}
+            onChange={(next) => {
+              setSalary(next);
               setDirty(true);
             }}
-            className="min-h-13 w-40 rounded-md border border-borda bg-superficie-funda px-4 text-body text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco"
-          >
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>
-                Dia {d}
-              </option>
-            ))}
-          </select>
-          {day >= 29 ? (
-            <p className="text-caption text-tinta-suave">
-              Em meses com menos dias, entra no último dia.
-            </p>
-          ) : null}
-        </div>
+            dayField={dayField}
+          />
+        ) : (
+          dayField
+        )}
         {mode === "new" ? (
           <>
-            <ChoiceChips<RepeatChoice>
-              legend="Repete"
-              name="repete"
-              value={repeat}
-              onValueChange={(v) => {
-                setRepeat(v);
-                setDirty(true);
-              }}
-              options={[
-                { value: "monthly", label: "Todo mês" },
-                { value: "installments", label: "Por alguns meses" },
-                { value: "once", label: "Só uma vez" },
-              ]}
-            />
+            {!split ? (
+              <ChoiceChips<RepeatChoice>
+                legend="Repete"
+                name="repete"
+                value={repeat}
+                onValueChange={(v) => {
+                  setRepeat(v);
+                  setDirty(true);
+                }}
+                options={[
+                  { value: "monthly", label: "Todo mês" },
+                  { value: "installments", label: "Por alguns meses" },
+                  { value: "once", label: "Só uma vez" },
+                ]}
+              />
+            ) : null}
             {repeat === "installments" ? (
               <TextField
                 id={`${id}-meses`}
@@ -351,9 +406,11 @@ export function RecurringForm({
                 ]}
               />
             ) : null}
-            <p aria-live="polite" className="text-body text-tinta">
-              A primeira vez entra em {formatDayMonth(firstDate)}.
-            </p>
+            {!split ? (
+              <p aria-live="polite" className="text-body text-tinta">
+                A primeira vez entra em {formatDayMonth(firstDate)}.
+              </p>
+            ) : null}
           </>
         ) : (
           <Notice tone="info">
@@ -371,7 +428,11 @@ export function RecurringForm({
           <div className="border-t border-veio pt-6">
             <ConfirmInline
               trigger="Parar este fixo"
-              question={`Parar “${initial.description || "este fixo"}”? O que já foi anotado continua na lista.`}
+              question={
+                initial.hasAdvance
+                  ? "Parar o salário e o adiantamento? O que já foi anotado continua na lista."
+                  : `Parar “${initial.description || "este fixo"}”? O que já foi anotado continua na lista.`
+              }
               confirmLabel="Parar este fixo"
               keepLabel="Manter fixo"
               busy={deleting}

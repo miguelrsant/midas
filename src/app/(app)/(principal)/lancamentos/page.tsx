@@ -8,7 +8,11 @@ import { requireUser } from "@/lib/auth/dal";
 import { listEntries } from "@/lib/data/entries";
 import { resolveMonth } from "@/lib/data/months";
 import { loadContext } from "@/lib/data/overview";
+import { listExpectedIncomes } from "@/lib/data/planning";
+import { listRecurring } from "@/lib/data/recurring";
 import { addMonths, monthName } from "@/lib/dates";
+import { upcomingThisMonth } from "@/lib/finance/upcoming";
+import { paymentLabel } from "@/lib/labor/types";
 
 import { EntriesBrowser } from "./entries-browser";
 
@@ -31,6 +35,19 @@ export default async function EntriesPage({
   const expense = entries
     .filter((e) => e.kind === "expense")
     .reduce((s, e) => s + e.amountCents, 0);
+  // No mês atual, também o que ainda vai chegar: fixos que não chegaram ao dia e previstas.
+  const upcoming = isCurrent
+    ? upcomingThisMonth(
+        await listRecurring(user.id),
+        (await listExpectedIncomes(user.id)).map((e) => ({
+          ...e,
+          label: paymentLabel(e.labelKey),
+        })),
+        today,
+      )
+    : [];
+  const sum = (kind: "income" | "expense") =>
+    upcoming.filter((u) => u.kind === kind).reduce((s, u) => s + u.amountCents, 0);
   const previous = addMonths(month, -1);
   const here = isCurrent ? "/lancamentos" : `/lancamentos?mes=${month}`;
 
@@ -43,6 +60,21 @@ export default async function EntriesPage({
           Entrou <Money cents={income} kind="income" /> <span aria-hidden="true">·</span> Saiu{" "}
           <Money cents={expense} kind="expense" />
         </p>
+        {upcoming.length > 0 ? (
+          <p className="-mt-2 text-body text-tinta-suave">
+            {sum("income") > 0 ? (
+              <>
+                Ainda vai entrar <Money cents={sum("income")} kind="income" />
+              </>
+            ) : null}
+            {sum("income") > 0 && sum("expense") > 0 ? <span aria-hidden="true"> · </span> : null}
+            {sum("expense") > 0 ? (
+              <>
+                Ainda vai sair <Money cents={sum("expense")} kind="expense" />
+              </>
+            ) : null}
+          </p>
+        ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href={
@@ -73,6 +105,7 @@ export default async function EntriesPage({
             recurringId,
           }),
         )}
+        upcoming={upcoming}
         categories={categories}
         today={today}
         monthName={monthName(month)}

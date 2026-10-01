@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type Category, findCategory } from "@/lib/categories";
 import { type DateOnly, formatDayHeading, formatEntryDate } from "@/lib/dates";
 import type { EntryView } from "@/lib/data/entries";
+import type { Upcoming } from "@/lib/finance/upcoming";
 
 import { CategoryIcon } from "./category-icon";
 import { Highlightable } from "./golden-touch";
@@ -17,18 +18,27 @@ import { Money } from "./money";
 export type RowEntry = Pick<
   EntryView,
   "id" | "kind" | "amountCents" | "categoryId" | "description" | "date" | "recurringId"
->;
+> & {
+  /**
+   * Ainda não aconteceu (fixo que não chegou ao dia, renda prevista): aparece na lista
+   * do mês com a etiqueta "vai cair" e leva ao fixo ou ao planejamento.
+   */
+  future?: { href: string; late: boolean };
+};
 
 export function TransactionRow({
   entry,
   categories,
   today,
   hideDate = false,
+  backTo,
 }: {
   entry: RowEntry;
   categories: readonly Category[];
   today: DateOnly;
   hideDate?: boolean;
+  /** Tela para onde o "Voltar" da edição leva (vai como `?de=`). */
+  backTo?: string;
 }) {
   const category = findCategory(categories, entry.categoryId);
   const date = formatEntryDate(entry.date, today);
@@ -37,13 +47,21 @@ export function TransactionRow({
     <li className="border-b border-veio last:border-b-0">
       <Highlightable id={entry.id}>
         <Link
-          href={`/lancamentos/${entry.id}` as Route}
+          href={
+            (entry.future?.href ??
+              `/lancamentos/${entry.id}${backTo ? `?de=${encodeURIComponent(backTo)}` : ""}`) as Route
+          }
           className="grid min-h-16 grid-cols-[44px_1fr_auto] items-center gap-3 px-2 py-2 hover:bg-superficie-funda focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foco"
         >
           <CategoryIcon icon={category.icon} kind={entry.kind} />
           <span className="min-w-0">
             <span className="block truncate text-body font-semibold text-tinta">{title}</span>
             <span className="block text-caption text-tinta-suave">
+              {entry.future ? (
+                <span className="mr-2 inline-block rounded-pill border border-dashed border-borda px-2 font-semibold text-tinta">
+                  {entry.future.late ? "atrasada" : "vai cair"}
+                </span>
+              ) : null}
               {category.name}
               {entry.recurringId ? (
                 <>
@@ -61,7 +79,17 @@ export function TransactionRow({
               )}
             </span>
           </span>
-          <Money cents={entry.amountCents} kind={entry.kind} className="font-mono text-amount" />
+          {entry.future ? (
+            <span
+              className={`font-mono text-amount whitespace-nowrap opacity-80 ${entry.kind === "income" ? "text-renda" : "text-gasto"}`}
+            >
+              <span className="md-sr">{entry.kind === "income" ? "Vai entrar " : "Vai sair "}</span>
+              <span aria-hidden="true">{entry.kind === "income" ? "+ " : "− "}</span>
+              <Money cents={entry.amountCents} />
+            </span>
+          ) : (
+            <Money cents={entry.amountCents} kind={entry.kind} className="font-mono text-amount" />
+          )}
         </Link>
       </Highlightable>
     </li>
@@ -72,15 +100,23 @@ export function TransactionList({
   entries,
   categories,
   today,
+  backTo,
 }: {
   entries: readonly RowEntry[];
   categories: readonly Category[];
   today: DateOnly;
+  backTo?: string;
 }) {
   return (
     <ul className="flex flex-col">
       {entries.map((entry) => (
-        <TransactionRow key={entry.id} entry={entry} categories={categories} today={today} />
+        <TransactionRow
+          key={entry.id}
+          entry={entry}
+          categories={categories}
+          today={today}
+          backTo={backTo}
+        />
       ))}
     </ul>
   );
@@ -91,10 +127,13 @@ export function DayGroups({
   entries,
   categories,
   today,
+  backTo,
 }: {
   entries: readonly RowEntry[];
   categories: readonly Category[];
   today: DateOnly;
+  /** Tela para onde o "Voltar" da edição leva. */
+  backTo?: string;
 }) {
   const days = new Map<DateOnly, RowEntry[]>();
   for (const entry of entries) {
@@ -105,7 +144,9 @@ export function DayGroups({
   return (
     <div className="flex flex-col gap-6">
       {[...days.entries()].map(([day, list]) => {
-        const net = list.reduce(
+        // O total do dia conta só o que já aconteceu.
+        const real = list.filter((e) => !e.future);
+        const net = real.reduce(
           (sum, e) => sum + (e.kind === "income" ? e.amountCents : -e.amountCents),
           0,
         );
@@ -116,10 +157,12 @@ export function DayGroups({
               <h2 id={headingId} className="text-label text-tinta-suave">
                 {formatDayHeading(day, today)}
               </h2>
-              <span className="text-caption text-tinta-suave">
-                <span className="md-sr">Total do dia: </span>
-                <Money cents={net} />
-              </span>
+              {real.length > 0 ? (
+                <span className="text-caption text-tinta-suave">
+                  <span className="md-sr">Total do dia: </span>
+                  <Money cents={net} />
+                </span>
+              ) : null}
             </div>
             <ul className="flex flex-col rounded-lg bg-superficie px-2 shadow-cartao">
               {list.map((entry) => (
@@ -129,6 +172,7 @@ export function DayGroups({
                   categories={categories}
                   today={today}
                   hideDate
+                  backTo={backTo}
                 />
               ))}
             </ul>
@@ -137,4 +181,29 @@ export function DayGroups({
       })}
     </div>
   );
+}
+
+/**
+ * O que ainda vai cair no mês, como linhas da lista (etiqueta "vai cair"). Prevista
+ * atrasada fica em "Hoje", com a etiqueta "atrasada".
+ */
+export function upcomingRows(items: readonly Upcoming[], today: DateOnly): RowEntry[] {
+  return items.map((u) => ({
+    id: u.key,
+    kind: u.kind,
+    amountCents: u.amountCents,
+    categoryId: u.categoryId,
+    description: u.title,
+    date: u.late ? today : u.date,
+    recurringId: u.source === "fixo" ? u.id : null,
+    future: {
+      href: u.source === "fixo" ? `/planejamento/fixos/${u.id}` : "/planejamento",
+      late: u.late,
+    },
+  }));
+}
+
+/** Lançamentos e o que vai cair, do dia mais novo para o mais velho (no mesmo dia, o real antes). */
+export function mergeByDay(real: readonly RowEntry[], future: readonly RowEntry[]): RowEntry[] {
+  return [...real, ...future].sort((a, b) => b.date.localeCompare(a.date));
 }

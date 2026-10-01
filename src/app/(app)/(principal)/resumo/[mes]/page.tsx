@@ -3,15 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BalanceCard } from "@/components/midas/balance-card";
-import { CategoryBars } from "@/components/midas/category-bars";
+import { CategoryDonut } from "@/components/midas/category-donut";
+import { MaskedText } from "@/components/midas/masked-text";
 import { TransactionList } from "@/components/midas/transaction-list";
 import { buttonClasses } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/dal";
-import { findCategory, sortByValueOtherLast } from "@/lib/categories";
+import { findCategory } from "@/lib/categories";
 import { listEntries } from "@/lib/data/entries";
 import { loadContext } from "@/lib/data/overview";
 import { markSummaryOpened } from "@/lib/data/planning";
 import { addMonths, isMonthKey, monthLongTitle, monthName, monthOf } from "@/lib/dates";
+import { totalsByCategory } from "@/lib/finance/breakdown";
 import { formatWholeMoney } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Resumo do mês" };
@@ -32,27 +34,14 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
   // Abrir o resumo de um mês fechado encerra a conquista dele (em todos os aparelhos).
   if (mes < current) await markSummaryOpened(user.id, mes);
 
-  const byCategory = (list: typeof entries, kind: "expense" | "income") => {
-    const map = new Map<string, number>();
-    for (const e of list)
-      if (e.kind === kind) map.set(e.categoryId, (map.get(e.categoryId) ?? 0) + e.amountCents);
-    return map;
-  };
-  const expenses = byCategory(entries, "expense");
-  const previousExpenses = byCategory(previousEntries, "expense");
+  const expenses = totalsByCategory(entries, "expense");
+  const previousExpenses = totalsByCategory(previousEntries, "expense");
   const income = entries.filter((e) => e.kind === "income").reduce((s, e) => s + e.amountCents, 0);
   const expense = [...expenses.values()].reduce((s, v) => s + v, 0);
   const balance = income - expense;
   const closed = mes < current;
   const name = monthName(mes);
   const Name = name.charAt(0).toUpperCase() + name.slice(1);
-
-  const top = sortByValueOtherLast(
-    [...expenses.entries()].map(([categoryId, cents]) => ({ categoryId, cents })),
-  )[0];
-  const barsTitle = top
-    ? `${findCategory(categories, top.categoryId).name} levou a maior parte de ${name}: ${formatWholeMoney(top.cents)}.`
-    : `Nenhum gasto anotado em ${name}.`;
 
   const comparisons = previousEntries.length
     ? [...new Set([...expenses.keys(), ...previousExpenses.keys()])]
@@ -77,13 +66,17 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
         <p className="md-eyebrow">Resumo do mês</p>
         <h1 className="font-display text-display-lg text-tinta">{monthLongTitle(mes)}</h1>
         <p className="text-body text-tinta">
-          {!closed
-            ? `${Name} ainda está em andamento.`
-            : balance >= 100
-              ? `${Name} fechou no azul, com ${formatWholeMoney(balance)} de sobra.`
-              : balance < 0
-                ? `${Name} fechou com ${formatWholeMoney(-balance)} a menos. Quer ver onde dá para ajustar?`
-                : `${Name} fechou zerado.`}
+          <MaskedText
+            text={
+              !closed
+                ? `${Name} ainda está em andamento.`
+                : balance >= 100
+                  ? `${Name} fechou no azul, com ${formatWholeMoney(balance)} de sobra.`
+                  : balance < 0
+                    ? `${Name} fechou com ${formatWholeMoney(-balance)} a menos. Quer ver onde dá para ajustar?`
+                    : `${Name} fechou zerado.`
+            }
+          />
         </p>
       </div>
       <BalanceCard
@@ -94,16 +87,12 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
         plain
       />
 
-      <section
-        aria-labelledby="por-categoria"
-        className="rounded-lg bg-superficie p-6 shadow-cartao"
-      >
-        <p className="md-eyebrow">Gastos por categoria</p>
-        <h2 id="por-categoria" className="mt-1 mb-4 font-display text-heading text-tinta">
-          {barsTitle}
-        </h2>
-        {expenses.size > 0 ? <CategoryBars totals={expenses} categories={categories} /> : null}
-      </section>
+      <CategoryDonut
+        headingId="por-categoria"
+        totals={expenses}
+        categories={categories}
+        month={mes}
+      />
 
       {comparisons.length > 0 ? (
         <section
@@ -126,7 +115,12 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
           <h2 id="maiores" className="px-2 pb-2 font-display text-heading text-tinta">
             Os maiores gastos
           </h2>
-          <TransactionList entries={biggest} categories={categories} today={today} />
+          <TransactionList
+            entries={biggest}
+            categories={categories}
+            today={today}
+            backTo={`/resumo/${mes}`}
+          />
         </section>
       ) : null}
 

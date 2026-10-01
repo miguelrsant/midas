@@ -290,8 +290,8 @@ Teste de alto risco (Res. CD/ANPD nº 2/2022, Art. 4º, critério geral **e** es
 | Slug | a014-fixos-e-previstas |
 | Finalidade | Anotar sozinho, no dia marcado, rendas e gastos que se repetem (inclusive parcelas e "só uma vez"); mostrar rendas previstas das calculadoras até a pessoa confirmar "Recebi"; lembrar se o resumo do mês já foi visto |
 | Base legal | Art. 7º, V; parte sensível: Art. 11, II, "d" |
-| Dados | `recurring`: tipo, valor, categoria, descrição **cifrada**, dia do mês, mês inicial e final, próxima ocorrência. `expected_income`: categoria, chave do rótulo, valor, data prevista, conta de calculadora de origem. `user_preference`: último mês de resumo aberto |
-| Fonte | Coletado do titular ou gerado pelas calculadoras a pedido dele |
+| Dados | `recurring`: tipo, valor, categoria, descrição **cifrada**, dia do mês, mês inicial e final, próxima ocorrência e, só no adiantamento do salário, o vínculo técnico com o fixo do salário (`salaryId`, não é dado novo da pessoa). `expected_income`: categoria, chave do rótulo, valor, data prevista, conta de calculadora de origem. `user_preference`: último mês de resumo aberto |
+| Fonte | Coletado do titular ou gerado pelas calculadoras a pedido dele. **Salário bruto** digitado no fixo ou no "Monte seu mês": usado só para calcular o líquido no servidor, na hora, e descartado; nunca é gravado, devolvido ou registrado em log (minimização, art. 6º, III). Só o líquido (e, se dividido, as duas partes) vira fixo |
 | Retenção | Enquanto a conta existir; "Recebi" transforma a prevista em lançamento e apaga a prevista; "Não recebi" apaga |
 | Segurança | Como A010; ocorrências criadas de forma idempotente, sem agendador externo |
 | Alto risco? | Coberto pela RIPD de A010 |

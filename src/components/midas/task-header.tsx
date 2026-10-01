@@ -35,10 +35,10 @@ export function TaskHeader({
     if (confirming) keepRef.current?.focus();
   }, [confirming]);
 
-  const leave = () => {
-    if (window.history.length > 1) router.back();
-    else router.push(backHref);
-  };
+  // Sempre para a tela de origem: `router.back()` dependia do histórico da aba e, com o
+  // formulário aberto direto (recarregado, link colado, aba nova), saía do app ou não
+  // fazia nada. `replace` evita que o "voltar" do navegador reabra o formulário.
+  const leave = () => router.replace(backHref);
 
   return (
     <header className="flex flex-col gap-2 pt-3 pb-4">

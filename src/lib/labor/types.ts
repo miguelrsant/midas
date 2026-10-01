@@ -1,5 +1,11 @@
 import type { DateOnly } from "@/lib/dates";
 
+/**
+ * Salário aceito: até R$ 999.999,99 (a rescisão de 5 salários cabe em int4). Fica aqui,
+ * sem Zod, para telas que só precisam do teto não levarem a Zod para o navegador.
+ */
+export const MAX_SALARY_CENTS = 99_999_999;
+
 /** Versão das regras de cálculo; muda quando uma regra muda (a conta guardada leva a versão). */
 export const LABOR_ENGINE_VERSION = 1;
 

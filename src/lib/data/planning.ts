@@ -80,6 +80,24 @@ export async function listCalculations(
   });
 }
 
+/** Uma conta guardada, só da dona (para "Ver a conta"). */
+export async function getCalculation(userId: string, id: string): Promise<CalculationView | null> {
+  const r = await db.calculation.findFirst({
+    where: { id, userId },
+    select: { id: true, kind: true, createdAt: true, sealed: true },
+  });
+  if (!r) return null;
+  let data: StoredCalculation | null = null;
+  try {
+    data = JSON.parse(
+      openText(r.sealed, { field: FIELD, userId, rowId: r.id }),
+    ) as StoredCalculation;
+  } catch {
+    data = null;
+  }
+  return { id: r.id, kind: r.kind, createdAt: r.createdAt, data };
+}
+
 /**
  * Guarda a conta e cria as rendas previstas, numa transação. Idempotente pelo id
  * gerado no aparelho: adicionar duas vezes não duplica.

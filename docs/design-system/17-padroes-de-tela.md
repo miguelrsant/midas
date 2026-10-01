@@ -67,8 +67,12 @@ O mês exibido fica na URL (`?mes=2026-09`), para o botão Voltar do navegador e
 Adicionar, editar, "Monte seu mês", fixos, limites, categorias e os passos das calculadoras são páginas próprias (com rota), não janelas por cima:
 
 - No topo, o link **"Voltar"** (`chevron-left` + texto) e o título da tarefa.
-- O botão Voltar do navegador e do celular fazem o mesmo que o "Voltar" da tela.
+- O "Voltar" da tela leva sempre à tela de onde a tarefa foi aberta (o `?de=` do link, ou a tela-mãe da tarefa), mesmo quando o formulário foi aberto direto (recarregado, link colado, aba nova). O Voltar do navegador e do celular continua voltando pelo histórico.
 - Se a pessoa já digitou algo e toca em "Voltar", o Midas pergunta na própria tela: "Sair sem salvar? O que você digitou vai se perder." com "Sair sem salvar" e "Continuar editando".
+
+### Depois de salvar
+
+**Terminar uma tarefa leva ao Início**, com o aviso por cima ("Anotado: …"). Isso vale para lançamento (novo, editado ou excluído), fixo, limite, "Monte seu mês", "Adicionar ao planejamento" das calculadoras e "Recebi" de uma renda prevista. A pessoa vê na hora o efeito no saldo e no gráfico, sem procurar onde está. Um lançamento de um mês passado abre o Início naquele mês (`/?mes=2026-08`). "Voltar" sem salvar continua levando à tela de origem. Ações que só arrumam uma lista ("Não recebi", apagar uma conta de calculadora) ficam na mesma tela.
 
 ## Painel (Início)
 
@@ -113,15 +117,16 @@ Ordem dos blocos:
 3. [Achievement](componentes/achievement.md), só nos primeiros dias do mês seguinte a um mês com sobra. Nesses dias, a conquista fica com o mármore, e o cartão de saldo fica liso.
 4. [BalanceCard](componentes/balance-card.md).
 5. Botão primário grande **"Adicionar gasto"** e, abaixo, o secundário **"Adicionar renda"**. No celular, os dois ocupam a largura toda.
-6. Últimos lançamentos: até 5 [TransactionRow](componentes/transaction-row.md) e o link "Ver todos".
-7. [IncomeExpenseChart](componentes/income-expense-chart.md) com três meses reais e três projetados.
+6. [IncomeExpenseChart](componentes/income-expense-chart.md) do mês atual (o real até hoje mais o que ainda deve entrar e sair) e dos cinco meses seguintes, projetados. Vem antes da lista: é a primeira resposta para "como vai o meu dinheiro".
+7. "Lançamentos de outubro": os 5 últimos lançamentos e, no mês atual, o que ainda vai cair, separados por dia, com a etiqueta "vai cair", igual à tela de Lançamentos; e o link "Ver todos".
+8. [CategoryDonut](componentes/category-donut.md) com os gastos do mês escolhido por categoria, quando houver gasto, e o link "Ver o resumo de setembro".
 
 Estados:
 
 | Estado | O que muda |
 | --- | --- |
 | Primeiro acesso (nenhum lançamento) | Tudo abaixo da saudação vira um [EmptyState](componentes/empty-state.md): "Tudo pronto para *começar*." / "Comece anotando quanto você recebe por mês. Assim o Midas mostra quanto sobra." / "Adicionar minha renda" (primário) e "Anotar um gasto" (secundário). |
-| Mês novo, sem lançamentos | O cartão de saldo mostra R$ 0,00; a lista vira o estado vazio "Outubro começa *aqui*."; o gráfico continua, com os meses anteriores. |
+| Mês novo, sem lançamentos | O cartão de saldo mostra R$ 0,00; a lista vira o estado vazio "Outubro começa *aqui*."; o gráfico continua, a partir do mês atual. |
 | Carregando | Blocos em `superficie-funda` no formato do cartão de saldo e de três linhas; `aria-busy="true"`. |
 | Sem conexão | Aviso de alerta no topo com "Tentar de novo"; os dados já carregados continuam visíveis. |
 
@@ -149,6 +154,7 @@ Descrição (opcional)
 Quando?
 (Hoje) (Ontem) (Outro dia)
 [ ] Repete todo mês
+    Até quando?  (Sem fim) (Por alguns meses)  ← só com a caixa marcada
 [        Salvar gasto        ]                ← primário grande + toque de ouro
 ```
 
@@ -158,8 +164,8 @@ Quando?
 4. **Categoria** ([CategoryChip](componentes/category-chip.md)): seis mais usadas e "Mais". Opcional: sem escolha, vai para "Outros".
 5. **Descrição** (opcional): campo de texto, até 60 caracteres.
 6. **Quando?**: três opções em chips de escolha única, com "Hoje" marcado. "Outro dia" mostra um campo de data nativo (`<input type="date">`) que vai de 10 anos atrás **até hoje**: data futura não existe em lançamento. Para anotar algo que ainda vai acontecer, a pessoa usa um fixo ("só uma vez") no Planejamento. Quem chega de um mês passado ("Adicionar lançamento em agosto") já encontra "Outro dia" marcado com o último dia daquele mês.
-7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, a partir do mês seguinte, e liga este lançamento a ele. O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10."
-8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta para a tela de onde a pessoa veio, com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
+7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, e liga este lançamento a ele (é a vez deste mês). Marcada, aparece **"Até quando?"**: "Sem fim" (já marcado) ou "Por alguns meses", que pede "Quantos meses, contando este?" (2 a 120; "10 para uma compra em 10 parcelas"). O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10." ou, com fim, "…Ele se repete todo dia 10 até julho de 2027."
+8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta ao Início ([depois de salvar](#depois-de-salvar)), com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
 
 Regras:
 
@@ -171,6 +177,7 @@ Regras:
 
 **Pergunta:** "Onde eu gastei?"
 
+- **No mês atual, o que já caiu e o que vai cair, separado por dia:** os fixos que ainda não chegaram ao dia e as rendas previstas entram na mesma lista, no dia em que devem cair ("Amanhã", "Terça, 20 de outubro"), com a etiqueta tracejada **"vai cair"** e o valor um pouco mais claro. Uma renda prevista atrasada aparece em "Hoje" com a etiqueta "atrasada". O total do dia conta só o que já aconteceu. Tocar abre o fixo ou o planejamento; filtros e busca valem para tudo. No topo, embaixo de "Entrou · Saiu": "Ainda vai entrar + R$ … · Ainda vai sair − R$ …". O Início mostra o mesmo no cartão de saldo, no bloco "Até o fim de outubro".
 - Título "Lançamentos" e o mês no topo (troca de mês do `AppHeader`).
 - Linha de totais do mês: "Entrou + R$ 6.200,00 · Saiu − R$ 4.357,90".
 - Filtros em chips de escolha única: **Todos**, **Gastos**, **Rendas**. Busca por descrição (ícone `search`), com o texto "Buscar lançamento". A busca filtra na própria tela, sobre o mês aberto; o termo não vai para a URL nem para o servidor.
@@ -195,7 +202,7 @@ Regras:
 1. Título display: "Setembro de 2026".
 2. Se o mês fechou com sobra: a [conquista](componentes/achievement.md). Se não, o resumo em fatos: "Setembro fechou com R$ 210 a menos. Quer ver onde dá para ajustar?"
 3. Entrou, saiu e sobrou (ou faltou), no formato do cartão de saldo, sem mármore.
-4. Gastos por categoria: barras horizontais da maior para a menor, com valor e porcentagem ([Gráficos e dados](13-graficos-e-dados.md#barras-por-categoria)). Título-conclusão: "Mercado levou a maior parte de setembro: R$ 1.230."
+4. Gastos por categoria: [rosca](componentes/category-donut.md) com até seis fatias e a legenda com valor e porcentagem ([Gráficos e dados](13-graficos-e-dados.md#rosca-por-categoria)). Título-conclusão: "Mercado levou a maior parte de setembro: R$ 1.230."
 5. Comparação com o mês anterior, em frases: "Você gastou R$ 180 a menos com restaurante do que em agosto."
 6. Os cinco maiores gastos do mês.
 
@@ -205,15 +212,15 @@ Abrir o resumo de um mês fechado marca a conquista daquele mês como vista (em 
 
 **Pergunta:** "Como vão ficar os próximos meses?"
 
-1. Título-conclusão do ano: "2026 deve fechar com R$ 14.200 de sobra." (ou, sem acento, "Novembro pode fechar no vermelho.").
-2. Gráfico do ano (janeiro a dezembro): meses reais sólidos, meses futuros projetados, com o 13º e as férias previstas aparecendo nos meses em que caem.
+1. Título-conclusão dos próximos 12 meses: "Nos próximos 12 meses, devem sobrar R$ 14.200." (ou, sem acento, "Novembro pode fechar no vermelho."). Sem histórico e sem renda fixa, a projeção ainda não conhece a renda, e o título pede: "Anote sua renda para ver quanto deve sobrar."
+2. Gráfico do mês atual até 11 meses à frente: o mês atual com o real até hoje e o que ainda falta, os seguintes projetados, com o 13º e as férias previstas aparecendo nos meses em que caem.
 3. Tabela "Mês a mês" com Entrou, Saiu e Sobrou para cada mês, marcando "(projeção)".
 4. **Rendas previstas** (das calculadoras, [ExpectedIncomeRow](componentes/expected-income-row.md)): "13º salário, 1ª parcela · até 30 nov · + R$ 2.700" com a etiqueta "prevista", "Recebi" e "Não recebi".
 5. **Fixos:** rendas e gastos que se repetem ("Salário, todo dia 5, + R$ 5.400,00"; "Aluguel, todo dia 10, − R$ 1.650,00"; "Geladeira, 3 de 10, − R$ 250,00"), com "Adicionar renda fixa" e "Adicionar gasto fixo" e o link "Ver todos os fixos". Fixos entram sozinhos na lista no dia marcado, e a pessoa pode ajustar o valor daquele mês editando o lançamento.
 6. **Limites por categoria:** barras de limite ([Categorias](15-categorias.md#limites-por-categoria)) e "Definir um limite".
 7. A nota da projeção: "Estimativa com base nos últimos 3 meses, nos fixos e nas rendas já previstas." ([Gráficos e dados](13-graficos-e-dados.md#projeção-como-é-calculada-e-como-é-explicada)).
 
-O ano fica na URL (`?ano=2026`). O ano seguinte pode ser aberto enquanto houver meses projetados nele (até 12 meses à frente).
+O gráfico sempre começa no mês atual: o planejamento olha para a frente. Os meses que já passaram ficam no Início (troca de mês) e no resumo de cada mês.
 
 ### Rendas e gastos fixos
 
@@ -245,13 +252,33 @@ A primeira vez entra em 10 de outubro.
 - **Primeira vez**: a frase "A primeira vez entra em 10 de outubro." sempre diz a data. Se o dia deste mês já passou, a tela pergunta: "Já anotou o de setembro?" com "Já anotei" (começa no mês que vem) e "Anotar agora" (cria o de setembro também). Criar um fixo nunca preenche meses passados.
 - Salvar confirma no aviso: "Aluguel entra todo dia 10." Sem toque de ouro.
 
+#### Salário
+
+Quando a renda fixa é da categoria **Salário** e repete todo mês, aparecem mais duas perguntas, já com o caso mais comum marcado. O resto só se abre quando a pessoa escolhe:
+
+```
+Esse valor é:   (✓ Líquido (o que cai na conta)) (Bruto (do contracheque))
+                Cai na conta cerca de R$ 4.498,49.        ← só com Bruto
+Como cai?       (✓ Tudo num dia) (Dividido em dois)
+Quanto vem no adiantamento?  [ 40% ⌄ ]                    ← só com Dividido
+Dia do adiantamento          [ Dia 20 ⌄ ]
+Dia do resto                 [ Dia 5 ⌄ ]                  ← o "Que dia?" muda de nome
+R$ 2.000,00 no dia 20 e R$ 3.000,00 no dia 5.
+```
+
+- **Bruto:** o Midas calcula o líquido na hora (INSS e Imposto de Renda, sem dependentes), mostra "Cai na conta cerca de R$ …" e guarda **só o líquido**: o bruto não é gravado. Para dependentes e outros descontos, o link leva à calculadora de salário líquido.
+- **Dividido em dois:** a porcentagem (10% a 90%, padrão 40%) vale sobre o líquido, porque é o dinheiro que cai na conta. O adiantamento fica com a parte inteira e o resto leva os centavos; as duas partes sempre somam o total. Viram dois fixos ligados, "Adiantamento" (dia 20) e o salário (dia 5), que aparecem separados na lista e entram cada um no seu dia. Cada parte começa na sua próxima data, sem a pergunta "Já anotou?".
+- **Editar:** abrir o adiantamento ou o salário abre o mesmo formulário, com o total e a divisão; mudar para "Tudo num dia" apaga o adiantamento. "Parar" pergunta "Parar o salário e o adiantamento?" e apaga os dois.
+- O aviso diz as duas partes: "Salário: R$ 2.000,00 no dia 20 e R$ 3.000,00 no dia 5." Com bruto numa data só: "Salário entra todo dia 5. Cai na conta cerca de R$ 4.498,49 por mês."
+- A calculadora de salário líquido, ao atualizar um salário dividido, mantém a mesma porcentagem.
+
 **Editar fixo** (`/planejamento/fixos/[id]`): o mesmo formulário. Mudanças valem **dali para a frente**; lançamentos já anotados não mudam. "Parar este fixo" (perigo, com confirmação na tela: "Parar “Aluguel”? O que já foi anotado continua na lista.").
 
 ### Monte seu mês
 
 **Pergunta:** "O que entra e sai todo mês?" (`/comecar`, tela de tarefa com passos, destino de "Adicionar minha renda" no primeiro acesso)
 
-1. **Quanto você recebe por mês?** MoneyInput + "Que dia cai?" + a opção "Minha renda muda todo mês" (pula para o passo 2 sem criar renda fixa). Link "Não sabe o líquido? Calcule pelo salário bruto" para a calculadora de salário líquido.
+1. **Quanto você recebe por mês?** MoneyInput + "Que dia cai?" + as perguntas do [salário](#salário) (líquido ou bruto; num dia só ou dividido) + a opção "Minha renda muda todo mês" (pula para o passo 2 sem criar renda fixa).
 2. **Quais destes gastos você tem todo mês?** Caixas de seleção grandes com os fixos prontos (Aluguel, Condomínio, Luz, Água, Gás, Internet, Celular, Plano de saúde, Escola ou faculdade, Academia, Streaming, Transporte, Parcela de compra). "Nenhum destes" é válido.
 3. **Quanto é e que dia vence?** Uma linha por gasto escolhido: nome, valor e dia.
 4. **Algum já aconteceu este mês?** Para os que já passaram do dia: marcar os que já foram pagos, para o Midas anotar agora.
@@ -283,7 +310,7 @@ Cinco cartões, um por calculadora, cada um com título, uma frase que explica o
 | Salário líquido | "Veja quanto do salário bruto cai na sua conta, depois do INSS e do Imposto de Renda." |
 | Seguro-desemprego | "Veja quantas parcelas e de quanto, se você foi dispensado ou dispensada sem justa causa." |
 
-Abaixo, "Suas últimas contas": só as contas que a pessoa **adicionou ao planejamento**, com o tipo, o valor principal, a data e "Apagar esta conta". A calculadora roda no aparelho; uma conta que não foi adicionada ao planejamento não é guardada.
+Abaixo, "Suas últimas contas": só as contas que a pessoa **adicionou ao planejamento**, com o tipo, o valor principal, a data, "Ver a conta" e "Apagar esta conta". "Ver a conta" (`/calculadoras/conta/[id]`) mostra o resultado guardado, linha por linha, do jeito que foi feito; para mudar algo, a pessoa refaz a conta. A calculadora roda no aparelho; uma conta que não foi adicionada ao planejamento não é guardada.
 
 ### Passo a passo
 
@@ -311,8 +338,8 @@ Perguntas sugeridas:
 
 | Calculadora | Passos |
 | --- | --- |
-| Férias | Salário bruto · Média de horas extras e adicionais (opcional) · Quantos dias de férias e se vai vender 10 dias · Quando começam |
-| 13º salário | Salário bruto · Desde quando trabalha na empresa (para os meses do ano) · Média de horas extras e adicionais (opcional) · Número de dependentes (para o Imposto de Renda) |
+| Férias | Salário bruto · Recebe hora extra ou adicional? (Não recebo, já marcado; com "Recebo", quanto vem a mais por mês) · Quantos dias de férias e se vai vender 10 dias · Quando começam |
+| 13º salário | Salário bruto · Desde quando trabalha na empresa (para os meses do ano) · Recebe hora extra ou adicional? (Não recebo, já marcado; com "Recebo", quanto vem a mais por mês) · Número de dependentes (para o Imposto de Renda) |
 | Rescisão | Salário bruto · Data de entrada e último dia de trabalho · Como foi a saída · Aviso prévio (trabalhado, pago em dinheiro ou dispensado; não aparece em justa causa e fim de contrato) · Férias vencidas (nenhuma, 1 período ou 2) · FGTS: saldo para fins rescisórios (opcional) e adesão ao saque-aniversário · Número de dependentes |
 | Salário líquido | Salário bruto · Número de dependentes · Outros descontos do contracheque (opcional: vale-transporte, plano de saúde) · Que dia o salário cai (só para "Adicionar ao planejamento") |
 | Seguro-desemprego | Como foi a saída (só dispensa sem justa causa tem direito; as outras respostas explicam e encerram) · Último dia de trabalho · Salários dos 3 últimos meses (com "Foi o mesmo nos três") · Meses com carteira assinada nos últimos 3 anos · Quantas vezes já pediu o seguro e se faz mais de 16 meses desde o último |
@@ -351,7 +378,7 @@ Resultados de cada calculadora:
 | Calculadora | Título | Valor principal | "De onde vem esse valor" |
 | --- | --- | --- | --- |
 | Férias | "Suas férias, *em números*." | "Você deve receber cerca de R$ 3.874,00 até 13 de dezembro" | Férias (N dias), Um terço a mais, Venda de 10 dias e o terço dela (se houver), INSS, Imposto de Renda, Você recebe. Nota: "O salário do mês das férias vem menor, porque parte dele foi paga adiantada." |
-| 13º salário | "Seu 13º, *parte por parte*." | "Você deve receber cerca de R$ 5.400,00 em duas parcelas" | 1ª parcela (até 30 de novembro, sem descontos); 13º integral (N meses de 12), INSS do 13º, Imposto de Renda do 13º, 1ª parcela já paga, 2ª parcela (até 20 de dezembro) |
+| 13º salário | "Seu 13º, *parte por parte*." | "Você deve receber cerca de R$ 1.210,59 em duas vezes: R$ 654,38 até 30 de novembro e R$ 556,21 até 20 de dezembro" | 1ª parcela: Metade do seu 13º ("Você trabalhou 5 meses este ano. A 1ª parcela vem sem descontos."), Cai na conta. 2ª parcela: Seu 13º inteiro ("5 de 12 avos do salário."), Menos a 1ª parcela ("Já veio em novembro."), INSS, Imposto de Renda ("Nesse valor, não há imposto." quando zero), Cai na conta |
 | Rescisão | "Sua rescisão, *explicada*." | Dois blocos: "A empresa paga cerca de R$ X até 10 de outubro" e "FGTS para sacar na Caixa: cerca de R$ Y" | Empresa: Saldo de salário (N dias), Aviso prévio (N dias, trabalhado ou pago), 13º proporcional (N/12), Férias vencidas + 1/3, Férias proporcionais (N/12) + 1/3, Desconto do aviso não cumprido, INSS, Imposto de Renda. FGTS: saldo informado ou estimado, depósito da rescisão, multa de 40% ou 20%, quanto pode sacar |
 | Salário líquido | "Seu salário, *no bolso*." | "Cai na sua conta cerca de R$ 4.498,49 por mês" | Salário bruto, INSS, Imposto de Renda (com a redução de 2026, quando houver), Outros descontos, Você recebe |
 | Seguro-desemprego | "Seu seguro, *mês a mês*." | "Cerca de 4 parcelas de R$ 2.080,00" | Média dos salários, Faixa da tabela, Valor da parcela, Número de parcelas e datas estimadas (a 1ª cerca de 37 dias depois da saída; depois, a cada 30) |

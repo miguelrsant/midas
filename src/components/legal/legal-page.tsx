@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Notice } from "@/components/ui/notice";
 
+import { BackLink } from "./back-link";
+
 export function LegalPage({
   title,
   version,
@@ -15,10 +17,11 @@ export function LegalPage({
 }) {
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto max-w-2xl px-4 py-6">
+      <header className="mx-auto flex max-w-2xl flex-col items-start gap-3 px-4 py-6">
         <Link href="/" className="inline-block rounded-sm">
           <Logo className="h-8 w-auto" />
         </Link>
+        <BackLink />
       </header>
       <main id="conteudo" className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pb-12">
         <h1 className="font-display text-display-lg text-tinta">{title}</h1>

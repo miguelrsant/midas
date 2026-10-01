@@ -241,6 +241,7 @@ export function formatDayHeading(date: DateOnly, today: DateOnly): string {
   const diff = dayDiff(date, today);
   if (diff === 0) return "Hoje";
   if (diff === 1) return "Ontem";
+  if (diff === -1) return "Amanhã";
   const { year } = parseDate(date);
   const base = `${WEEKDAYS[weekday(date)]}, ${formatDayMonth(date)}`;
   return year === parseDate(today).year ? base : `${base} de ${year}`;

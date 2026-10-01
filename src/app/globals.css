@@ -77,6 +77,13 @@
   --grafico-renda: var(--renda);
   --grafico-gasto: var(--gasto);
   --grafico-projecao: var(--ouro);
+  /* Fatias da rosca por categoria, pela posição (a maior é a 1). */
+  --grafico-cat-1: #2a78d6;
+  --grafico-cat-2: #c4520f;
+  --grafico-cat-3: #138a60;
+  --grafico-cat-4: #a87200;
+  --grafico-cat-5: #c2477a;
+  --grafico-cat-outros: var(--borda);
 
   --sombra-cartao: 0 1px 2px rgba(43, 31, 22, 0.06), 0 8px 24px rgba(43, 31, 22, 0.06);
   --folha-de-ouro: linear-gradient(135deg, #ecd58f 0%, #c9a04d 38%, #a97f31 62%, #dcbb6c 100%);
@@ -115,6 +122,12 @@
   --brilho: rgba(214, 178, 99, 0.28);
   --foco: #e2c27a;
 
+  --grafico-cat-1: #3987e5;
+  --grafico-cat-2: #d95926;
+  --grafico-cat-3: #199e70;
+  --grafico-cat-4: #c98500;
+  --grafico-cat-5: #d55181;
+
   --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.5);
   --textura: url("/texturas/marmore-portoro.webp");
 }
@@ -152,6 +165,12 @@
   --color-grafico-renda: var(--grafico-renda);
   --color-grafico-gasto: var(--grafico-gasto);
   --color-grafico-projecao: var(--grafico-projecao);
+  --color-grafico-cat-1: var(--grafico-cat-1);
+  --color-grafico-cat-2: var(--grafico-cat-2);
+  --color-grafico-cat-3: var(--grafico-cat-3);
+  --color-grafico-cat-4: var(--grafico-cat-4);
+  --color-grafico-cat-5: var(--grafico-cat-5);
+  --color-grafico-cat-outros: var(--grafico-cat-outros);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -320,6 +339,11 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--tinta-suave);
+  }
+  /* Amostra da parte variável na legenda do gráfico: a mesma hachura das barras. */
+  .md-hachura {
+    border: 1px solid currentColor;
+    background-image: repeating-linear-gradient(0deg, currentColor 0 1.5px, transparent 1.5px 4px);
   }
   .md-moeda {
     width: 28px;

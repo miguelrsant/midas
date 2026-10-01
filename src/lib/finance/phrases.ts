@@ -16,9 +16,25 @@ export function monthLabel(month: MonthKey) {
   return cap(monthName(month));
 }
 
-export function chartTitle(points: readonly MonthPoint[]): string {
+/** O que as frases do gráfico leem de cada mês. */
+export type ChartPhrasePoint = Pick<
+  MonthPoint,
+  "month" | "incomeCents" | "expenseCents" | "projected" | "current"
+>;
+
+/**
+ * Título-conclusão do gráfico. Com `canWarnNegative` falso (sem histórico e sem renda
+ * fixa, a projeção ainda não conhece a renda), não diz que um mês "pode fechar" mal.
+ */
+export function chartTitle(
+  points: readonly ChartPhrasePoint[],
+  opts: { canWarnNegative?: boolean } = {},
+): string {
   const projected = points.filter((p) => p.projected);
   const negative = projected.find((p) => p.incomeCents - p.expenseCents < 0);
+  if (negative && opts.canWarnNegative === false) {
+    return "Anote sua renda para ver quanto deve sobrar.";
+  }
   if (negative) {
     const missing = roundToHundredReais(negative.expenseCents - negative.incomeCents);
     return `${monthLabel(negative.month)} pode fechar com ${formatWholeMoney(missing)} a menos.`;
@@ -37,12 +53,14 @@ export function chartTitle(points: readonly MonthPoint[]): string {
   return `${monthLabel(real.month)} ${verb} com ${formatWholeMoney(-balance)} a menos.`;
 }
 
-export function chartSummary(points: readonly MonthPoint[]): string {
+export function chartSummary(points: readonly ChartPhrasePoint[]): string {
   if (points.length === 0) return "Gráfico de renda e gastos sem dados.";
   const first = monthName(points[0]!.month);
   const last = monthName(points.at(-1)!.month);
   const projected = points.filter((p) => p.projected);
-  const parts = [`Gráfico de barras de renda e gastos, de ${first} a ${last}.`];
+  const parts = [
+    `Gráfico de barras de renda e gastos, de ${first} a ${last}, com a parte fixa embaixo e a variável em cima.`,
+  ];
   if (projected.length > 0) {
     parts.push(
       projected.length === 1
@@ -64,14 +82,21 @@ export function projectionNote(
   opts: { hasFixed: boolean; hasExpected: boolean; fixedIncomeOnly: boolean },
 ): string {
   const basis =
-    reference.length >= 3
-      ? "nos últimos 3 meses"
-      : `em ${reference.map((m) => monthName(m)).join(" e ")}`;
+    reference.length === 0
+      ? null
+      : reference.length >= 3
+        ? "nos últimos 3 meses"
+        : `em ${reference.map((m) => monthName(m)).join(" e ")}`;
   const extras = [
     opts.hasFixed ? "nos fixos" : null,
     opts.hasExpected ? "nas rendas já previstas, como o 13º" : null,
   ].filter(Boolean);
-  let note = `Estimativa com base ${basis}${extras.length ? `, ${extras.join(" e ")}` : ""}.`;
+  let note: string;
+  if (basis)
+    note = `Estimativa com base ${basis}${extras.length ? `, ${extras.join(" e ")}` : ""}.`;
+  else if (extras.length) note = `Estimativa com base ${extras.join(" e ")}.`;
+  else return "Estimativa. Fica mais certa depois do primeiro mês com lançamentos.";
+  if (!basis) note += " Os gastos do dia a dia entram depois do primeiro mês com lançamentos.";
   if (opts.fixedIncomeOnly)
     note += " Como você tem renda fixa, a estimativa conta só ela; ganhos avulsos não entram.";
   return note;

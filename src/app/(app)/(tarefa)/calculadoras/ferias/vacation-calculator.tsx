@@ -10,6 +10,7 @@ import {
   moneyReview,
   NumberSelect,
 } from "@/components/midas/calculator/fields";
+import { extrasStep, extrasCents } from "@/components/midas/calculator/extras-step";
 import { CalculatorWizard, type WizardStep } from "@/components/midas/calculator/wizard";
 import { addDays, type DateOnly, formatDayMonth, isDateOnly } from "@/lib/dates";
 import { calculateVacation } from "@/lib/labor/calculators";
@@ -18,6 +19,7 @@ import type { VacationInput } from "@/lib/labor/schemas";
 type Answers = {
   gross: string;
   extras: string;
+  hasExtras?: boolean;
   plan: "30" | "20+10" | "outro";
   days: number;
   sellTen: boolean;
@@ -41,23 +43,7 @@ export function VacationCalculator({ today }: { today: DateOnly }) {
       validate: (a) => (moneyError(a.gross) ? { gross: moneyError(a.gross)! } : null),
       review: (a) => moneyReview(a.gross),
     },
-    {
-      id: "extras",
-      question: "Qual a média de horas extras e adicionais?",
-      help: "Opcional. A média dos últimos 12 meses, se você recebe. Deixe em branco se não recebe.",
-      render: ({ answers, set, errors }) => (
-        <MoneyField
-          label="Média por mês"
-          value={answers.extras}
-          onChange={(extras) => set({ extras })}
-          error={errors.extras}
-          help="Deixe em branco se não recebe."
-        />
-      ),
-      validate: (a) =>
-        moneyError(a.extras, true) ? { extras: moneyError(a.extras, true)! } : null,
-      review: (a) => moneyReview(a.extras, true),
-    },
+    extrasStep<Answers>(),
     {
       id: "dias",
       question: "Quantos dias de férias?",
@@ -156,7 +142,7 @@ export function VacationCalculator({ today }: { today: DateOnly }) {
   ];
   const toInput = (a: Answers): VacationInput => ({
     grossCents: cents(a.gross),
-    extrasCents: cents(a.extras, true),
+    extrasCents: extrasCents(a),
     days: a.days,
     sellTen: a.sellTen,
     startDate: a.start,

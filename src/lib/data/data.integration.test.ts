@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/lib/db";
-import { addMonths, clampDay, monthOf, todayInSaoPaulo } from "@/lib/dates";
+import { addDays, addMonths, clampDay, monthOf, todayInSaoPaulo } from "@/lib/dates";
 
 import { buildExport, deleteAccountData, EXPORTED_MODELS } from "./account";
 import {
@@ -14,8 +14,22 @@ import {
   loadCategories,
 } from "./categories";
 import { createEntry, deleteEntry, entryFacts, getEntry, updateEntry } from "./entries";
-import { addCalculationToPlan, listExpectedIncomes, receiveExpectedIncome } from "./planning";
-import { createRecurring, createRecurringWithinLimit, ensureRecurringUpToDate } from "./recurring";
+import { loadOverview } from "./overview";
+import {
+  addCalculationToPlan,
+  getCalculation,
+  listExpectedIncomes,
+  receiveExpectedIncome,
+} from "./planning";
+import {
+  createRecurring,
+  createRecurringWithinLimit,
+  deleteRecurring,
+  ensureRecurringUpToDate,
+  getSalaryGroup,
+  listRecurring,
+  saveSalary,
+} from "./recurring";
 
 /*
  * Camada de dados contra o Postgres de teste (midas_test): isolamento entre contas,
@@ -313,6 +327,154 @@ describe("calculadoras e rendas previstas", () => {
     ).toBe(false);
     expect((await getEntry(a, entryId))?.categoryId).toBe("ferias");
     expect(await listExpectedIncomes(a)).toHaveLength(0);
+  });
+});
+
+describe("ver a conta", () => {
+  it("só a dona abre a conta guardada, decifrada", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const id = randomUUID();
+    const result = { headlineCents: 123, headlineNote: "x", sections: [], payments: [], notes: [] };
+    await addCalculationToPlan(
+      a,
+      id,
+      "VACATION",
+      { input: {}, result: result as never, engineVersion: 1 },
+      [],
+    );
+    expect((await getCalculation(a, id))?.data?.result.headlineCents).toBe(123);
+    expect(await getCalculation(b, id)).toBeNull();
+  });
+});
+
+describe("rendas previstas no gráfico", () => {
+  const stored = { input: {}, result: {} as never, engineVersion: 1 };
+  const current = monthOf(today);
+
+  it("atrasada conta no mês atual, e 'Recebi' não conta duas vezes", async () => {
+    const a = await makeUser("a");
+    const lastMonthDay = clampDay(addMonths(current, -1), 15);
+    await addCalculationToPlan(a, randomUUID(), "TERMINATION", stored, [
+      {
+        labelKey: "rescisao",
+        categoryId: "rescisao" as const,
+        cents: 400_000,
+        dueDate: lastMonthDay,
+      },
+    ]);
+    const before = (await loadOverview(a, current)).projection.currentPoint;
+    expect(before.income.pendingCents).toBe(400_000);
+    expect(before.incomeCents).toBe(400_000);
+
+    const [expected] = await listExpectedIncomes(a);
+    await receiveExpectedIncome(a, expected!.id, randomUUID(), {
+      amountCents: 400_000,
+      date: today,
+      description: "Rescisão",
+    });
+    const after = (await loadOverview(a, current)).projection.currentPoint;
+    expect(after.income).toEqual({ fixedCents: 400_000, variableCents: 0, pendingCents: 0 });
+    expect(after.incomeCents).toBe(400_000);
+  });
+
+  it("quem só usou a calculadora já vê a projeção", async () => {
+    const a = await makeUser("a");
+    const due = addDays(clampDay(addMonths(current, 2), 1), 9);
+    await addCalculationToPlan(a, randomUUID(), "VACATION", stored, [
+      { labelKey: "ferias", categoryId: "ferias" as const, cents: 387_400, dueDate: due },
+    ]);
+    const { projection } = await loadOverview(a, current);
+    expect(projection.hasHistory).toBe(false);
+    expect(projection.future(monthOf(due))?.incomeCents).toBe(387_400);
+  });
+});
+
+describe("salário dividido", () => {
+  const current = monthOf(today);
+  const plan = [
+    { role: "advance" as const, amountCents: 200_000, dayOfMonth: 20, startMonth: current },
+    { role: "salary" as const, amountCents: 300_000, dayOfMonth: 5, startMonth: current },
+  ];
+
+  it("cria os dois ligados, que somam o líquido, e anota os dois", async () => {
+    const a = await makeUser("a");
+    const saved = await saveSalary(a, null, plan, "Salário");
+    expect(saved?.advance?.salaryId).toBe(saved?.salary.id);
+    const rows = await listRecurring(a);
+    expect(rows.reduce((s, r) => s + r.amountCents, 0)).toBe(500_000);
+    const far = addDays(clampDay(addMonths(current, 1), 28), 0);
+    expect(await ensureRecurringUpToDate(a, far)).toBe(4);
+  });
+
+  it("editar de um para dois e de volta, sempre pelo salário", async () => {
+    const a = await makeUser("a");
+    const single = await saveSalary(a, null, [plan[1]!], "Salário");
+    const split = await saveSalary(a, single!.salary.id, plan, "Salário");
+    expect(split?.advance?.amountCents).toBe(200_000);
+    expect((await getSalaryGroup(a, split!.advance!.id))?.salary.id).toBe(single!.salary.id);
+    const back = await saveSalary(a, single!.salary.id, [plan[1]!], "Salário");
+    expect(back?.advance).toBeNull();
+    expect(await listRecurring(a)).toHaveLength(1);
+  });
+
+  it("parar o adiantamento ou o salário apaga os dois", async () => {
+    const a = await makeUser("a");
+    const one = await saveSalary(a, null, plan, "Salário");
+    expect(await deleteRecurring(a, one!.advance!.id)).toBe(true);
+    expect(await listRecurring(a)).toHaveLength(0);
+    const two = await saveSalary(a, null, plan, "Salário");
+    expect(await deleteRecurring(a, two!.salary.id)).toBe(true);
+    expect(await listRecurring(a)).toHaveLength(0);
+  });
+
+  it("outra conta não lê, não edita e não apaga", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const saved = await saveSalary(a, null, plan, "Salário");
+    expect(await getSalaryGroup(b, saved!.salary.id)).toBeNull();
+    expect(await saveSalary(b, saved!.salary.id, plan, "x")).toBeNull();
+    expect(await deleteRecurring(b, saved!.advance!.id)).toBe(false);
+    expect(await listRecurring(a)).toHaveLength(2);
+    expect(await listRecurring(b)).toHaveLength(0);
+  });
+
+  it("o banco recusa adiantamento ligado ao salário de outra conta", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const saved = await saveSalary(a, null, [plan[1]!], "Salário");
+    await expect(
+      createRecurring(b, {
+        kind: "income",
+        amountCents: 100,
+        categoryId: "salario",
+        description: null,
+        dayOfMonth: 20,
+        startMonth: current,
+        repeat: { mode: "monthly" },
+        salaryId: saved!.salary.id,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("os dois contam no teto de fixos", async () => {
+    const a = await makeUser("a");
+    await createRecurringWithinLimit(
+      a,
+      Array.from({ length: 99 }, () => ({
+        input: {
+          kind: "expense" as const,
+          amountCents: 100,
+          categoryId: "mercado",
+          description: null,
+          dayOfMonth: 1,
+          startMonth: current,
+          repeat: { mode: "monthly" as const },
+        },
+      })),
+    );
+    expect(await saveSalary(a, null, plan, "Salário")).toBeNull();
+    expect(await saveSalary(a, null, [plan[1]!], "Salário")).not.toBeNull();
   });
 });
 

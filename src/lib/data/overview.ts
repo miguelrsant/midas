@@ -42,13 +42,13 @@ export async function loadOverview(userId: string, from: MonthKey): Promise<Over
     listRecurring(userId),
     listExpectedIncomes(userId),
   ]);
-  const pending = expected.filter((e) => e.dueDate.slice(0, 7) >= current);
+  // Todas as previstas ainda sem "Recebi" ou "Não recebi" contam: as atrasadas, no mês atual.
   const projection = buildProjection({
     today,
     entries: facts,
     firstEntryDate: first,
     recurrings: recurrings.map((r) => ({ ...r })),
-    expected: pending.map((e) => ({
+    expected: expected.map((e) => ({
       amountCents: e.amountCents,
       dueDate: e.dueDate,
       categoryId: e.categoryId,

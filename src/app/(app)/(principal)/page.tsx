@@ -4,10 +4,11 @@ import Link from "next/link";
 
 import { Achievement, shouldShowAchievement } from "@/components/midas/achievement";
 import { BalanceCard } from "@/components/midas/balance-card";
+import { CategoryDonut } from "@/components/midas/category-donut";
 import { DiscreetToggle } from "@/components/midas/discreet-mode";
 import { MonthChart } from "@/components/midas/month-chart";
 import { MonthSwitcher } from "@/components/midas/month-switcher";
-import { TransactionList } from "@/components/midas/transaction-list";
+import { DayGroups, mergeByDay, upcomingRows } from "@/components/midas/transaction-list";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
@@ -18,7 +19,8 @@ import { listLimits } from "@/lib/data/limits";
 import { resolveMonth } from "@/lib/data/months";
 import { loadContext, loadOverview } from "@/lib/data/overview";
 import { lastSummaryOpened } from "@/lib/data/planning";
-import { addMonths, monthName, monthOf, parseDate } from "@/lib/dates";
+import { addMonths, monthName, parseDate } from "@/lib/dates";
+import { totalsByCategory } from "@/lib/finance/breakdown";
 import { pickLimitNotice } from "@/lib/finance/limits";
 import {
   assessMonth,
@@ -29,8 +31,11 @@ import {
   summarySentence,
 } from "@/lib/finance/phrases";
 import { monthPoints } from "@/lib/finance/projection";
+import { upcomingThisMonth } from "@/lib/finance/upcoming";
+import { paymentLabel } from "@/lib/labor/types";
 import { longDate, salutation } from "@/lib/greeting";
 import { formatMoney, formatWholeMoney, roundToHundredReais } from "@/lib/money";
+import { MaskedText } from "@/components/midas/masked-text";
 
 export const metadata: Metadata = { title: "Início" };
 
@@ -108,12 +113,7 @@ export default async function DashboardPage({
   let notice: ReactNode = null;
   if (isCurrent) {
     const limits = await listLimits(user.id);
-    const spent = new Map<string, number>();
-    for (const e of overview.facts) {
-      if (e.kind === "expense" && monthOf(e.date) === current) {
-        spent.set(e.categoryId, (spent.get(e.categoryId) ?? 0) + e.amountCents);
-      }
-    }
+    const spent = totalsByCategory(overview.facts, "expense", current);
     const limitPick = pickLimitNotice(
       [...limits.entries()].map(([categoryId, limitCents]) => ({
         categoryId,
@@ -140,7 +140,10 @@ export default async function DashboardPage({
           : `Você planejou ${formatMoney(row.limitCents)} para ${monthName(current)}.`;
       notice = (
         <Notice tone="alerta" role="note">
-          <strong>{headline}</strong> {detail}
+          <strong>
+            <MaskedText text={headline} />
+          </strong>{" "}
+          <MaskedText text={detail} />
           {more}{" "}
           <Link href="/planejamento/limites" className="md-link">
             Ver limites
@@ -148,15 +151,22 @@ export default async function DashboardPage({
         </Notice>
       );
     } else {
-      const negative = [1, 2, 3]
-        .map((i) => projection.future(addMonths(current, i)))
-        .find((p) => p && p.incomeCents < p.expenseCents);
+      const negative = projection.canWarnNegative
+        ? [1, 2, 3]
+            .map((i) => projection.future(addMonths(current, i)))
+            .find((p) => p && p.incomeCents < p.expenseCents)
+        : undefined;
       if (negative) {
         notice = (
           <Notice tone="alerta" role="note">
             <strong>{monthLabel(negative.month)} pode fechar no vermelho.</strong> Se os gastos
             seguirem como nos últimos meses, vão faltar cerca de{" "}
-            {formatWholeMoney(roundToHundredReais(negative.expenseCents - negative.incomeCents))}.{" "}
+            <MaskedText
+              text={formatWholeMoney(
+                roundToHundredReais(negative.expenseCents - negative.incomeCents),
+              )}
+            />
+            .{" "}
             <Link href="/planejamento" className="md-link">
               Ver o planejamento
             </Link>
@@ -191,24 +201,33 @@ export default async function DashboardPage({
     }
   }
 
-  const chartMonths = [-2, -1, 0, 1, 2, 3]
-    .map((i) => addMonths(current, i))
-    .filter((m) => m >= first);
+  // O gráfico começa no mês atual e mostra a projeção dos 5 seguintes.
+  const chartMonths = [0, 1, 2, 3, 4, 5].map((i) => addMonths(current, i));
   const points = monthPoints(projection, chartMonths, today);
-  const showChart =
-    projection.reference.length > 0 || points.filter((p) => !p.projected).length > 1;
+  const showChart = points.some((p) => p.incomeCents + p.expenseCents > 0);
   const here = isCurrent ? "/" : `/?mes=${month}`;
+  const monthExpenses = totalsByCategory(overview.facts, "expense", month);
+  // Como em Lançamentos: no mês atual, também o que ainda vai cair.
+  const upcoming = isCurrent
+    ? upcomingThisMonth(
+        recurrings,
+        expected.map((e) => ({ ...e, label: paymentLabel(e.labelKey) })),
+        today,
+      )
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
       {greeting}
       <p className="-mt-4 text-body text-tinta">
-        {summarySentence(
-          balance,
-          prevTotals ? prevTotals.incomeCents - prevTotals.expenseCents : null,
-          month,
-          isCurrent,
-        )}
+        <MaskedText
+          text={summarySentence(
+            balance,
+            prevTotals ? prevTotals.incomeCents - prevTotals.expenseCents : null,
+            month,
+            isCurrent,
+          )}
+        />
       </p>
       <MonthSwitcher month={month} first={first} last={current} basePath="/" />
       {notice}
@@ -219,6 +238,14 @@ export default async function DashboardPage({
         incomeCents={monthTotals.incomeCents}
         expenseCents={monthTotals.expenseCents}
         plain={Boolean(achievement)}
+        pending={
+          isCurrent
+            ? {
+                incomeCents: projection.currentPoint.income.pendingCents,
+                expenseCents: projection.currentPoint.expense.pendingCents,
+              }
+            : undefined
+        }
       />
       <div className="flex flex-col gap-2">
         <Button asChild size="lg" fullWidth>
@@ -241,10 +268,32 @@ export default async function DashboardPage({
         </Button>
       </div>
 
-      <section aria-labelledby="ultimos" className="rounded-lg bg-superficie p-4 shadow-cartao">
+      {showChart ? (
+        <MonthChart
+          headingId="grafico-inicio"
+          points={points}
+          title={chartTitle(points, { canWarnNegative: projection.canWarnNegative })}
+          summary={chartSummary(points)}
+          note={projectionNote(projection.reference, {
+            hasFixed: recurrings.length > 0,
+            hasExpected: overview.expected.length > 0,
+            fixedIncomeOnly: projection.hasFixedIncome && projection.averageVariableIncome > 0,
+          })}
+        />
+      ) : (
+        <section className="rounded-lg bg-superficie p-6 shadow-cartao">
+          <p className="md-eyebrow">Renda x gastos</p>
+          <p className="mt-2 text-tinta-suave">
+            O gráfico aparece quando você anotar uma renda fixa ou fechar o primeiro mês com
+            lançamentos.
+          </p>
+        </section>
+      )}
+
+      <section aria-labelledby="ultimos">
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
           <h2 id="ultimos" className="md-eyebrow">
-            Últimos lançamentos
+            Lançamentos de {monthName(month)}
           </h2>
           <Link
             href={(isCurrent ? "/lancamentos" : `/lancamentos?mes=${month}`) as Route}
@@ -253,10 +302,15 @@ export default async function DashboardPage({
             Ver todos
           </Link>
         </div>
-        {entries.length > 0 ? (
-          <TransactionList entries={entries} categories={categories} today={today} />
+        {entries.length + upcoming.length > 0 ? (
+          <DayGroups
+            entries={mergeByDay(entries, upcomingRows(upcoming, today))}
+            categories={categories}
+            today={today}
+            backTo={here}
+          />
         ) : (
-          <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
+          <div className="flex flex-col items-center gap-2 rounded-lg bg-superficie px-4 py-6 text-center shadow-cartao">
             <p className="font-display text-heading text-tinta">
               {isCurrent ? (
                 <>
@@ -275,31 +329,22 @@ export default async function DashboardPage({
         )}
       </section>
 
-      {showChart ? (
-        <MonthChart
-          headingId="grafico-inicio"
-          points={points}
-          title={chartTitle(points)}
-          summary={chartSummary(points)}
-          note={
-            points.some((p) => p.projected)
-              ? projectionNote(projection.reference, {
-                  hasFixed: recurrings.length > 0,
-                  hasExpected: overview.expected.length > 0,
-                  fixedIncomeOnly:
-                    projection.hasFixedIncome && projection.averageVariableIncome > 0,
-                })
-              : undefined
+      {monthExpenses.size > 0 ? (
+        <CategoryDonut
+          headingId="categorias-inicio"
+          totals={monthExpenses}
+          categories={categories}
+          month={month}
+          footer={
+            <Link
+              href={`/resumo/${month}` as Route}
+              className={buttonClasses({ variant: "ghost" })}
+            >
+              Ver o resumo de {monthName(month)}
+            </Link>
           }
         />
-      ) : (
-        <section className="rounded-lg bg-superficie p-6 shadow-cartao">
-          <p className="md-eyebrow">Renda x gastos</p>
-          <p className="mt-2 text-tinta-suave">
-            O gráfico aparece quando você fechar o primeiro mês com lançamentos.
-          </p>
-        </section>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -331,11 +376,11 @@ function GreetingTitle({
       {hello}{" "}
       {assessment.accent ? (
         <>
-          {assessment.text}
+          <MaskedText text={assessment.text} />
           <em className="md-acento">{assessment.accent}</em>.
         </>
       ) : (
-        assessment.text
+        <MaskedText text={assessment.text} />
       )}
     </h1>
   );
