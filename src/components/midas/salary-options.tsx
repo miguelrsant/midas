@@ -11,7 +11,7 @@ import {
   splitSalary,
 } from "@/lib/finance/salary";
 import { netSalaryFromGross } from "@/lib/labor/calculators";
-import { MAX_SALARY_CENTS } from "@/lib/labor/schemas";
+import { MAX_SALARY_CENTS } from "@/lib/labor/types";
 import { formatMoney } from "@/lib/money";
 
 import { ChoiceChips } from "./choices";

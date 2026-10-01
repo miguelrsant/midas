@@ -2,13 +2,15 @@ import { z } from "zod";
 
 import { isDateOnly } from "@/lib/dates";
 
+import { MAX_SALARY_CENTS } from "./types";
+
 /**
  * Respostas das calculadoras, validadas igual no aparelho e no servidor.
  * O servidor refaz a conta a partir disto; nunca aceita resultado pronto.
  */
 
-/** Salário aceito: até R$ 999.999,99 (a rescisão de 5 salários cabe em int4). */
-export const MAX_SALARY_CENTS = 99_999_999;
+/** Teto do salário: definido em types.ts, sem Zod. */
+export { MAX_SALARY_CENTS };
 
 const cents = z.number().int().min(0).max(MAX_SALARY_CENTS);
 const salary = z
