@@ -5,6 +5,7 @@ import type { Layers, MonthPoint } from "@/lib/finance/projection";
 import { formatAxis, formatMoney, roundToHundredReais } from "@/lib/money";
 
 import { MonthChartDetails } from "./month-chart-details";
+import { MaskedText } from "./masked-text";
 
 /**
  * Gráfico renda x gastos por mês (docs/design-system/componentes/income-expense-chart.md),
@@ -119,7 +120,7 @@ export function MonthChart({
     <section aria-labelledby={headingId} className="rounded-lg bg-superficie p-6 shadow-cartao">
       <p className="md-eyebrow">{eyebrow}</p>
       <h2 id={headingId} className="mt-1 mb-3 font-display text-heading text-tinta">
-        {title}
+        <MaskedText text={title} />
       </h2>
 
       <div className="flex gap-2">

@@ -16,6 +16,7 @@ import { chartSummary, monthLabel, projectionNote } from "@/lib/finance/phrases"
 import { monthPoints } from "@/lib/finance/projection";
 import { paymentLabel } from "@/lib/labor/types";
 import { formatWholeMoney, roundToHundredReais } from "@/lib/money";
+import { MaskedText } from "@/components/midas/masked-text";
 
 export const metadata: Metadata = { title: "Planejamento" };
 
@@ -57,7 +58,9 @@ export default async function PlanningPage() {
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex flex-col gap-2">
         <p className="md-eyebrow">Planejamento</p>
-        <h1 className="font-display text-display-lg text-tinta">{title}</h1>
+        <h1 className="font-display text-display-lg text-tinta">
+          <MaskedText text={title} />
+        </h1>
       </div>
 
       {points.some((p) => p.incomeCents + p.expenseCents > 0) ? (

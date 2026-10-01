@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { monthAbbr } from "@/lib/dates";
 
 import type { ChartMonth, ChartSide } from "./month-chart";
+import { MaskedText } from "./masked-text";
 import { TableToggle } from "./table-toggle";
 
 /** "entrou R$ 6.200 (fixa R$ 5.400 · variável R$ 800); deve entrar mais R$ 300" */
@@ -17,10 +18,14 @@ function spoken(verb: "entrou" | "saiu", s: ChartSide) {
 function Breakdown({ s, verb }: { s: ChartSide; verb: "entrar" | "sair" }) {
   return (
     <>
-      {s.split ? <span className="block text-caption text-tinta-suave">{s.split}</span> : null}
+      {s.split ? (
+        <span className="block text-caption text-tinta-suave">
+          <MaskedText text={s.split} />
+        </span>
+      ) : null}
       {s.pending ? (
         <span className="block text-caption text-tinta-suave">
-          deve {verb} mais {s.pending}
+          deve {verb} mais <MaskedText text={s.pending} />
         </span>
       ) : null}
     </>
@@ -80,9 +85,13 @@ export function MonthChartDetails({
                 )}
               >
                 <p className="text-label text-tinta">{m.label}</p>
-                <p className="text-amount text-renda">Entrou + {m.income.total}</p>
+                <p className="text-amount text-renda">
+                  Entrou + <MaskedText text={m.income.total} />
+                </p>
                 <Breakdown s={m.income} verb="entrar" />
-                <p className="mt-1 text-amount text-gasto">Saiu − {m.expense.total}</p>
+                <p className="mt-1 text-amount text-gasto">
+                  Saiu − <MaskedText text={m.expense.total} />
+                </p>
                 <Breakdown s={m.expense} verb="sair" />
               </div>
             ) : null}
@@ -128,15 +137,19 @@ export function MonthChartDetails({
                   {m.label}
                 </th>
                 <td className="py-2 text-right align-top tabular-nums">
-                  <span className="block whitespace-nowrap text-renda">{m.income.total}</span>
+                  <span className="block whitespace-nowrap text-renda">
+                    <MaskedText text={m.income.total} />
+                  </span>
                   <Breakdown s={m.income} verb="entrar" />
                 </td>
                 <td className="py-2 text-right align-top tabular-nums">
-                  <span className="block whitespace-nowrap text-gasto">{m.expense.total}</span>
+                  <span className="block whitespace-nowrap text-gasto">
+                    <MaskedText text={m.expense.total} />
+                  </span>
                   <Breakdown s={m.expense} verb="sair" />
                 </td>
                 <td className="py-2 text-right align-top whitespace-nowrap text-tinta tabular-nums">
-                  {m.balance}
+                  <MaskedText text={m.balance} />
                 </td>
               </tr>
             ))}

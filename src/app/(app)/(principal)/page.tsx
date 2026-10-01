@@ -33,6 +33,7 @@ import {
 import { monthPoints } from "@/lib/finance/projection";
 import { longDate, salutation } from "@/lib/greeting";
 import { formatMoney, formatWholeMoney, roundToHundredReais } from "@/lib/money";
+import { MaskedText } from "@/components/midas/masked-text";
 
 export const metadata: Metadata = { title: "Início" };
 
@@ -137,7 +138,10 @@ export default async function DashboardPage({
           : `Você planejou ${formatMoney(row.limitCents)} para ${monthName(current)}.`;
       notice = (
         <Notice tone="alerta" role="note">
-          <strong>{headline}</strong> {detail}
+          <strong>
+            <MaskedText text={headline} />
+          </strong>{" "}
+          <MaskedText text={detail} />
           {more}{" "}
           <Link href="/planejamento/limites" className="md-link">
             Ver limites
@@ -155,7 +159,12 @@ export default async function DashboardPage({
           <Notice tone="alerta" role="note">
             <strong>{monthLabel(negative.month)} pode fechar no vermelho.</strong> Se os gastos
             seguirem como nos últimos meses, vão faltar cerca de{" "}
-            {formatWholeMoney(roundToHundredReais(negative.expenseCents - negative.incomeCents))}.{" "}
+            <MaskedText
+              text={formatWholeMoney(
+                roundToHundredReais(negative.expenseCents - negative.incomeCents),
+              )}
+            />
+            .{" "}
             <Link href="/planejamento" className="md-link">
               Ver o planejamento
             </Link>
@@ -201,12 +210,14 @@ export default async function DashboardPage({
     <div className="flex flex-col gap-6">
       {greeting}
       <p className="-mt-4 text-body text-tinta">
-        {summarySentence(
-          balance,
-          prevTotals ? prevTotals.incomeCents - prevTotals.expenseCents : null,
-          month,
-          isCurrent,
-        )}
+        <MaskedText
+          text={summarySentence(
+            balance,
+            prevTotals ? prevTotals.incomeCents - prevTotals.expenseCents : null,
+            month,
+            isCurrent,
+          )}
+        />
       </p>
       <MonthSwitcher month={month} first={first} last={current} basePath="/" />
       {notice}
@@ -350,11 +361,11 @@ function GreetingTitle({
       {hello}{" "}
       {assessment.accent ? (
         <>
-          {assessment.text}
+          <MaskedText text={assessment.text} />
           <em className="md-acento">{assessment.accent}</em>.
         </>
       ) : (
-        assessment.text
+        <MaskedText text={assessment.text} />
       )}
     </h1>
   );

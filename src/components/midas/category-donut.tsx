@@ -8,6 +8,7 @@ import { floorPercent, formatWholeMoney } from "@/lib/money";
 import { CategoryIcon } from "./category-icon";
 import { Money } from "./money";
 import { TableToggle } from "./table-toggle";
+import { MaskedText } from "./masked-text";
 
 /**
  * Rosca de gastos por categoria (docs/design-system/componentes/category-donut.md): até
@@ -74,7 +75,7 @@ export function CategoryDonut({
     <section aria-labelledby={headingId} className="rounded-lg bg-superficie p-6 shadow-cartao">
       <p className="md-eyebrow">Gastos por categoria</p>
       <h2 id={headingId} className="mt-1 mb-4 font-display text-heading text-tinta">
-        {donutTitle(slices, categories, month)}
+        <MaskedText text={donutTitle(slices, categories, month)} />
       </h2>
 
       {slices.length > 0 ? (

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { BalanceCard } from "@/components/midas/balance-card";
 import { CategoryDonut } from "@/components/midas/category-donut";
+import { MaskedText } from "@/components/midas/masked-text";
 import { TransactionList } from "@/components/midas/transaction-list";
 import { buttonClasses } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/dal";
@@ -65,13 +66,17 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
         <p className="md-eyebrow">Resumo do mês</p>
         <h1 className="font-display text-display-lg text-tinta">{monthLongTitle(mes)}</h1>
         <p className="text-body text-tinta">
-          {!closed
-            ? `${Name} ainda está em andamento.`
-            : balance >= 100
-              ? `${Name} fechou no azul, com ${formatWholeMoney(balance)} de sobra.`
-              : balance < 0
-                ? `${Name} fechou com ${formatWholeMoney(-balance)} a menos. Quer ver onde dá para ajustar?`
-                : `${Name} fechou zerado.`}
+          <MaskedText
+            text={
+              !closed
+                ? `${Name} ainda está em andamento.`
+                : balance >= 100
+                  ? `${Name} fechou no azul, com ${formatWholeMoney(balance)} de sobra.`
+                  : balance < 0
+                    ? `${Name} fechou com ${formatWholeMoney(-balance)} a menos. Quer ver onde dá para ajustar?`
+                    : `${Name} fechou zerado.`
+            }
+          />
         </p>
       </div>
       <BalanceCard
