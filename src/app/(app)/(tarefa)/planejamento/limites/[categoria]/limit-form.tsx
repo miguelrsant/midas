@@ -15,6 +15,7 @@ import { Notice } from "@/components/ui/notice";
 import { runAction, signInHref } from "@/lib/actions/client";
 import type { Category } from "@/lib/categories";
 import { formatAmount, MONEY_ERRORS, readMoney } from "@/lib/money";
+import { HOME } from "@/lib/navigation";
 
 /** Definir, mudar ou remover o limite de uma categoria de gasto. */
 export function LimitForm({
@@ -56,7 +57,7 @@ export function LimitForm({
       return setFormError(result.fields?.categoryId ?? result.message);
     }
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   async function remove() {
@@ -66,7 +67,7 @@ export function LimitForm({
     setRemoving(false);
     if (!result.ok) return setFormError(result.message);
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   return (

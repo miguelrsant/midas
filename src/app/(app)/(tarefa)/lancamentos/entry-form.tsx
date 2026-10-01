@@ -21,15 +21,17 @@ import { TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { runAction, signInHref } from "@/lib/actions/client";
 import type { Category } from "@/lib/categories";
-import { addDays, type DateOnly } from "@/lib/dates";
+import { addDays, type DateOnly, monthOf } from "@/lib/dates";
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
 import { formatAmount, formatSigned, MONEY_ERRORS, readMoney } from "@/lib/money";
+import { homeFor } from "@/lib/navigation";
 import { SHORTCUTS } from "@/lib/presets";
 
 /**
  * Formulário de lançamento (docs/design-system/17-padroes-de-tela.md#adicionar-lançamento).
  * Só o valor é obrigatório. Erros aparecem ao salvar, e o foco vai para o primeiro campo
- * com erro. Salvar um lançamento novo toca o toque de ouro e volta para a tela de origem.
+ * com erro. Salvar um lançamento novo toca o toque de ouro; salvar ou excluir volta ao
+ * Início, no mês do lançamento. "Voltar" sem salvar vai para a tela de origem.
  */
 
 type WhenChoice = "hoje" | "ontem" | "outro";
@@ -148,7 +150,7 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
       announce(result.data.message);
       highlight(result.data.id);
     }
-    router.replace(backHref);
+    router.replace(homeFor(monthOf(date), today));
   }
 
   async function remove() {
@@ -161,7 +163,7 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
       return;
     }
     announce(result.data.message);
-    router.replace(backHref);
+    router.replace(homeFor(monthOf(initial.date ?? today), today));
   }
 
   return (

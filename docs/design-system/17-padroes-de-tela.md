@@ -70,6 +70,10 @@ Adicionar, editar, "Monte seu mês", fixos, limites, categorias e os passos das 
 - O botão Voltar do navegador e do celular fazem o mesmo que o "Voltar" da tela.
 - Se a pessoa já digitou algo e toca em "Voltar", o Midas pergunta na própria tela: "Sair sem salvar? O que você digitou vai se perder." com "Sair sem salvar" e "Continuar editando".
 
+### Depois de salvar
+
+**Terminar uma tarefa leva ao Início**, com o aviso por cima ("Anotado: …"). Isso vale para lançamento (novo, editado ou excluído), fixo, limite, "Monte seu mês", "Adicionar ao planejamento" das calculadoras e "Recebi" de uma renda prevista. A pessoa vê na hora o efeito no saldo e no gráfico, sem procurar onde está. Um lançamento de um mês passado abre o Início naquele mês (`/?mes=2026-08`). "Voltar" sem salvar continua levando à tela de origem. Ações que só arrumam uma lista ("Não recebi", apagar uma conta de calculadora) ficam na mesma tela.
+
 ## Painel (Início)
 
 **Pergunta:** "Quanto sobrou este mês?"
@@ -159,7 +163,7 @@ Quando?
 5. **Descrição** (opcional): campo de texto, até 60 caracteres.
 6. **Quando?**: três opções em chips de escolha única, com "Hoje" marcado. "Outro dia" mostra um campo de data nativo (`<input type="date">`) que vai de 10 anos atrás **até hoje**: data futura não existe em lançamento. Para anotar algo que ainda vai acontecer, a pessoa usa um fixo ("só uma vez") no Planejamento. Quem chega de um mês passado ("Adicionar lançamento em agosto") já encontra "Outro dia" marcado com o último dia daquele mês.
 7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, a partir do mês seguinte, e liga este lançamento a ele. O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10."
-8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta para a tela de onde a pessoa veio, com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
+8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta ao Início ([depois de salvar](#depois-de-salvar)), com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
 
 Regras:
 

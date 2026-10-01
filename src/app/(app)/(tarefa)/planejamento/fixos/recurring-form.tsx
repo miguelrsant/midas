@@ -38,6 +38,7 @@ import {
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
 import { dayAlreadyPassed, MAX_INSTALLMENTS, type RepeatMode } from "@/lib/finance/recurring";
 import { formatAmount, MONEY_ERRORS, readMoney } from "@/lib/money";
+import { HOME } from "@/lib/navigation";
 import { findRecurringPreset, RECURRING_PRESETS } from "@/lib/presets";
 
 /** Adicionar ou editar um fixo (docs/design-system/17-padroes-de-tela.md#rendas-e-gastos-fixos). */
@@ -163,7 +164,7 @@ export function RecurringForm({
       return;
     }
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   async function stop() {
@@ -173,7 +174,7 @@ export function RecurringForm({
     setDeleting(false);
     if (!result.ok) return setFormError(result.message);
     announce(result.data.message);
-    router.push(back);
+    router.replace(HOME);
   }
 
   const months = Array.from({ length: 24 }, (_, i) => addMonths(current, i));

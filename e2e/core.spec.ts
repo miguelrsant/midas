@@ -64,13 +64,15 @@ test("anotar um gasto com atalho, editar e excluir", async ({ page }) => {
   await expect(page.getByRole("radio", { name: "Restaurante" })).toBeChecked();
   await page.getByRole("button", { name: "Salvar gasto" }).click();
 
-  await expect(page).toHaveURL("/lancamentos");
+  // Salvou: volta ao Início, com o aviso e a linha nova.
+  await expect(page).toHaveURL("/");
   await expect(page.getByRole("status").filter({ hasText: "Anotado: Café" })).toBeVisible();
   const row = page.getByRole("link", { name: /Café/ });
   await expect(row).toContainText("8,50");
   await expectNoAxeViolations(page);
 
-  // Busca na própria tela, sem resultado.
+  // Busca na lista de lançamentos, sem resultado.
+  await page.goto("/lancamentos");
   await page.getByLabel("Buscar lançamento").fill("farmácia");
   await expect(page.getByText(/Nenhum lançamento com “farmácia”/)).toBeVisible();
   await page.getByRole("button", { name: "Limpar busca" }).click();
@@ -79,6 +81,7 @@ test("anotar um gasto com atalho, editar e excluir", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Editar gasto" })).toBeVisible();
   await page.getByLabel(/Quanto foi\?/).fill("9");
   await page.getByRole("button", { name: "Salvar alterações" }).click();
+  await expect(page).toHaveURL("/");
   await expect(page.getByRole("status").filter({ hasText: "Alterado: Café" })).toBeVisible();
 
   await page.getByRole("link", { name: /Café/ }).click();
@@ -111,7 +114,7 @@ test("limite a 90% vira aviso no Início", async ({ page }) => {
   await page.goto("/planejamento/limites/mercado");
   await page.getByLabel(/Quanto você quer gastar com Mercado/).fill("100");
   await page.getByRole("button", { name: "Salvar limite" }).click();
-  await expect(page).toHaveURL("/planejamento/limites");
+  await expect(page).toHaveURL("/");
 
   await page.goto("/lancamentos/novo");
   await page.getByLabel(/Quanto foi\?/).fill("95");
@@ -142,6 +145,7 @@ test("13º no planejamento e Recebi", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "1ª parcela, até 30 de novembro" })).toBeVisible();
   await expectNoAxeViolations(page);
   await page.getByRole("button", { name: "Adicionar ao planejamento" }).click();
+  await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("status").filter({ hasText: "13º adicionado ao planejamento" }),
   ).toBeVisible();
@@ -152,9 +156,11 @@ test("13º no planejamento e Recebi", async ({ page }) => {
   await expectNoAxeViolations(page);
   await page.getByRole("button", { name: "Recebi: 13º salário, 1ª parcela", exact: true }).click();
   await page.getByRole("button", { name: "Anotar renda" }).click();
+  await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("status").filter({ hasText: "Anotado: 13º salário, 1ª parcela" }),
   ).toBeVisible();
+  await page.goto("/planejamento");
   await expect(
     page.getByRole("button", { name: "Recebi: 13º salário, 1ª parcela", exact: true }),
   ).toHaveCount(0);
