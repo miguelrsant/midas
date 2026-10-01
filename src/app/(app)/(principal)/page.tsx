@@ -217,6 +217,14 @@ export default async function DashboardPage({
         incomeCents={monthTotals.incomeCents}
         expenseCents={monthTotals.expenseCents}
         plain={Boolean(achievement)}
+        pending={
+          isCurrent
+            ? {
+                incomeCents: projection.currentPoint.income.pendingCents,
+                expenseCents: projection.currentPoint.expense.pendingCents,
+              }
+            : undefined
+        }
       />
       <div className="flex flex-col gap-2">
         <Button asChild size="lg" fullWidth>

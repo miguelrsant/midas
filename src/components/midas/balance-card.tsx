@@ -3,25 +3,35 @@ import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { type MonthKey, monthName } from "@/lib/dates";
 import { balanceSentence } from "@/lib/finance/phrases";
-import { floorPercent, formatMoney } from "@/lib/money";
+import { floorPercent, formatMoney, formatWholeMoney } from "@/lib/money";
 
 import { Bar } from "./bar";
 import { Money } from "./money";
 
-/** Cartão de saldo do mês (docs/design-system/componentes/balance-card.md). */
+/**
+ * Cartão de saldo do mês (docs/design-system/componentes/balance-card.md). No mês atual,
+ * `pending` traz o que ainda deve entrar e sair até o fim do mês (fixos que ainda não
+ * chegaram ao dia, rendas previstas): sem isso, quem só cadastrou fixos veria R$ 0,00.
+ */
 export function BalanceCard({
   month,
   isCurrentMonth,
   incomeCents,
   expenseCents,
   plain = false,
+  pending,
 }: {
   month: MonthKey;
   isCurrentMonth: boolean;
   incomeCents: number;
   expenseCents: number;
   plain?: boolean;
+  pending?: { incomeCents: number; expenseCents: number };
 }) {
+  const hasPending = Boolean(pending && pending.incomeCents + pending.expenseCents > 0);
+  const estimate = pending
+    ? incomeCents + pending.incomeCents - (expenseCents + pending.expenseCents)
+    : 0;
   const balance = incomeCents - expenseCents;
   const negative = balance < 0;
   const big = Math.abs(balance) >= 10_000_000;
@@ -63,6 +73,11 @@ export function BalanceCard({
           </dt>
           <dd className="font-mono text-[1.1875rem]/[1.625rem] font-medium">
             <Money cents={incomeCents} kind="income" />
+            {hasPending && pending!.incomeCents > 0 ? (
+              <span className="block font-sans text-caption font-normal text-tinta-suave">
+                deve entrar mais <Money cents={pending!.incomeCents} />
+              </span>
+            ) : null}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-2 @[340px]:block">
@@ -72,13 +87,30 @@ export function BalanceCard({
           </dt>
           <dd className="font-mono text-[1.1875rem]/[1.625rem] font-medium">
             <Money cents={expenseCents} kind="expense" />
+            {hasPending && pending!.expenseCents > 0 ? (
+              <span className="block font-sans text-caption font-normal text-tinta-suave">
+                deve sair mais <Money cents={pending!.expenseCents} />
+              </span>
+            ) : null}
           </dd>
         </div>
       </dl>
       {pct !== null ? <Bar percent={pct} className="mt-4" /> : null}
-      <p className="mt-2 text-caption text-tinta-suave">
-        {balanceSentence(incomeCents, expenseCents, month, isCurrentMonth)}
-      </p>
+      {/* Com a renda a caminho, "Anote sua renda" confundiria: fica só a estimativa. */}
+      {hasPending && incomeCents === 0 && pending!.incomeCents > 0 ? null : (
+        <p className="mt-2 text-caption text-tinta-suave">
+          {balanceSentence(incomeCents, expenseCents, month, isCurrentMonth)}
+        </p>
+      )}
+      {hasPending ? (
+        <p className="mt-1 text-body text-tinta">
+          {estimate >= 0
+            ? "Até o fim do mês, devem sobrar cerca de "
+            : "Até o fim do mês, podem faltar cerca de "}
+          <span className="md-valor">{formatWholeMoney(Math.abs(estimate))}</span>
+          <span className="md-oculto">R$&nbsp;•••••</span>.
+        </p>
+      ) : null}
     </section>
   );
 }

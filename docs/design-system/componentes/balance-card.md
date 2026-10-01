@@ -32,7 +32,7 @@ Grupo: Painel · Classe base: `md-card md-marmore` + `md-balance` · Componente 
 | --- | --- | --- |
 | Sobrou (padrão) | Saldo maior ou igual a zero | Saldo em `tinta`, sem sinal |
 | Faltou | Saldo negativo | Saldo em `gasto`, com `−`; sobretítulo "Faltou em …" |
-| Mês atual | O mês exibido é o mês corrente | Mesmo visual; textos com "até agora" |
+| Mês atual | O mês exibido é o mês corrente | Mesmo visual; textos com "até agora". Se ainda faltam fixos ou rendas previstas no mês, embaixo de Entrou e Saiu vem "deve entrar mais R$ …" / "deve sair mais R$ …" em `caption`, e no fim a estimativa: "Até o fim do mês, devem sobrar cerca de R$ 2.476." (ou "podem faltar"). Quem só cadastrou fixos não vê só R$ 0,00 |
 | Mês fechado | Mês anterior ao atual | Mesmo visual; textos no passado, sem "até agora" |
 | Sem renda | Nenhuma renda anotada no mês | Sem barra; frase pede a renda |
 | Liso (`md-card` sem `md-marmore`) | Dias 1 a 7 do mês, enquanto o [Achievement](achievement.md) aparece acima dele | Fundo `superficie`, sem textura nem véu; o resto igual |
