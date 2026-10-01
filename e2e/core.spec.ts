@@ -93,6 +93,31 @@ test("anotar um gasto com atalho, editar e excluir", async ({ page }) => {
   expect(csp).toEqual([]);
 });
 
+test("Voltar sai do formulário aberto direto, e Repete por alguns meses", async ({ page }) => {
+  const csp = await watchCsp(page);
+  await signedInAccount(page, "voltar");
+  // Formulário aberto direto (sem histórico no app): Voltar leva ao Início.
+  await page.goto("/lancamentos/novo");
+  await page.getByLabel(/Quanto foi\?/).fill("350");
+  await page.getByRole("button", { name: "Voltar" }).click();
+  await page.getByRole("button", { name: "Sair sem salvar" }).click();
+  await expect(page).toHaveURL("/");
+
+  await page.goto("/lancamentos/novo");
+  await page.getByLabel(/Quanto foi\?/).fill("250");
+  await page.getByLabel("Repete todo mês").check();
+  await expect(page.getByRole("radio", { name: "Sem fim" })).toBeChecked();
+  await page.getByRole("radio", { name: "Por alguns meses" }).check({ force: true });
+  await page.getByLabel("Quantos meses, contando este?").fill("3");
+  await expectNoAxeViolations(page);
+  await page.getByRole("button", { name: "Salvar gasto" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("status").filter({ hasText: /Ele se repete todo dia \d+ até / }),
+  ).toBeVisible();
+  expect(csp).toEqual([]);
+});
+
 test("categoria própria com ícone aparece no formulário", async ({ page }) => {
   await signedInAccount(page, "categoria");
   await page.goto("/configuracoes/categorias");

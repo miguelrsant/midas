@@ -23,6 +23,7 @@ import { runAction, signInHref } from "@/lib/actions/client";
 import type { Category } from "@/lib/categories";
 import { addDays, type DateOnly, monthOf } from "@/lib/dates";
 import { DESCRIPTION_MAX_LENGTH, type EntryKind } from "@/lib/entry";
+import { MAX_INSTALLMENTS } from "@/lib/finance/recurring";
 import { formatAmount, formatSigned, MONEY_ERRORS, readMoney } from "@/lib/money";
 import { homeFor } from "@/lib/navigation";
 import { SHORTCUTS } from "@/lib/presets";
@@ -75,6 +76,8 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
     initial.date && initialWhen(initial.date, today) === "outro" ? initial.date : today,
   );
   const [repeat, setRepeat] = useState(false);
+  const [repeatUntil, setRepeatUntil] = useState<"forever" | "months">("forever");
+  const [repeatCount, setRepeatCount] = useState("10");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -104,6 +107,11 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
     const read = readMoney(amountText);
     const nextErrors: Record<string, string> = {};
     if (!read.ok) nextErrors.amountCents = MONEY_ERRORS[read.error];
+    const count = Number(repeatCount);
+    const limited = repeat && repeatUntil === "months";
+    if (limited && (!Number.isInteger(count) || count < 2 || count > MAX_INSTALLMENTS)) {
+      nextErrors.repeatCount = `Digite de 2 a ${MAX_INSTALLMENTS} meses.`;
+    }
     if (when === "outro") {
       if (!otherDate) nextErrors.date = "Escolha uma data.";
       else if (otherDate > today)
@@ -113,7 +121,8 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
     setErrors(nextErrors);
     if (!read.ok || Object.keys(nextErrors).length > 0) {
       if (nextErrors.amountCents) amountRef.current?.focus();
-      else document.getElementById(`${idBase}-data`)?.focus();
+      else if (nextErrors.date) document.getElementById(`${idBase}-data`)?.focus();
+      else document.getElementById(`${idBase}-meses`)?.focus();
       return;
     }
     const cents = read.cents;
@@ -127,7 +136,14 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
     setBusy(true);
     const result =
       mode === "new"
-        ? await runAction(() => createEntryAction({ ...payload, id: newId, repeatMonthly: repeat }))
+        ? await runAction(() =>
+            createEntryAction({
+              ...payload,
+              id: newId,
+              repeatMonthly: repeat,
+              repeatCount: limited ? count : null,
+            }),
+          )
         : await runAction(() => updateEntryAction(initial.id, payload));
     if (!result.ok) {
       setBusy(false);
@@ -304,7 +320,7 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
         {mode === "new" ? (
           <CheckboxField
             label="Repete todo mês"
-            help="Cria um fixo: o Midas anota sozinho, no mesmo dia, a partir do mês que vem."
+            help="Cria um fixo: o Midas anota sozinho, no mesmo dia, nos próximos meses."
             checked={repeat}
             error={errors.repeatMonthly}
             onChange={(value) => {
@@ -312,6 +328,37 @@ export function EntryForm({ mode, today, categories, backHref, initial }: EntryF
               touch();
             }}
           />
+        ) : null}
+        {mode === "new" && repeat ? (
+          <div className="flex flex-col gap-3">
+            <ChoiceChips<"forever" | "months">
+              legend="Até quando?"
+              name="ate-quando"
+              value={repeatUntil}
+              onValueChange={(v) => {
+                setRepeatUntil(v);
+                touch();
+              }}
+              options={[
+                { value: "forever", label: "Sem fim" },
+                { value: "months", label: "Por alguns meses" },
+              ]}
+            />
+            {repeatUntil === "months" ? (
+              <TextField
+                id={`${idBase}-meses`}
+                label="Quantos meses, contando este?"
+                help="Por exemplo, 10 para uma compra em 10 parcelas."
+                inputMode="numeric"
+                value={repeatCount}
+                error={errors.repeatCount}
+                onChange={(event) => {
+                  setRepeatCount(event.target.value.replace(/\D/g, "").slice(0, 3));
+                  touch();
+                }}
+              />
+            ) : null}
+          </div>
         ) : null}
 
         <Button

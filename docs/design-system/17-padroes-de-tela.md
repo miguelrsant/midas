@@ -67,7 +67,7 @@ O mês exibido fica na URL (`?mes=2026-09`), para o botão Voltar do navegador e
 Adicionar, editar, "Monte seu mês", fixos, limites, categorias e os passos das calculadoras são páginas próprias (com rota), não janelas por cima:
 
 - No topo, o link **"Voltar"** (`chevron-left` + texto) e o título da tarefa.
-- O botão Voltar do navegador e do celular fazem o mesmo que o "Voltar" da tela.
+- O "Voltar" da tela leva sempre à tela de onde a tarefa foi aberta (o `?de=` do link, ou a tela-mãe da tarefa), mesmo quando o formulário foi aberto direto (recarregado, link colado, aba nova). O Voltar do navegador e do celular continua voltando pelo histórico.
 - Se a pessoa já digitou algo e toca em "Voltar", o Midas pergunta na própria tela: "Sair sem salvar? O que você digitou vai se perder." com "Sair sem salvar" e "Continuar editando".
 
 ### Depois de salvar
@@ -154,6 +154,7 @@ Descrição (opcional)
 Quando?
 (Hoje) (Ontem) (Outro dia)
 [ ] Repete todo mês
+    Até quando?  (Sem fim) (Por alguns meses)  ← só com a caixa marcada
 [        Salvar gasto        ]                ← primário grande + toque de ouro
 ```
 
@@ -163,7 +164,7 @@ Quando?
 4. **Categoria** ([CategoryChip](componentes/category-chip.md)): seis mais usadas e "Mais". Opcional: sem escolha, vai para "Outros".
 5. **Descrição** (opcional): campo de texto, até 60 caracteres.
 6. **Quando?**: três opções em chips de escolha única, com "Hoje" marcado. "Outro dia" mostra um campo de data nativo (`<input type="date">`) que vai de 10 anos atrás **até hoje**: data futura não existe em lançamento. Para anotar algo que ainda vai acontecer, a pessoa usa um fixo ("só uma vez") no Planejamento. Quem chega de um mês passado ("Adicionar lançamento em agosto") já encontra "Outro dia" marcado com o último dia daquele mês.
-7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, a partir do mês seguinte, e liga este lançamento a ele. O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10."
+7. **Repete todo mês** (caixa de seleção, desmarcada): ao salvar, cria também um fixo com o mesmo valor, categoria, descrição e dia, e liga este lançamento a ele (é a vez deste mês). Marcada, aparece **"Até quando?"**: "Sem fim" (já marcado) ou "Por alguns meses", que pede "Quantos meses, contando este?" (2 a 120; "10 para uma compra em 10 parcelas"). O aviso diz: "Anotado: Aluguel, − R$ 1.650,00. Ele se repete todo dia 10." ou, com fim, "…Ele se repete todo dia 10 até julho de 2027."
 8. **Salvar gasto**: primário grande, com o [toque de ouro](componentes/golden-touch.md). Depois de salvar, o app volta ao Início ([depois de salvar](#depois-de-salvar)), com a linha nova brilhando uma vez e o aviso "Anotado: Mercado do bairro, − R$ 127,90".
 
 Regras:
