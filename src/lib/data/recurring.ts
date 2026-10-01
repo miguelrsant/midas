@@ -48,6 +48,8 @@ export interface RecurringView {
   startMonth: MonthKey;
   endMonth: MonthKey | null;
   nextOccurrenceOn: DateOnly | null;
+  /** Só no adiantamento: o fixo do salário a que ele pertence. */
+  salaryId: string | null;
 }
 
 const select = {
@@ -60,6 +62,7 @@ const select = {
   startMonth: true,
   endMonth: true,
   nextOccurrenceOn: true,
+  salaryId: true,
   createdAt: true,
 } satisfies Prisma.RecurringSelect;
 
@@ -76,6 +79,7 @@ function toView(userId: string, row: Row): RecurringView {
     startMonth: row.startMonth,
     endMonth: row.endMonth,
     nextOccurrenceOn: row.nextOccurrenceOn ? fromDbDate(row.nextOccurrenceOn) : null,
+    salaryId: row.salaryId,
   };
 }
 
@@ -88,9 +92,36 @@ export async function listRecurring(userId: string): Promise<RecurringView[]> {
   return rows.map((row) => toView(userId, row));
 }
 
-export async function getRecurring(userId: string, id: string): Promise<RecurringView | null> {
-  const row = await db.recurring.findFirst({ where: { id, userId }, select });
+export async function getRecurring(
+  userId: string,
+  id: string,
+  client: Tx | typeof db = db,
+): Promise<RecurringView | null> {
+  const row = await client.recurring.findFirst({ where: { id, userId }, select });
   return row ? toView(userId, row) : null;
+}
+
+/**
+ * O salário e o adiantamento dele, a partir de qualquer um dos dois. Para um fixo que
+ * não é salário dividido, `advance` é nulo e `salary` é o próprio fixo.
+ */
+export async function getSalaryGroup(
+  userId: string,
+  id: string,
+  client: Tx | typeof db = db,
+): Promise<{ salary: RecurringView; advance: RecurringView | null } | null> {
+  const row = await getRecurring(userId, id, client);
+  if (!row) return null;
+  if (row.salaryId) {
+    const salary = await getRecurring(userId, row.salaryId, client);
+    return salary ? { salary, advance: row } : null;
+  }
+  const advance = await client.recurring.findFirst({
+    where: { userId, salaryId: row.id },
+    orderBy: { createdAt: "asc" },
+    select,
+  });
+  return { salary: row, advance: advance ? toView(userId, advance) : null };
 }
 
 /** Anota as ocorrências vencidas até hoje. Uma vez por requisição (cache do React). */
@@ -150,6 +181,8 @@ export interface RecurringInput {
   dayOfMonth: number;
   startMonth: MonthKey;
   repeat: RepeatMode;
+  /** Só no adiantamento: o fixo do salário (do mesmo dono, conferido aqui). */
+  salaryId?: string | null;
 }
 
 export async function countRecurring(userId: string) {
@@ -187,6 +220,7 @@ export async function createRecurring(
       startMonth: input.startMonth,
       endMonth,
       nextOccurrenceOn: first ? toDbDate(first) : null,
+      salaryId: input.salaryId ?? null,
     },
     select,
   });
@@ -200,9 +234,12 @@ export async function createRecurring(
 export async function updateRecurring(
   userId: string,
   id: string,
-  input: Omit<RecurringInput, "startMonth" | "repeat"> & { endMonth: MonthKey | null },
+  input: Omit<RecurringInput, "startMonth" | "repeat" | "salaryId"> & {
+    endMonth: MonthKey | null;
+  },
+  client: Tx | typeof db = db,
 ): Promise<RecurringView | null> {
-  const current = await getRecurring(userId, id);
+  const current = await getRecurring(userId, id, client);
   if (!current) return null;
   let next: DateOnly | null = current.nextOccurrenceOn;
   if (next) {
@@ -214,7 +251,7 @@ export async function updateRecurring(
         month,
       );
   }
-  const updated = await db.recurring.updateMany({
+  const updated = await client.recurring.updateMany({
     where: { id, userId },
     data: {
       kind: toDbKind(input.kind),
@@ -226,12 +263,18 @@ export async function updateRecurring(
       nextOccurrenceOn: next ? toDbDate(next) : null,
     },
   });
-  return updated.count === 1 ? getRecurring(userId, id) : null;
+  return updated.count === 1 ? getRecurring(userId, id, client) : null;
 }
 
-/** "Parar este fixo": apaga a regra; os lançamentos já anotados ficam (vínculo vira nulo). */
+/**
+ * "Parar este fixo": apaga a regra; os lançamentos já anotados ficam (vínculo vira nulo).
+ * Salário dividido para inteiro: parar o adiantamento ou o salário apaga os dois.
+ */
 export async function deleteRecurring(userId: string, id: string): Promise<boolean> {
-  const deleted = await db.recurring.deleteMany({ where: { id, userId } });
+  const row = await db.recurring.findFirst({ where: { id, userId }, select: { salaryId: true } });
+  if (!row) return false;
+  // Apagar o salário leva o adiantamento junto (ON DELETE CASCADE).
+  const deleted = await db.recurring.deleteMany({ where: { id: row.salaryId ?? id, userId } });
   return deleted.count === 1;
 }
 
@@ -257,5 +300,103 @@ export async function createRecurringWithinLimit(
       );
     }
     return created;
+  });
+}
+
+export interface SalaryPlanItem {
+  role: "advance" | "salary";
+  amountCents: number;
+  dayOfMonth: number;
+  startMonth: MonthKey;
+}
+
+/**
+ * Cria ou edita um salário (numa data só ou dividido em adiantamento e resto), tudo na
+ * mesma transação travada e dentro do teto de fixos. Na edição, `salaryId` é o fixo do
+ * salário (já conferido com getSalaryGroup); o adiantamento é criado, mudado ou apagado
+ * conforme o plano. Devolve null se passar do teto ou se o fixo sumiu.
+ */
+export async function saveSalary(
+  userId: string,
+  salaryId: string | null,
+  plan: readonly SalaryPlanItem[],
+  description: string | null,
+): Promise<{ salary: RecurringView; advance: RecurringView | null } | null> {
+  const salaryItem = plan.find((i) => i.role === "salary");
+  const advanceItem = plan.find((i) => i.role === "advance") ?? null;
+  if (!salaryItem) throw new Error("plano sem salário");
+  return withUserLock(userId, async (tx) => {
+    const count = await tx.recurring.count({ where: { userId } });
+    const base = { kind: "income" as const, categoryId: "salario" };
+
+    if (!salaryId) {
+      if (count + plan.length > RECURRING_LIMIT) return null;
+      const salary = await createRecurring(
+        userId,
+        { ...base, ...salaryItem, description, repeat: { mode: "monthly" } },
+        { client: tx },
+      );
+      const advance = advanceItem
+        ? await createRecurring(
+            userId,
+            {
+              ...base,
+              ...advanceItem,
+              description: "Adiantamento",
+              repeat: { mode: "monthly" },
+              salaryId: salary.id,
+            },
+            { client: tx },
+          )
+        : null;
+      return { salary, advance };
+    }
+
+    const group = await getSalaryGroup(userId, salaryId, tx);
+    if (!group || group.salary.id !== salaryId) return null;
+    const salary = await updateRecurring(
+      userId,
+      salaryId,
+      {
+        ...base,
+        amountCents: salaryItem.amountCents,
+        dayOfMonth: salaryItem.dayOfMonth,
+        description,
+        endMonth: group.salary.endMonth,
+      },
+      tx,
+    );
+    if (!salary) return null;
+    let advance: RecurringView | null = null;
+    if (advanceItem && group.advance) {
+      advance = await updateRecurring(
+        userId,
+        group.advance.id,
+        {
+          ...base,
+          amountCents: advanceItem.amountCents,
+          dayOfMonth: advanceItem.dayOfMonth,
+          description: group.advance.description,
+          endMonth: group.advance.endMonth,
+        },
+        tx,
+      );
+    } else if (advanceItem) {
+      if (count + 1 > RECURRING_LIMIT) return null;
+      advance = await createRecurring(
+        userId,
+        {
+          ...base,
+          ...advanceItem,
+          description: "Adiantamento",
+          repeat: { mode: "monthly" },
+          salaryId,
+        },
+        { client: tx },
+      );
+    } else if (group.advance) {
+      await tx.recurring.deleteMany({ where: { id: group.advance.id, userId } });
+    }
+    return { salary, advance };
   });
 }

@@ -185,27 +185,33 @@ model Entry {
 
 /// @lgpd:activity=a014 @lgpd:legal_basis=art7-v,art11-ii-d @lgpd:retention=account @lgpd:sensitive=potential
 model Recurring {
-  id               String    @id @db.Uuid
+  id               String      @id @db.Uuid
   userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind             EntryKind
   amountCents      Int
-  categoryId       String    @db.VarChar(40)
+  categoryId       String      @db.VarChar(40)
   /// Nome do fixo, cifrado (AAD: recurring.description|userId|id).
   description      String?
   /// Dia do mês (1 a 31); meses mais curtos usam o último dia.
-  dayOfMonth       Int       @db.SmallInt
+  dayOfMonth       Int         @db.SmallInt
   /// Primeiro mês ("2026-10").
-  startMonth       String    @db.Char(7)
+  startMonth       String      @db.Char(7)
   /// Último mês, para parcelas e "só uma vez"; nulo = sem fim.
-  endMonth         String?   @db.Char(7)
+  endMonth         String?     @db.Char(7)
   /// Próxima ocorrência ainda não anotada; nulo = terminou.
-  nextOccurrenceOn DateTime? @db.Date
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  nextOccurrenceOn DateTime?   @db.Date
+  /// Só no adiantamento: o fixo do salário a que ele pertence. Os dois se editam e se
+  /// apagam juntos; apagar o salário apaga o adiantamento.
+  salaryId         String?     @db.Uuid
+  salary           Recurring?  @relation("SalaryAdvance", fields: [salaryId], references: [id], onDelete: Cascade)
+  advances         Recurring[] @relation("SalaryAdvance")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
   entries          Entry[]
 
   @@index([userId, nextOccurrenceOn])
+  @@index([salaryId])
   @@map("recurring")
 }
 

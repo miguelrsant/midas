@@ -250,13 +250,33 @@ A primeira vez entra em 10 de outubro.
 - **Primeira vez**: a frase "A primeira vez entra em 10 de outubro." sempre diz a data. Se o dia deste mês já passou, a tela pergunta: "Já anotou o de setembro?" com "Já anotei" (começa no mês que vem) e "Anotar agora" (cria o de setembro também). Criar um fixo nunca preenche meses passados.
 - Salvar confirma no aviso: "Aluguel entra todo dia 10." Sem toque de ouro.
 
+#### Salário
+
+Quando a renda fixa é da categoria **Salário** e repete todo mês, aparecem mais duas perguntas, já com o caso mais comum marcado. O resto só se abre quando a pessoa escolhe:
+
+```
+Esse valor é:   (✓ Líquido (o que cai na conta)) (Bruto (do contracheque))
+                Cai na conta cerca de R$ 4.498,49.        ← só com Bruto
+Como cai?       (✓ Tudo num dia) (Dividido em dois)
+Quanto vem no adiantamento?  [ 40% ⌄ ]                    ← só com Dividido
+Dia do adiantamento          [ Dia 20 ⌄ ]
+Dia do resto                 [ Dia 5 ⌄ ]                  ← o "Que dia?" muda de nome
+R$ 2.000,00 no dia 20 e R$ 3.000,00 no dia 5.
+```
+
+- **Bruto:** o Midas calcula o líquido na hora (INSS e Imposto de Renda, sem dependentes), mostra "Cai na conta cerca de R$ …" e guarda **só o líquido**: o bruto não é gravado. Para dependentes e outros descontos, o link leva à calculadora de salário líquido.
+- **Dividido em dois:** a porcentagem (10% a 90%, padrão 40%) vale sobre o líquido, porque é o dinheiro que cai na conta. O adiantamento fica com a parte inteira e o resto leva os centavos; as duas partes sempre somam o total. Viram dois fixos ligados, "Adiantamento" (dia 20) e o salário (dia 5), que aparecem separados na lista e entram cada um no seu dia. Cada parte começa na sua próxima data, sem a pergunta "Já anotou?".
+- **Editar:** abrir o adiantamento ou o salário abre o mesmo formulário, com o total e a divisão; mudar para "Tudo num dia" apaga o adiantamento. "Parar" pergunta "Parar o salário e o adiantamento?" e apaga os dois.
+- O aviso diz as duas partes: "Salário: R$ 2.000,00 no dia 20 e R$ 3.000,00 no dia 5." Com bruto numa data só: "Salário entra todo dia 5. Cai na conta cerca de R$ 4.498,49 por mês."
+- A calculadora de salário líquido, ao atualizar um salário dividido, mantém a mesma porcentagem.
+
 **Editar fixo** (`/planejamento/fixos/[id]`): o mesmo formulário. Mudanças valem **dali para a frente**; lançamentos já anotados não mudam. "Parar este fixo" (perigo, com confirmação na tela: "Parar “Aluguel”? O que já foi anotado continua na lista.").
 
 ### Monte seu mês
 
 **Pergunta:** "O que entra e sai todo mês?" (`/comecar`, tela de tarefa com passos, destino de "Adicionar minha renda" no primeiro acesso)
 
-1. **Quanto você recebe por mês?** MoneyInput + "Que dia cai?" + a opção "Minha renda muda todo mês" (pula para o passo 2 sem criar renda fixa). Link "Não sabe o líquido? Calcule pelo salário bruto" para a calculadora de salário líquido.
+1. **Quanto você recebe por mês?** MoneyInput + "Que dia cai?" + as perguntas do [salário](#salário) (líquido ou bruto; num dia só ou dividido) + a opção "Minha renda muda todo mês" (pula para o passo 2 sem criar renda fixa).
 2. **Quais destes gastos você tem todo mês?** Caixas de seleção grandes com os fixos prontos (Aluguel, Condomínio, Luz, Água, Gás, Internet, Celular, Plano de saúde, Escola ou faculdade, Academia, Streaming, Transporte, Parcela de compra). "Nenhum destes" é válido.
 3. **Quanto é e que dia vence?** Uma linha por gasto escolhido: nome, valor e dia.
 4. **Algum já aconteceu este mês?** Para os que já passaram do dia: marcar os que já foram pagos, para o Midas anotar agora.

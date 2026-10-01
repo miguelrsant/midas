@@ -7,9 +7,15 @@ import type { CalculatorKind } from "@/generated/prisma/client";
 import { authedAction, invalid } from "@/lib/actions/server";
 import { type ActionResult, fail, ok } from "@/lib/actions/result";
 import { addCalculationToPlan, deleteCalculation } from "@/lib/data/planning";
-import { createRecurringWithinLimit, updateRecurring } from "@/lib/data/recurring";
+import {
+  createRecurringWithinLimit,
+  getSalaryGroup,
+  saveSalary,
+  updateRecurring,
+} from "@/lib/data/recurring";
 import { addMonths, clampDay, monthName, monthOf, todayInSaoPaulo } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { inferAdvancePercent, planSalary } from "@/lib/finance/salary";
 import {
   calculateNetSalary,
   calculateTermination,
@@ -85,11 +91,28 @@ export async function addToPlanAction(raw: unknown): Promise<ActionResult<{ mess
       const current = monthOf(today);
       const start = clampDay(current, input.payDay) >= today ? current : addMonths(current, 1);
       const existing = await db.recurring.findFirst({
-        where: { userId: user.id, kind: "INCOME", categoryId: "salario" },
+        // O adiantamento também é da categoria Salário: aqui só vale o salário.
+        where: { userId: user.id, kind: "INCOME", categoryId: "salario", salaryId: null },
         orderBy: { createdAt: "asc" },
         select: { id: true, endMonth: true },
       });
-      if (existing) {
+      const group = existing ? await getSalaryGroup(user.id, existing.id) : null;
+      if (existing && group?.advance) {
+        // Salário dividido: o líquido novo se divide na mesma porcentagem de antes.
+        const advancePercent = inferAdvancePercent(
+          group.advance.amountCents,
+          group.advance.amountCents + group.salary.amountCents,
+        );
+        const plan = planSalary(
+          result.headlineCents,
+          input.payDay,
+          { mode: "split", advancePercent, advanceDay: group.advance.dayOfMonth },
+          today,
+        );
+        if (!plan.ok) return fail("invalid", "Valor pequeno demais para dividir.");
+        if (!(await saveSalary(user.id, existing.id, plan.items, group.salary.description)))
+          return fail("server");
+      } else if (existing) {
         await updateRecurring(user.id, existing.id, {
           kind: "income",
           amountCents: result.headlineCents,

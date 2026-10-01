@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateNetSalary,
+  netSalaryFromGross,
   calculateTermination,
   calculateThirteenth,
   calculateUnemployment,
@@ -346,6 +347,10 @@ describe("calculateNetSalary", () => {
       payDay: 5,
     });
     expect(r.headlineCents).toBe(449_849);
+  });
+
+  it("líquido a partir do bruto, sem dependentes nem descontos", () => {
+    expect(netSalaryFromGross(500_000, "2026-09-30").netCents).toBe(449_849);
   });
 });
 

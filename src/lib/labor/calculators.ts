@@ -424,6 +424,25 @@ export function calculateNetSalary(input: NetSalaryInput): LaborResult {
   });
 }
 
+/**
+ * Líquido de um salário bruto, para a renda fixa "Salário" quando a pessoa digita o bruto:
+ * sem dependentes e sem outros descontos (a calculadora de salário líquido detalha).
+ * O bruto só serve para esta conta; quem chama não guarda o bruto.
+ */
+export function netSalaryFromGross(
+  grossCents: number,
+  today: DateOnly,
+): { netCents: number; outdated: boolean } {
+  const result = calculateNetSalary({
+    grossCents,
+    dependents: 0,
+    otherDiscountsCents: 0,
+    referenceDate: today,
+    payDay: 5,
+  });
+  return { netCents: result.headlineCents, outdated: result.outdated };
+}
+
 // ——— Seguro-desemprego (Lei 7.998/1990, com a Lei 13.134/2015) ———
 
 export interface UnemploymentOutcome {

@@ -158,6 +158,7 @@ export async function buildExport(userId: string, now = new Date()) {
       mesInicial: r.startMonth,
       mesFinal: r.endMonth,
       proximaVez: r.nextOccurrenceOn,
+      adiantamentoDoSalario: r.salaryId,
     })),
     limites: limits.map((l) => ({
       categoriaId: l.categoryId,

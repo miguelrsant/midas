@@ -190,6 +190,42 @@ test("rescisão sem justa causa leva ao seguro-desemprego", async ({ page }) => 
   await expect(page.getByRole("radio", { name: /sem justa causa/ })).toBeChecked();
 });
 
+test("salário bruto dividido em adiantamento e resto", async ({ page }) => {
+  const csp = await watchCsp(page);
+  await signedInAccount(page, "salario");
+  await page.goto("/planejamento/fixos/novo?tipo=renda");
+  await page.getByRole("radio", { name: "Salário" }).check({ force: true });
+  // O caso comum já vem marcado; bruto e divisão só aparecem quando escolhidos.
+  await expect(page.getByRole("radio", { name: /Líquido/ })).toBeChecked();
+  await expect(page.getByLabel("Quanto vem no adiantamento?")).toHaveCount(0);
+  await page.getByRole("radio", { name: /Bruto/ }).check({ force: true });
+  await page.getByLabel(/Quanto é o salário bruto/).fill("5000");
+  await expect(page.getByText(/Cai na conta cerca de R\$\s4\.498,49\./)).toBeVisible();
+  await page.getByRole("radio", { name: "Dividido em dois" }).check({ force: true });
+  await expect(page.getByLabel("Dia do resto")).toBeVisible();
+  await expect(
+    page.getByText(/R\$\s1\.799,39 no dia 20 e R\$\s2\.699,10 no dia 5\./),
+  ).toBeVisible();
+  await expectNoAxeViolations(page);
+  await page.getByRole("button", { name: "Salvar renda fixa" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("status").filter({ hasText: /Salário: R\$\s1\.799,39 no dia 20/ }),
+  ).toBeVisible();
+
+  // Abrir o adiantamento abre o salário, com a divisão; parar apaga os dois.
+  await page.goto("/planejamento/fixos");
+  await page.getByRole("link", { name: /Adiantamento/ }).click();
+  await expect(page.getByRole("radio", { name: "Dividido em dois" })).toBeChecked();
+  await page.getByRole("button", { name: "Parar este fixo" }).click();
+  await expect(page.getByText("Parar o salário e o adiantamento?")).toBeVisible();
+  await page.getByRole("button", { name: "Parar este fixo" }).click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/planejamento/fixos");
+  await expect(page.getByRole("link", { name: /Adiantamento/ })).toHaveCount(0);
+  expect(csp).toEqual([]);
+});
+
 test("baixar os dados e apagar a conta", async ({ page }) => {
   const csp = await watchCsp(page);
   const email = await signedInAccount(page, "dados");

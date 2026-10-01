@@ -16,7 +16,15 @@ import {
 import { createEntry, deleteEntry, entryFacts, getEntry, updateEntry } from "./entries";
 import { loadOverview } from "./overview";
 import { addCalculationToPlan, listExpectedIncomes, receiveExpectedIncome } from "./planning";
-import { createRecurring, createRecurringWithinLimit, ensureRecurringUpToDate } from "./recurring";
+import {
+  createRecurring,
+  createRecurringWithinLimit,
+  deleteRecurring,
+  ensureRecurringUpToDate,
+  getSalaryGroup,
+  listRecurring,
+  saveSalary,
+} from "./recurring";
 
 /*
  * Camada de dados contra o Postgres de teste (midas_test): isolamento entre contas,
@@ -356,6 +364,76 @@ describe("rendas previstas no gráfico", () => {
     const { projection } = await loadOverview(a, current);
     expect(projection.hasHistory).toBe(false);
     expect(projection.future(monthOf(due))?.incomeCents).toBe(387_400);
+  });
+});
+
+describe("salário dividido", () => {
+  const current = monthOf(today);
+  const plan = [
+    { role: "advance" as const, amountCents: 200_000, dayOfMonth: 20, startMonth: current },
+    { role: "salary" as const, amountCents: 300_000, dayOfMonth: 5, startMonth: current },
+  ];
+
+  it("cria os dois ligados, que somam o líquido, e anota os dois", async () => {
+    const a = await makeUser("a");
+    const saved = await saveSalary(a, null, plan, "Salário");
+    expect(saved?.advance?.salaryId).toBe(saved?.salary.id);
+    const rows = await listRecurring(a);
+    expect(rows.reduce((s, r) => s + r.amountCents, 0)).toBe(500_000);
+    const far = addDays(clampDay(addMonths(current, 1), 28), 0);
+    expect(await ensureRecurringUpToDate(a, far)).toBe(4);
+  });
+
+  it("editar de um para dois e de volta, sempre pelo salário", async () => {
+    const a = await makeUser("a");
+    const single = await saveSalary(a, null, [plan[1]!], "Salário");
+    const split = await saveSalary(a, single!.salary.id, plan, "Salário");
+    expect(split?.advance?.amountCents).toBe(200_000);
+    expect((await getSalaryGroup(a, split!.advance!.id))?.salary.id).toBe(single!.salary.id);
+    const back = await saveSalary(a, single!.salary.id, [plan[1]!], "Salário");
+    expect(back?.advance).toBeNull();
+    expect(await listRecurring(a)).toHaveLength(1);
+  });
+
+  it("parar o adiantamento ou o salário apaga os dois", async () => {
+    const a = await makeUser("a");
+    const one = await saveSalary(a, null, plan, "Salário");
+    expect(await deleteRecurring(a, one!.advance!.id)).toBe(true);
+    expect(await listRecurring(a)).toHaveLength(0);
+    const two = await saveSalary(a, null, plan, "Salário");
+    expect(await deleteRecurring(a, two!.salary.id)).toBe(true);
+    expect(await listRecurring(a)).toHaveLength(0);
+  });
+
+  it("outra conta não lê, não edita e não apaga", async () => {
+    const a = await makeUser("a");
+    const b = await makeUser("b");
+    const saved = await saveSalary(a, null, plan, "Salário");
+    expect(await getSalaryGroup(b, saved!.salary.id)).toBeNull();
+    expect(await saveSalary(b, saved!.salary.id, plan, "x")).toBeNull();
+    expect(await deleteRecurring(b, saved!.advance!.id)).toBe(false);
+    expect(await listRecurring(a)).toHaveLength(2);
+    expect(await listRecurring(b)).toHaveLength(0);
+  });
+
+  it("os dois contam no teto de fixos", async () => {
+    const a = await makeUser("a");
+    await createRecurringWithinLimit(
+      a,
+      Array.from({ length: 99 }, () => ({
+        input: {
+          kind: "expense" as const,
+          amountCents: 100,
+          categoryId: "mercado",
+          description: null,
+          dayOfMonth: 1,
+          startMonth: current,
+          repeat: { mode: "monthly" as const },
+        },
+      })),
+    );
+    expect(await saveSalary(a, null, plan, "Salário")).toBeNull();
+    expect(await saveSalary(a, null, [plan[1]!], "Salário")).not.toBeNull();
   });
 });
 
