@@ -62,9 +62,17 @@ export default async function EntriesPage({
         </p>
         {upcoming.length > 0 ? (
           <p className="-mt-2 text-body text-tinta-suave">
-            Ainda vai entrar <Money cents={sum("income")} kind="income" />{" "}
-            <span aria-hidden="true">·</span> Ainda vai sair{" "}
-            <Money cents={sum("expense")} kind="expense" />
+            {sum("income") > 0 ? (
+              <>
+                Ainda vai entrar <Money cents={sum("income")} kind="income" />
+              </>
+            ) : null}
+            {sum("income") > 0 && sum("expense") > 0 ? <span aria-hidden="true"> · </span> : null}
+            {sum("expense") > 0 ? (
+              <>
+                Ainda vai sair <Money cents={sum("expense")} kind="expense" />
+              </>
+            ) : null}
           </p>
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">

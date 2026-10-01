@@ -1,18 +1,14 @@
 "use client";
 
 import { Search } from "lucide-react";
-import type { Route } from "next";
-import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
-import { CategoryIcon } from "@/components/midas/category-icon";
-import { Money } from "@/components/midas/money";
 import { ChoiceChips } from "@/components/midas/choices";
 import { DayGroups, type RowEntry } from "@/components/midas/transaction-list";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { type Category, findCategory } from "@/lib/categories";
-import { type DateOnly, formatDayMonthShort } from "@/lib/dates";
+import type { DateOnly } from "@/lib/dates";
 import type { Upcoming } from "@/lib/finance/upcoming";
 
 type Filter = "todos" | "gastos" | "rendas";
@@ -133,81 +129,29 @@ export function EntriesBrowser({
           </div>
         ) : null}
       </div>
-      {visible.length > 0 ? (
-        <DayGroups entries={visible} categories={categories} today={today} />
-      ) : entries.length === 0 ? (
-        <p className="px-2 text-body text-tinta-suave">Nada anotado ainda em {monthName}.</p>
-      ) : null}
-      {visibleUpcoming.length > 0 ? (
-        <UpcomingList
-          items={visibleUpcoming}
+      {visible.length + visibleUpcoming.length > 0 ? (
+        <DayGroups
+          entries={[
+            ...visible,
+            ...visibleUpcoming.map((u): RowEntry => ({
+              id: u.key,
+              kind: u.kind,
+              amountCents: u.amountCents,
+              categoryId: u.categoryId,
+              description: u.title,
+              // Prevista atrasada fica em "Hoje", com a etiqueta "atrasada".
+              date: u.late ? today : u.date,
+              recurringId: u.source === "fixo" ? u.id : null,
+              future: {
+                href: u.source === "fixo" ? `/planejamento/fixos/${u.id}` : "/planejamento",
+                late: u.late,
+              },
+            })),
+          ].sort((a, b) => b.date.localeCompare(a.date))}
           categories={categories}
           today={today}
-          monthName={monthName}
         />
       ) : null}
     </div>
-  );
-}
-
-/** "Ainda vai chegar": fixos que não chegaram ao dia e rendas previstas, com a data. */
-function UpcomingList({
-  items,
-  categories,
-  today,
-  monthName,
-}: {
-  items: Upcoming[];
-  categories: Category[];
-  today: DateOnly;
-  monthName: string;
-}) {
-  return (
-    <section aria-labelledby="ainda-vai-chegar">
-      <h2 id="ainda-vai-chegar" className="px-2 pb-1 text-label text-tinta-suave">
-        Ainda vai chegar em {monthName}
-      </h2>
-      <ul className="flex flex-col rounded-lg border border-dashed border-borda bg-superficie/60">
-        {items.map((u) => {
-          const category = findCategory(categories, u.categoryId);
-          const when =
-            u.source === "fixo"
-              ? `dia ${Number(u.date.slice(8))}`
-              : `${u.late ? "era até" : "até"} ${formatDayMonthShort(u.date)}`;
-          const href = (
-            u.source === "fixo" ? `/planejamento/fixos/${u.id}` : "/planejamento"
-          ) as Route;
-          return (
-            <li key={u.key} className="border-b border-veio last:border-b-0">
-              <Link
-                href={href}
-                className="grid min-h-16 grid-cols-[44px_1fr_auto] items-center gap-3 px-2 py-2 hover:bg-superficie-funda focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foco"
-              >
-                <CategoryIcon icon={category.icon} kind={u.kind} />
-                <span className="min-w-0">
-                  <span className="block truncate text-body font-semibold text-tinta">
-                    {u.title || category.name}
-                  </span>
-                  <span className="block text-caption text-tinta-suave">
-                    <span className="mr-2 rounded-pill bg-superficie-funda px-2 py-0.5 font-semibold">
-                      {u.source === "fixo" ? "fixo" : "prevista"}
-                    </span>
-                    {when}
-                    {u.date === today ? " (hoje)" : ""}
-                  </span>
-                </span>
-                <span
-                  className={`font-mono text-amount whitespace-nowrap ${u.kind === "income" ? "text-renda" : "text-gasto"}`}
-                >
-                  <span className="md-sr">{u.kind === "income" ? "Vai entrar " : "Vai sair "}</span>
-                  <span aria-hidden="true">{u.kind === "income" ? "+ " : "− "}</span>
-                  <Money cents={u.amountCents} />
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }

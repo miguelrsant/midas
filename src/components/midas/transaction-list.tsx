@@ -17,7 +17,13 @@ import { Money } from "./money";
 export type RowEntry = Pick<
   EntryView,
   "id" | "kind" | "amountCents" | "categoryId" | "description" | "date" | "recurringId"
->;
+> & {
+  /**
+   * Ainda não aconteceu (fixo que não chegou ao dia, renda prevista): aparece na lista
+   * do mês com a etiqueta "vai cair" e leva ao fixo ou ao planejamento.
+   */
+  future?: { href: string; late: boolean };
+};
 
 export function TransactionRow({
   entry,
@@ -41,7 +47,8 @@ export function TransactionRow({
       <Highlightable id={entry.id}>
         <Link
           href={
-            `/lancamentos/${entry.id}${backTo ? `?de=${encodeURIComponent(backTo)}` : ""}` as Route
+            (entry.future?.href ??
+              `/lancamentos/${entry.id}${backTo ? `?de=${encodeURIComponent(backTo)}` : ""}`) as Route
           }
           className="grid min-h-16 grid-cols-[44px_1fr_auto] items-center gap-3 px-2 py-2 hover:bg-superficie-funda focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foco"
         >
@@ -49,6 +56,11 @@ export function TransactionRow({
           <span className="min-w-0">
             <span className="block truncate text-body font-semibold text-tinta">{title}</span>
             <span className="block text-caption text-tinta-suave">
+              {entry.future ? (
+                <span className="mr-2 inline-block rounded-pill border border-dashed border-borda px-2 font-semibold text-tinta">
+                  {entry.future.late ? "atrasada" : "vai cair"}
+                </span>
+              ) : null}
               {category.name}
               {entry.recurringId ? (
                 <>
@@ -66,7 +78,17 @@ export function TransactionRow({
               )}
             </span>
           </span>
-          <Money cents={entry.amountCents} kind={entry.kind} className="font-mono text-amount" />
+          {entry.future ? (
+            <span
+              className={`font-mono text-amount whitespace-nowrap opacity-80 ${entry.kind === "income" ? "text-renda" : "text-gasto"}`}
+            >
+              <span className="md-sr">{entry.kind === "income" ? "Vai entrar " : "Vai sair "}</span>
+              <span aria-hidden="true">{entry.kind === "income" ? "+ " : "− "}</span>
+              <Money cents={entry.amountCents} />
+            </span>
+          ) : (
+            <Money cents={entry.amountCents} kind={entry.kind} className="font-mono text-amount" />
+          )}
         </Link>
       </Highlightable>
     </li>
@@ -118,7 +140,9 @@ export function DayGroups({
   return (
     <div className="flex flex-col gap-6">
       {[...days.entries()].map(([day, list]) => {
-        const net = list.reduce(
+        // O total do dia conta só o que já aconteceu.
+        const real = list.filter((e) => !e.future);
+        const net = real.reduce(
           (sum, e) => sum + (e.kind === "income" ? e.amountCents : -e.amountCents),
           0,
         );
@@ -129,10 +153,12 @@ export function DayGroups({
               <h2 id={headingId} className="text-label text-tinta-suave">
                 {formatDayHeading(day, today)}
               </h2>
-              <span className="text-caption text-tinta-suave">
-                <span className="md-sr">Total do dia: </span>
-                <Money cents={net} />
-              </span>
+              {real.length > 0 ? (
+                <span className="text-caption text-tinta-suave">
+                  <span className="md-sr">Total do dia: </span>
+                  <Money cents={net} />
+                </span>
+              ) : null}
             </div>
             <ul className="flex flex-col rounded-lg bg-superficie px-2 shadow-cartao">
               {list.map((entry) => (
