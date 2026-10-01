@@ -92,7 +92,8 @@ export function projectionNote(
     opts.hasExpected ? "nas rendas já previstas, como o 13º" : null,
   ].filter(Boolean);
   let note: string;
-  if (basis) note = `Estimativa com base ${basis}${extras.length ? `, ${extras.join(" e ")}` : ""}.`;
+  if (basis)
+    note = `Estimativa com base ${basis}${extras.length ? `, ${extras.join(" e ")}` : ""}.`;
   else if (extras.length) note = `Estimativa com base ${extras.join(" e ")}.`;
   else return "Estimativa. Fica mais certa depois do primeiro mês com lançamentos.";
   if (!basis) note += " Os gastos do dia a dia entram depois do primeiro mês com lançamentos.";

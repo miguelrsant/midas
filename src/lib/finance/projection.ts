@@ -213,7 +213,8 @@ export function buildProjection(input: ProjectionInput): Projection {
   const remaining = (kind: EntryKind) =>
     input.recurrings
       .filter(
-        (r) => r.kind === kind && isActiveIn(r, current) && occurrenceDate(r, current) > input.today,
+        (r) =>
+          r.kind === kind && isActiveIn(r, current) && occurrenceDate(r, current) > input.today,
       )
       .reduce((s, r) => s + r.amountCents, 0);
   const currentExpected = expectedIn(input.expected, current, current);
