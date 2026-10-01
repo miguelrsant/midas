@@ -26,10 +26,11 @@ Grupo: Painel · Classe base: `md-chart` (SVG) + `md-legend` · Componente React
    - **Eixo Y**: "0", "4 mil", "8 mil", "12 mil", à esquerda, alinhados à direita. Texto `sans` em `tinta-suave`.
    - **Eixo X**: meses abreviados ("Jul", "Ago", "Set"), centralizados sob cada par.
    - **Barras reais**: renda em `grafico-renda`, gasto em `grafico-gasto`, lado a lado (renda à esquerda), 22px de largura, 6px entre as duas, cantos de 4px.
+   - **Camadas**: cada barra empilha a parte fixa (cheia, embaixo) e a variável (fundo claro, hachura horizontal e contorno de 1px, em cima). No mês atual, o que ainda deve entrar ou sair vai por cima, no estilo de projeção. Regras em [Gráficos e dados](../13-graficos-e-dados.md#cores).
    - **Barras projetadas**: preenchimento `renda-fundo` / `gasto-fundo`, contorno tracejado de 1,5px (traço 4, espaço 3) em `grafico-renda` / `grafico-gasto`.
    - **Linha de projeção**: vertical, entre o último mês real e o primeiro projetado, em `grafico-projecao` (`ouro`), 2px, tracejada (5, 4).
    - **Rótulo "Projeção"**: ao lado da linha, no alto, em `ouro-texto`.
-5. **Legenda** (`md-legend`): sempre visível, com texto. Quadrados de 12px (cantos de 3px): "Renda", "Gastos", "Projeção" (com "(inclui 13º)" quando houver). `sans` 400, 14/20, `tinta-suave`.
+5. **Legenda** (`md-legend`): sempre visível, com texto. Quadrados de 12px (cantos de 3px): "Renda", "Gastos", "Fixa" (cheio), "Variável" (hachurado, `md-hachura`), "Projeção" (com "(inclui 13º)" quando houver). `sans` 400, 14/20, `tinta-suave`.
 6. **Nota da projeção** (`md-help`): "Estimativa com base nos últimos 3 meses e nas rendas já previstas, como o 13º." `caption`, `tinta-suave`.
 7. **Botão "Ver em tabela"** (`md-btn-ghost`): mostra ou esconde a tabela com os mesmos dados.
 8. **Balão** (ao tocar ou passar o mouse numa coluna): mês e valores com sinal.

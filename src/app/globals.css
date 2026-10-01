@@ -321,6 +321,11 @@
     text-transform: uppercase;
     color: var(--tinta-suave);
   }
+  /* Amostra da parte variável na legenda do gráfico: a mesma hachura das barras. */
+  .md-hachura {
+    border: 1px solid currentColor;
+    background-image: repeating-linear-gradient(0deg, currentColor 0 1.5px, transparent 1.5px 4px);
+  }
   .md-moeda {
     width: 28px;
     height: 28px;

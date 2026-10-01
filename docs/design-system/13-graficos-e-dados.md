@@ -8,14 +8,15 @@ Um gráfico do Midas existe para responder uma pergunta, e a resposta vem **escr
 2. **Poucos tipos, sempre os mesmos.** Barras verticais para meses, barras horizontais para categorias. Nada além disso sem um bom motivo.
 3. **Duas cores de dado.** `grafico-renda` e `grafico-gasto`, mais `grafico-projecao` para marcar o futuro. Categorias não ganham cores.
 4. **Projeção nunca parece fato.** Meses projetados têm preenchimento claro, contorno tracejado, rótulo "Projeção" e uma nota que diz de onde vem a estimativa.
-5. **Tudo também em texto.** Título-conclusão, `aria-label` com o resumo e tabela com os mesmos dados.
-6. **Sem animação de entrada.** As barras aparecem prontas.
+5. **Fixa embaixo, variável em cima.** Cada barra de mês empilha duas camadas da mesma série: a parte fixa (fixos e rendas previstas) cheia, embaixo, e a variável hachurada, em cima. A hachura é textura, não cor nova.
+6. **Tudo também em texto.** Título-conclusão, `aria-label` com o resumo e tabela com os mesmos dados.
+7. **Sem animação de entrada.** As barras aparecem prontas.
 
 ## Tipos de gráfico
 
 | Pergunta | Gráfico | Onde | Componente |
 | --- | --- | --- | --- |
-| "Como vão os próximos meses?" | Barras verticais de renda e gasto por mês, com meses projetados | Painel, Planejamento | [IncomeExpenseChart](componentes/income-expense-chart.md) |
+| "Como vão os próximos meses?" | Barras verticais de renda e gasto por mês, do mês atual em diante, com a parte fixa e a variável empilhadas e os meses seguintes projetados | Painel, Planejamento | [IncomeExpenseChart](componentes/income-expense-chart.md) |
 | "Onde eu gastei?" | Barras horizontais por categoria, da maior para a menor | Resumo do mês, Lançamentos | Barras por categoria (abaixo) |
 | "Quanto já usei do que entrou?" | Barra de progresso simples | Cartão de saldo | [BalanceCard](componentes/balance-card.md) |
 | "Quanto falta para o limite?" | Barra de progresso por categoria | Planejamento | Barra de limite (abaixo) |
@@ -44,11 +45,16 @@ Um gráfico do Midas existe para responder uma pergunta, e a resposta vem **escr
 | Mês projetado de renda | preenchimento `renda-fundo`, contorno tracejado `grafico-renda` | |
 | Mês projetado de gasto | preenchimento `gasto-fundo`, contorno tracejado `grafico-gasto` | |
 | Início da projeção | linha vertical tracejada `grafico-projecao` (= `ouro`), rótulo "Projeção" em `ouro-texto` | O rótulo em texto compensa o contraste baixo do ouro no claro |
+| Parte fixa | preenchimento cheio na cor da série | Embaixo, com base comum em zero |
+| Parte variável | preenchimento `renda-fundo` / `gasto-fundo`, hachura horizontal (linhas de 1,5px a cada 4px) e contorno de 1px na cor da série | Em cima da fixa. A hachura é horizontal porque o SVG estica só na largura. Nos meses projetados, a hachura fica a 50% e o contorno, tracejado |
+| O que falta no mês atual | estilo de projeção (fundo claro e contorno tracejado), em cima da parte real | Fixos que faltam, rendas previstas e o que falta da média |
 | Grade | `veio`, 1px, só linhas horizontais | |
 | Eixos e legenda | `tinta-suave`, `caption` (14px) | |
 | Coluna em foco | faixa `superficie-funda` atrás do par de barras | |
 
-Renda fica sempre **à esquerda** do gasto no mesmo mês, e a legenda segue a mesma ordem.
+Renda fica sempre **à esquerda** do gasto no mesmo mês, e a legenda segue a mesma ordem: "Renda", "Gastos", "Fixa" (quadrado cheio), "Variável" (quadrado hachurado, classe `md-hachura`) e "Projeção".
+
+**O que é fixo:** lançamentos criados por um fixo, rendas das calculadoras (13º, férias, rescisão, seguro-desemprego) e, na projeção, os fixos e as rendas previstas. **Variável** é todo o resto.
 
 ## Eixos e números
 
@@ -97,7 +103,7 @@ Palavras: sobra projetada **"deve"** acontecer; falta projetada **"pode"** acont
 ## Balão (tooltip)
 
 - Aparece ao tocar, ao passar o mouse ou ao focar uma coluna.
-- Conteúdo: mês por extenso, com "(projeção)" ou "(até agora)" quando for o caso, e os valores com sinal e rótulo: "Outubro (projeção) · Entrou + R$ 6.200 · Saiu − R$ 4.800".
+- Conteúdo: mês por extenso, com "(projeção)" ou "(até agora)" quando for o caso, e os valores com sinal e rótulo: "Outubro (projeção) · Entrou + R$ 6.200 · Saiu − R$ 4.800". Embaixo de cada valor, em `caption`, a divisão ("fixa R$ 5.400 · variável R$ 800") e, no mês atual, "deve entrar mais R$ 300".
 - Visual: fundo `superficie`, borda 1px `veio`, `radius-md`, `sombra-cartao`, padding `space-3`; mês em `label`, valores em `amount` na cor da série.
 - O balão é um atalho. Nenhuma informação existe só nele.
 
@@ -110,13 +116,14 @@ Todo gráfico tem um botão "Ver em tabela" (`md-btn-ghost`, com `aria-expanded`
 - Meses projetados marcados no próprio cabeçalho da linha: "Outubro (projeção)".
 - Valores com sinal visual escondido do leitor de tela quando o cabeçalho já diz o sentido.
 - Valores alinhados à direita, em `amount`, com `tabular-nums`.
+- A divisão fixa e variável e o que falta no mês atual vão numa linha menor embaixo de cada total, não em colunas novas: seis colunas de números não cabem em 360px.
 
 ## Estados
 
 | Estado | O que mostrar |
 | --- | --- |
 | Carregando | O cartão com o sobretítulo e a área do gráfico em `superficie-funda`, sem barras falsas; `aria-busy="true"`. |
-| Sem dados suficientes | Sem gráfico. Uma frase: "O gráfico aparece quando você fechar o primeiro mês com lançamentos." |
+| Sem dados suficientes | Sem gráfico. Uma frase: "O gráfico aparece quando você anotar uma renda fixa ou fechar o primeiro mês com lançamentos." |
 | Erro | Sem gráfico. "Não foi possível carregar o gráfico." O botão "Tentar de novo" fica no aviso do topo da tela. Nunca desenhe zeros no lugar de dados que não chegaram. |
 | Um valor muito maior que os outros | A escala acompanha. Nada de cortar a barra ou mudar o eixo para escala logarítmica. |
 
@@ -145,7 +152,7 @@ Todo gráfico tem um botão "Ver em tabela" (`md-btn-ghost`, com `aria-expanded`
 | --- | --- | --- |
 | Pizza e rosca | Ângulos são difíceis de comparar, e muitas fatias exigem muitas cores. | Barras horizontais por categoria. |
 | Gráfico de linha para renda e gasto mensais | Sugere continuidade entre meses que são totais separados. | Barras por mês. |
-| Barras empilhadas com várias categorias | Só a primeira camada tem base comum; as outras não se comparam. | Barras por categoria. |
+| Barras empilhadas com várias categorias | Só a primeira camada tem base comum; as outras não se comparam. | Barras por categoria. A única pilha permitida é a de **duas camadas da mesma série** (fixa embaixo, variável em cima) no gráfico de meses: a parte fixa, que é a que a pessoa planeja, fica com a base comum. |
 | 3D, sombras, gradientes nas barras | Distorcem valores e poluem. | Barras chapadas. |
 | Dois eixos de valores | Induzem a comparações falsas. | Dois gráficos. |
 | Eixo que não começa em zero | Exagera diferenças. | Eixo a partir de zero. |
