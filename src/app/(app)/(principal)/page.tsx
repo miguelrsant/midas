@@ -260,7 +260,7 @@ export default async function DashboardPage({
           </Link>
         </div>
         {entries.length > 0 ? (
-          <TransactionList entries={entries} categories={categories} today={today} />
+          <TransactionList entries={entries} categories={categories} today={today} backTo={here} />
         ) : (
           <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
             <p className="font-display text-heading text-tinta">

@@ -24,11 +24,14 @@ export function TransactionRow({
   categories,
   today,
   hideDate = false,
+  backTo,
 }: {
   entry: RowEntry;
   categories: readonly Category[];
   today: DateOnly;
   hideDate?: boolean;
+  /** Tela para onde o "Voltar" da edição leva (vai como `?de=`). */
+  backTo?: string;
 }) {
   const category = findCategory(categories, entry.categoryId);
   const date = formatEntryDate(entry.date, today);
@@ -37,7 +40,9 @@ export function TransactionRow({
     <li className="border-b border-veio last:border-b-0">
       <Highlightable id={entry.id}>
         <Link
-          href={`/lancamentos/${entry.id}` as Route}
+          href={
+            `/lancamentos/${entry.id}${backTo ? `?de=${encodeURIComponent(backTo)}` : ""}` as Route
+          }
           className="grid min-h-16 grid-cols-[44px_1fr_auto] items-center gap-3 px-2 py-2 hover:bg-superficie-funda focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foco"
         >
           <CategoryIcon icon={category.icon} kind={entry.kind} />
@@ -72,15 +77,23 @@ export function TransactionList({
   entries,
   categories,
   today,
+  backTo,
 }: {
   entries: readonly RowEntry[];
   categories: readonly Category[];
   today: DateOnly;
+  backTo?: string;
 }) {
   return (
     <ul className="flex flex-col">
       {entries.map((entry) => (
-        <TransactionRow key={entry.id} entry={entry} categories={categories} today={today} />
+        <TransactionRow
+          key={entry.id}
+          entry={entry}
+          categories={categories}
+          today={today}
+          backTo={backTo}
+        />
       ))}
     </ul>
   );

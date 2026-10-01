@@ -110,7 +110,12 @@ export default async function SummaryPage({ params }: { params: Promise<{ mes: s
           <h2 id="maiores" className="px-2 pb-2 font-display text-heading text-tinta">
             Os maiores gastos
           </h2>
-          <TransactionList entries={biggest} categories={categories} today={today} />
+          <TransactionList
+            entries={biggest}
+            categories={categories}
+            today={today}
+            backTo={`/resumo/${mes}`}
+          />
         </section>
       ) : null}
 
