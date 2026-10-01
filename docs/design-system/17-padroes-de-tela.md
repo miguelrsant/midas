@@ -118,14 +118,14 @@ Ordem dos blocos:
 4. [BalanceCard](componentes/balance-card.md).
 5. Botão primário grande **"Adicionar gasto"** e, abaixo, o secundário **"Adicionar renda"**. No celular, os dois ocupam a largura toda.
 6. Últimos lançamentos: até 5 [TransactionRow](componentes/transaction-row.md) e o link "Ver todos".
-7. [IncomeExpenseChart](componentes/income-expense-chart.md) com três meses reais e três projetados.
+7. [IncomeExpenseChart](componentes/income-expense-chart.md) do mês atual (o real até hoje mais o que ainda deve entrar e sair) e dos cinco meses seguintes, projetados.
 
 Estados:
 
 | Estado | O que muda |
 | --- | --- |
 | Primeiro acesso (nenhum lançamento) | Tudo abaixo da saudação vira um [EmptyState](componentes/empty-state.md): "Tudo pronto para *começar*." / "Comece anotando quanto você recebe por mês. Assim o Midas mostra quanto sobra." / "Adicionar minha renda" (primário) e "Anotar um gasto" (secundário). |
-| Mês novo, sem lançamentos | O cartão de saldo mostra R$ 0,00; a lista vira o estado vazio "Outubro começa *aqui*."; o gráfico continua, com os meses anteriores. |
+| Mês novo, sem lançamentos | O cartão de saldo mostra R$ 0,00; a lista vira o estado vazio "Outubro começa *aqui*."; o gráfico continua, a partir do mês atual. |
 | Carregando | Blocos em `superficie-funda` no formato do cartão de saldo e de três linhas; `aria-busy="true"`. |
 | Sem conexão | Aviso de alerta no topo com "Tentar de novo"; os dados já carregados continuam visíveis. |
 
@@ -209,15 +209,15 @@ Abrir o resumo de um mês fechado marca a conquista daquele mês como vista (em 
 
 **Pergunta:** "Como vão ficar os próximos meses?"
 
-1. Título-conclusão do ano: "2026 deve fechar com R$ 14.200 de sobra." (ou, sem acento, "Novembro pode fechar no vermelho.").
-2. Gráfico do ano (janeiro a dezembro): meses reais sólidos, meses futuros projetados, com o 13º e as férias previstas aparecendo nos meses em que caem.
+1. Título-conclusão dos próximos 12 meses: "Nos próximos 12 meses, devem sobrar R$ 14.200." (ou, sem acento, "Novembro pode fechar no vermelho."). Sem histórico e sem renda fixa, a projeção ainda não conhece a renda, e o título pede: "Anote sua renda para ver quanto deve sobrar."
+2. Gráfico do mês atual até 11 meses à frente: o mês atual com o real até hoje e o que ainda falta, os seguintes projetados, com o 13º e as férias previstas aparecendo nos meses em que caem.
 3. Tabela "Mês a mês" com Entrou, Saiu e Sobrou para cada mês, marcando "(projeção)".
 4. **Rendas previstas** (das calculadoras, [ExpectedIncomeRow](componentes/expected-income-row.md)): "13º salário, 1ª parcela · até 30 nov · + R$ 2.700" com a etiqueta "prevista", "Recebi" e "Não recebi".
 5. **Fixos:** rendas e gastos que se repetem ("Salário, todo dia 5, + R$ 5.400,00"; "Aluguel, todo dia 10, − R$ 1.650,00"; "Geladeira, 3 de 10, − R$ 250,00"), com "Adicionar renda fixa" e "Adicionar gasto fixo" e o link "Ver todos os fixos". Fixos entram sozinhos na lista no dia marcado, e a pessoa pode ajustar o valor daquele mês editando o lançamento.
 6. **Limites por categoria:** barras de limite ([Categorias](15-categorias.md#limites-por-categoria)) e "Definir um limite".
 7. A nota da projeção: "Estimativa com base nos últimos 3 meses, nos fixos e nas rendas já previstas." ([Gráficos e dados](13-graficos-e-dados.md#projeção-como-é-calculada-e-como-é-explicada)).
 
-O ano fica na URL (`?ano=2026`). O ano seguinte pode ser aberto enquanto houver meses projetados nele (até 12 meses à frente).
+O gráfico sempre começa no mês atual: o planejamento olha para a frente. Os meses que já passaram ficam no Início (troca de mês) e no resumo de cada mês.
 
 ### Rendas e gastos fixos
 

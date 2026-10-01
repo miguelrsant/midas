@@ -6,13 +6,13 @@ Grupo: Painel · Classe base: `md-chart` (SVG) + `md-legend` · Componente React
 
 ## Quando usar
 
-- No painel, para responder "como vão os próximos meses?": três meses reais (dois fechados e o atual) e três projetados.
+- No painel, para responder "como vão os próximos meses?": o mês atual e os cinco seguintes, projetados. No planejamento, o mês atual e os onze seguintes.
 - Na tela de resumo do mês, com o mesmo formato.
 
 ## Quando não usar
 
 - Para mostrar gastos por categoria: é outra pergunta ("onde gastei?") e pede outro gráfico.
-- Com menos de um mês fechado: não há base para projetar (veja Casos-limite).
+- Sem nenhum valor (nem lançamento, nem fixo, nem renda prevista): não há o que mostrar (veja Casos-limite).
 - Sobre o mármore. O gráfico fica sempre num `md-card` liso (`superficie`).
 - Como único lugar de um dado. Tudo o que o gráfico mostra também está no título, no `aria-label` e na tabela.
 
@@ -38,7 +38,7 @@ Grupo: Painel · Classe base: `md-chart` (SVG) + `md-legend` · Componente React
 
 | Variante | Quando usar | Tokens |
 | --- | --- | --- |
-| Com projeção (padrão) | Painel, com pelo menos 1 mês fechado | Barras reais + projetadas + linha `grafico-projecao` |
+| Com projeção (padrão) | Painel e planejamento, a partir do mês atual | Barras reais + projetadas + linha `grafico-projecao` |
 | Só meses reais | Resumo de um mês passado, ou sem base para projetar | Sem linha, sem rótulo, legenda sem "Projeção" |
 
 ## Estados
@@ -49,7 +49,7 @@ Grupo: Painel · Classe base: `md-chart` (SVG) + `md-legend` · Componente React
 | Coluna em foco ou hover | Faixa de fundo `superficie-funda` atrás do par de barras + balão | `superficie-funda`, `superficie`, `sombra-cartao` | O balão fica dentro do cartão |
 | Tabela aberta | Tabela abaixo do gráfico; botão diz "Esconder tabela" | `aria-expanded="true"` | O gráfico continua visível |
 | Carregando | Cartão com sobretítulo; área de 240px em `superficie-funda`, sem barras falsas | `superficie-funda` | `aria-busy="true"` |
-| Sem dados | Sem gráfico: frase "O gráfico aparece quando você fechar o primeiro mês com lançamentos." | `tinta-suave` | |
+| Sem dados | Sem gráfico: frase "O gráfico aparece quando você anotar uma renda fixa ou fechar o primeiro mês com lançamentos." | `tinta-suave` | |
 | Erro de rede | Sem gráfico; frase "Não foi possível carregar o gráfico." em `tinta-suave` | `tinta-suave` | O [Notice](notice.md) de alerta no topo traz "Tentar de novo" |
 
 ## Medidas
@@ -131,9 +131,9 @@ O cálculo (média dos gastos variáveis mais os fixos; rendas fixas ou, na falt
 
 ## Casos-limite
 
-- **Menos de um mês fechado**: sem gráfico, com a frase do estado "Sem dados".
+- **Nenhum mês fechado**: o gráfico aparece se houver fixo ou renda prevista, e a projeção conta só eles. Sem nada disso, a frase do estado "Sem dados".
 - **Um ou dois meses fechados**: mostre os que existem; a nota cita os meses ("Estimativa com base em agosto e setembro.").
-- **Mês atual**: barra sólida (dado real), mas o balão e a tabela dizem "Setembro (até agora)".
+- **Mês atual**: a parte real é sólida; o que ainda deve entrar ou sair até o fim do mês (fixos que faltam, rendas previstas, inclusive as atrasadas, e o que falta da média) fica por cima, no estilo de projeção. O balão e a tabela dizem "Setembro (até agora)" e "falta R$ 300 (estimativa)".
 - **Mês sem renda ou sem gasto**: barra de altura zero (nada desenhado); no balão e na tabela, `R$ 0,00` sem sinal.
 - **Gasto acima da renda**: sem cor extra. O título conta a história ("Novembro pode fechar com R$ 300 a menos.").
 - **Valor muito maior que os outros** (rescisão, 13º): a escala acompanha; o eixo usa "mil" ou "mi". Não corte a barra.

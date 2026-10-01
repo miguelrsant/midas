@@ -1,4 +1,4 @@
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ExpectedIncomeRow } from "@/components/midas/expected-income-row";
@@ -10,7 +10,7 @@ import { requireUser } from "@/lib/auth/dal";
 import { findCategory } from "@/lib/categories";
 import { listLimits } from "@/lib/data/limits";
 import { loadOverview } from "@/lib/data/overview";
-import { addMonths, makeMonth, monthOf, parseMonth, todayInSaoPaulo } from "@/lib/dates";
+import { addMonths, monthOf, todayInSaoPaulo } from "@/lib/dates";
 import { chartSummary, monthLabel, projectionNote } from "@/lib/finance/phrases";
 import { monthPoints } from "@/lib/finance/projection";
 import { paymentLabel } from "@/lib/labor/types";
@@ -18,39 +18,31 @@ import { formatWholeMoney, roundToHundredReais } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Planejamento" };
 
-/** "Como vão ficar os próximos meses?" (docs/design-system/17-padroes-de-tela.md#planejamento) */
-export default async function PlanningPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ ano?: string }>;
-}) {
+/**
+ * "Como vão ficar os próximos meses?" (docs/design-system/17-padroes-de-tela.md#planejamento).
+ * O gráfico começa no mês atual e vai até 11 meses à frente; meses passados ficam no
+ * Início e no resumo de cada mês.
+ */
+export default async function PlanningPage() {
   const user = await requireUser();
   const current0 = monthOf(todayInSaoPaulo());
-  const requested = Number((await searchParams).ano);
-  const currentYear = parseMonth(current0).year;
-  const lastYear = parseMonth(addMonths(current0, 12)).year;
-  const year =
-    Number.isInteger(requested) && requested >= currentYear - 5 && requested <= lastYear
-      ? requested
-      : currentYear;
-
-  const overview = await loadOverview(user.id, makeMonth(year, 1));
+  const overview = await loadOverview(user.id, current0);
   const { today, categories, projection, recurrings, expected } = overview;
   const current = monthOf(today);
-  const horizon = addMonths(current, 12);
-  const months = Array.from({ length: 12 }, (_, i) => makeMonth(year, i + 1)).filter(
-    (m) => m <= horizon,
-  );
+  const months = Array.from({ length: 12 }, (_, i) => addMonths(current, i));
   const points = monthPoints(projection, months, today);
 
-  const negative = points.find((p) => p.projected && p.incomeCents < p.expenseCents);
-  const yearBalance = points.reduce((s, p) => s + p.incomeCents - p.expenseCents, 0);
-  const hasProjection = points.some((p) => p.projected);
+  const negative = projection.canWarnNegative
+    ? points.find((p) => p.projected && p.incomeCents < p.expenseCents)
+    : undefined;
+  const aheadBalance = points.reduce((s, p) => s + p.incomeCents - p.expenseCents, 0);
   const title = negative
     ? `${monthLabel(negative.month)} pode fechar no vermelho.`
-    : hasProjection
-      ? `${year} deve fechar com ${formatWholeMoney(roundToHundredReais(Math.max(0, yearBalance)))} de sobra.`
-      : `${year}: ${yearBalance >= 0 ? `${formatWholeMoney(yearBalance)} de sobra até agora` : `${formatWholeMoney(-yearBalance)} a menos até agora`}.`;
+    : aheadBalance >= 0
+      ? `Nos próximos 12 meses, devem sobrar ${formatWholeMoney(roundToHundredReais(aheadBalance))}.`
+      : projection.canWarnNegative
+        ? `Nos próximos 12 meses, pode faltar ${formatWholeMoney(roundToHundredReais(-aheadBalance))}.`
+        : "Anote sua renda para ver quanto deve sobrar.";
 
   const limits = await listLimits(user.id);
   const spent = new Map<string, number>();
@@ -58,45 +50,23 @@ export default async function PlanningPage({
     if (f.kind === "expense" && monthOf(f.date) === current)
       spent.set(f.categoryId, (spent.get(f.categoryId) ?? 0) + f.amountCents);
   }
-  const note = hasProjection
-    ? projectionNote(projection.reference, {
-        hasFixed: recurrings.length > 0,
-        hasExpected: expected.length > 0,
-        fixedIncomeOnly: projection.hasFixedIncome && projection.averageVariableIncome > 0,
-      })
-    : projection.reference.length === 0
-      ? "A projeção aparece quando você fechar o primeiro mês com lançamentos."
-      : undefined;
+  const note = projectionNote(projection.reference, {
+    hasFixed: recurrings.length > 0,
+    hasExpected: expected.length > 0,
+    fixedIncomeOnly: projection.hasFixedIncome && projection.averageVariableIncome > 0,
+  });
 
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex flex-col gap-2">
         <p className="md-eyebrow">Planejamento</p>
         <h1 className="font-display text-display-lg text-tinta">{title}</h1>
-        <nav aria-label="Ano" className="flex gap-2">
-          {year > currentYear - 1 ? (
-            <Link
-              href={`/planejamento?ano=${year - 1}` as Route}
-              className={buttonClasses({ variant: "ghost" })}
-            >
-              Ver {year - 1}
-            </Link>
-          ) : null}
-          {year < lastYear ? (
-            <Link
-              href={`/planejamento?ano=${year + 1}` as Route}
-              className={buttonClasses({ variant: "ghost" })}
-            >
-              Ver {year + 1}
-            </Link>
-          ) : null}
-        </nav>
       </div>
 
-      {points.length > 0 ? (
+      {points.some((p) => p.incomeCents + p.expenseCents > 0) ? (
         <MonthChart
           headingId="grafico-ano"
-          eyebrow={`Mês a mês em ${year}`}
+          eyebrow="Próximos 12 meses"
           points={points}
           title={title}
           summary={chartSummary(points)}

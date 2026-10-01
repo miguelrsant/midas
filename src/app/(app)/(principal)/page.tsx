@@ -148,9 +148,11 @@ export default async function DashboardPage({
         </Notice>
       );
     } else {
-      const negative = [1, 2, 3]
-        .map((i) => projection.future(addMonths(current, i)))
-        .find((p) => p && p.incomeCents < p.expenseCents);
+      const negative = projection.canWarnNegative
+        ? [1, 2, 3]
+            .map((i) => projection.future(addMonths(current, i)))
+            .find((p) => p && p.incomeCents < p.expenseCents)
+        : undefined;
       if (negative) {
         notice = (
           <Notice tone="alerta" role="note">
@@ -191,12 +193,10 @@ export default async function DashboardPage({
     }
   }
 
-  const chartMonths = [-2, -1, 0, 1, 2, 3]
-    .map((i) => addMonths(current, i))
-    .filter((m) => m >= first);
+  // O gráfico começa no mês atual e mostra a projeção dos 5 seguintes.
+  const chartMonths = [0, 1, 2, 3, 4, 5].map((i) => addMonths(current, i));
   const points = monthPoints(projection, chartMonths, today);
-  const showChart =
-    projection.reference.length > 0 || points.filter((p) => !p.projected).length > 1;
+  const showChart = points.some((p) => p.incomeCents + p.expenseCents > 0);
   const here = isCurrent ? "/" : `/?mes=${month}`;
 
   return (
@@ -279,24 +279,20 @@ export default async function DashboardPage({
         <MonthChart
           headingId="grafico-inicio"
           points={points}
-          title={chartTitle(points)}
+          title={chartTitle(points, { canWarnNegative: projection.canWarnNegative })}
           summary={chartSummary(points)}
-          note={
-            points.some((p) => p.projected)
-              ? projectionNote(projection.reference, {
-                  hasFixed: recurrings.length > 0,
-                  hasExpected: overview.expected.length > 0,
-                  fixedIncomeOnly:
-                    projection.hasFixedIncome && projection.averageVariableIncome > 0,
-                })
-              : undefined
-          }
+          note={projectionNote(projection.reference, {
+            hasFixed: recurrings.length > 0,
+            hasExpected: overview.expected.length > 0,
+            fixedIncomeOnly: projection.hasFixedIncome && projection.averageVariableIncome > 0,
+          })}
         />
       ) : (
         <section className="rounded-lg bg-superficie p-6 shadow-cartao">
           <p className="md-eyebrow">Renda x gastos</p>
           <p className="mt-2 text-tinta-suave">
-            O gráfico aparece quando você fechar o primeiro mês com lançamentos.
+            O gráfico aparece quando você anotar uma renda fixa ou fechar o primeiro mês com
+            lançamentos.
           </p>
         </section>
       )}

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/lib/db";
-import { addMonths, clampDay, monthOf, todayInSaoPaulo } from "@/lib/dates";
+import { addDays, addMonths, clampDay, monthOf, todayInSaoPaulo } from "@/lib/dates";
 
 import { buildExport, deleteAccountData, EXPORTED_MODELS } from "./account";
 import {
@@ -14,6 +14,7 @@ import {
   loadCategories,
 } from "./categories";
 import { createEntry, deleteEntry, entryFacts, getEntry, updateEntry } from "./entries";
+import { loadOverview } from "./overview";
 import { addCalculationToPlan, listExpectedIncomes, receiveExpectedIncome } from "./planning";
 import { createRecurring, createRecurringWithinLimit, ensureRecurringUpToDate } from "./recurring";
 
@@ -313,6 +314,48 @@ describe("calculadoras e rendas previstas", () => {
     ).toBe(false);
     expect((await getEntry(a, entryId))?.categoryId).toBe("ferias");
     expect(await listExpectedIncomes(a)).toHaveLength(0);
+  });
+});
+
+describe("rendas previstas no gráfico", () => {
+  const stored = { input: {}, result: {} as never, engineVersion: 1 };
+  const current = monthOf(today);
+
+  it("atrasada conta no mês atual, e 'Recebi' não conta duas vezes", async () => {
+    const a = await makeUser("a");
+    const lastMonthDay = clampDay(addMonths(current, -1), 15);
+    await addCalculationToPlan(a, randomUUID(), "TERMINATION", stored, [
+      {
+        labelKey: "rescisao",
+        categoryId: "rescisao" as const,
+        cents: 400_000,
+        dueDate: lastMonthDay,
+      },
+    ]);
+    const before = (await loadOverview(a, current)).projection.currentPoint;
+    expect(before.income.pendingCents).toBe(400_000);
+    expect(before.incomeCents).toBe(400_000);
+
+    const [expected] = await listExpectedIncomes(a);
+    await receiveExpectedIncome(a, expected!.id, randomUUID(), {
+      amountCents: 400_000,
+      date: today,
+      description: "Rescisão",
+    });
+    const after = (await loadOverview(a, current)).projection.currentPoint;
+    expect(after.income).toEqual({ fixedCents: 400_000, variableCents: 0, pendingCents: 0 });
+    expect(after.incomeCents).toBe(400_000);
+  });
+
+  it("quem só usou a calculadora já vê a projeção", async () => {
+    const a = await makeUser("a");
+    const due = addDays(clampDay(addMonths(current, 2), 1), 9);
+    await addCalculationToPlan(a, randomUUID(), "VACATION", stored, [
+      { labelKey: "ferias", categoryId: "ferias" as const, cents: 387_400, dueDate: due },
+    ]);
+    const { projection } = await loadOverview(a, current);
+    expect(projection.hasHistory).toBe(false);
+    expect(projection.future(monthOf(due))?.incomeCents).toBe(387_400);
   });
 });
 

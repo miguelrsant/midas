@@ -30,8 +30,21 @@ export interface ExpectedFact {
   categoryId: string;
 }
 
+/**
+ * Camadas de uma barra: a parte fixa (fixos e rendas previstas das calculadoras), a
+ * variável (o resto) e, no mês atual, o que ainda deve entrar ou sair até o fim do mês.
+ */
+export interface Layers {
+  fixedCents: number;
+  variableCents: number;
+  pendingCents: number;
+}
+
 export interface MonthPoint {
   month: MonthKey;
+  income: Layers;
+  expense: Layers;
+  /** Total da barra: fixa + variável + o que falta. */
   incomeCents: number;
   expenseCents: number;
   projected: boolean;
@@ -109,11 +122,43 @@ export interface Projection {
   reference: MonthKey[];
   averageVariableIncome: number;
   averageVariableExpense: number;
-  /** Projeção de um mês futuro; null sem meses de referência. */
+  /** Projeção de um mês futuro (null para o mês atual ou passado). Sem meses de
+   * referência, conta só os fixos e as rendas previstas. */
   future: (month: MonthKey) => MonthPoint | null;
-  /** Estimativa do mês atual até o fim. */
-  currentEstimate: { incomeCents: number; expenseCents: number } | null;
+  /** O mês atual: o real até hoje e o que ainda deve entrar ou sair até o fim. */
+  currentPoint: MonthPoint;
+  /** Estimativa do mês atual até o fim (os totais de `currentPoint`). */
+  currentEstimate: { incomeCents: number; expenseCents: number };
   hasFixedIncome: boolean;
+  /** Há meses fechados para tirar a média dos variáveis. */
+  hasHistory: boolean;
+  /** Dá para avisar que um mês "pode fechar no vermelho" sem assustar à toa: quem só
+   * anotou gastos fixos, sem histórico nem renda fixa, ainda não tem renda na conta. */
+  canWarnNegative: boolean;
+}
+
+const layers = (fixedCents: number, variableCents: number, pendingCents = 0): Layers => ({
+  fixedCents,
+  variableCents,
+  pendingCents,
+});
+
+const total = (l: Layers) => l.fixedCents + l.variableCents + l.pendingCents;
+
+function point(
+  month: MonthKey,
+  income: Layers,
+  expense: Layers,
+  extra: Pick<MonthPoint, "projected" | "current" | "hasThirteenth">,
+): MonthPoint {
+  return {
+    month,
+    income,
+    expense,
+    incomeCents: total(income),
+    expenseCents: total(expense),
+    ...extra,
+  };
 }
 
 function fixedIn(recurrings: readonly RecurringFact[], month: MonthKey, kind: EntryKind) {
@@ -122,8 +167,15 @@ function fixedIn(recurrings: readonly RecurringFact[], month: MonthKey, kind: En
     .reduce((sum, r) => sum + r.amountCents, 0);
 }
 
-function expectedIn(expected: readonly ExpectedFact[], month: MonthKey) {
-  const inMonth = expected.filter((e) => monthOf(e.dueDate) === month);
+/**
+ * Rendas previstas que contam no mês. Uma prevista atrasada (vencida e ainda sem
+ * "Recebi" ou "Não recebi") continua esperada no mês atual, nunca num mês que já passou.
+ */
+function expectedIn(expected: readonly ExpectedFact[], month: MonthKey, current: MonthKey) {
+  const inMonth = expected.filter((e) => {
+    const due = monthOf(e.dueDate);
+    return (due < current ? current : due) === month;
+  });
   return {
     cents: inMonth.reduce((sum, e) => sum + e.amountCents, 0),
     hasThirteenth: inMonth.some((e) => e.categoryId === "decimo-terceiro"),
@@ -148,45 +200,40 @@ export function buildProjection(input: ProjectionInput): Projection {
   const hasFixedIncome = input.recurrings.some((r) => r.kind === "income");
 
   const future = (month: MonthKey): MonthPoint | null => {
-    if (n === 0 || month <= current) return null;
+    if (month <= current) return null;
     const fixedIncome = fixedIn(input.recurrings, month, "income");
-    const exp = expectedIn(input.expected, month);
-    const income = (fixedIncome > 0 ? fixedIncome : averageVariableIncome) + exp.cents;
-    const expense = averageVariableExpense + fixedIn(input.recurrings, month, "expense");
-    return {
-      month,
-      incomeCents: income,
-      expenseCents: expense,
-      projected: true,
-      hasThirteenth: exp.hasThirteenth,
-    };
+    const exp = expectedIn(input.expected, month, current);
+    // Com renda fixa, a média de rendas variáveis fica de fora (não conta duas vezes).
+    const income = layers(fixedIncome + exp.cents, fixedIncome > 0 ? 0 : averageVariableIncome);
+    const expense = layers(fixedIn(input.recurrings, month, "expense"), averageVariableExpense);
+    return point(month, income, expense, { projected: true, hasThirteenth: exp.hasThirteenth });
   };
 
-  let currentEstimate: Projection["currentEstimate"] = null;
-  {
-    const t = totals.get(current) ?? empty();
-    const remaining = (kind: EntryKind) =>
-      input.recurrings
-        .filter(
-          (r) =>
-            r.kind === kind && isActiveIn(r, current) && occurrenceDate(r, current) > input.today,
-        )
-        .reduce((s, r) => s + r.amountCents, 0);
-    const exp = expectedIn(input.expected, current).cents;
-    const fixedIncomeThisMonth = fixedIn(input.recurrings, current, "income") > 0;
-    const incomeCents =
-      t.incomeCents +
+  const t = totals.get(current) ?? empty();
+  const remaining = (kind: EntryKind) =>
+    input.recurrings
+      .filter(
+        (r) => r.kind === kind && isActiveIn(r, current) && occurrenceDate(r, current) > input.today,
+      )
+      .reduce((s, r) => s + r.amountCents, 0);
+  const currentExpected = expectedIn(input.expected, current, current);
+  const fixedIncomeThisMonth = fixedIn(input.recurrings, current, "income") > 0;
+  const currentPoint = point(
+    current,
+    layers(
+      t.incomeCents - t.variableIncomeCents,
+      t.variableIncomeCents,
       remaining("income") +
-      exp +
-      (n > 0 && !fixedIncomeThisMonth
-        ? Math.max(0, averageVariableIncome - t.variableIncomeCents)
-        : 0);
-    const expenseCents =
-      t.expenseCents +
-      remaining("expense") +
-      (n > 0 ? Math.max(0, averageVariableExpense - t.variableExpenseCents) : 0);
-    currentEstimate = { incomeCents, expenseCents };
-  }
+        currentExpected.cents +
+        (fixedIncomeThisMonth ? 0 : Math.max(0, averageVariableIncome - t.variableIncomeCents)),
+    ),
+    layers(
+      t.expenseCents - t.variableExpenseCents,
+      t.variableExpenseCents,
+      remaining("expense") + Math.max(0, averageVariableExpense - t.variableExpenseCents),
+    ),
+    { projected: false, current: true, hasThirteenth: currentExpected.hasThirteenth },
+  );
 
   return {
     totals,
@@ -194,12 +241,21 @@ export function buildProjection(input: ProjectionInput): Projection {
     averageVariableIncome,
     averageVariableExpense,
     future,
-    currentEstimate,
+    currentPoint,
+    currentEstimate: {
+      incomeCents: currentPoint.incomeCents,
+      expenseCents: currentPoint.expenseCents,
+    },
     hasFixedIncome,
+    hasHistory: n > 0,
+    canWarnNegative: n > 0 || hasFixedIncome,
   };
 }
 
-/** Pontos de um intervalo de meses: passados reais, atual real ("até agora"), futuros projetados. */
+/**
+ * Pontos de um intervalo de meses: passados reais, o atual (real até hoje + o que
+ * falta) e os futuros projetados.
+ */
 export function monthPoints(
   projection: Projection,
   months: readonly MonthKey[],
@@ -208,15 +264,18 @@ export function monthPoints(
   const current = monthOf(today);
   const points: MonthPoint[] = [];
   for (const month of months) {
-    if (month <= current) {
+    if (month < current) {
       const t = projection.totals.get(month) ?? empty();
-      points.push({
-        month,
-        incomeCents: t.incomeCents,
-        expenseCents: t.expenseCents,
-        projected: false,
-        current: month === current,
-      });
+      points.push(
+        point(
+          month,
+          layers(t.incomeCents - t.variableIncomeCents, t.variableIncomeCents),
+          layers(t.expenseCents - t.variableExpenseCents, t.variableExpenseCents),
+          { projected: false },
+        ),
+      );
+    } else if (month === current) {
+      points.push(projection.currentPoint);
     } else {
       const p = projection.future(month);
       if (p) points.push(p);

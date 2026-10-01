@@ -75,11 +75,13 @@ const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "O
 
 O cálculo fica em `src/lib/finance/projection.ts`, com testes. As regras:
 
-- **Meses de referência:** os últimos 3 meses fechados **que têm lançamentos**, dentro dos últimos 6 meses. Mês sem lançamento não conta como zero ("não usou o app" não é "não gastou"). O primeiro mês de uso só entra se o primeiro lançamento foi até o dia 7 (um mês começado no meio puxaria a média para baixo). Sem nenhum mês de referência, não há projeção.
+- **Meses de referência:** os últimos 3 meses fechados **que têm lançamentos**, dentro dos últimos 6 meses. Mês sem lançamento não conta como zero ("não usou o app" não é "não gastou"). O primeiro mês de uso só entra se o primeiro lançamento foi até o dia 7 (um mês começado no meio puxaria a média para baixo). Sem nenhum mês de referência, a projeção conta só os fixos e as rendas previstas (sem médias), e a nota diz isso.
 - **Variável** é o lançamento que não veio de um fixo e não é das categorias de calculadora (13º, férias, rescisão, seguro-desemprego).
 - **Gasto projetado** de cada mês futuro: média dos gastos **variáveis** dos meses de referência, mais os gastos fixos que caem naquele mês. Os lançamentos criados pelos fixos ficam fora da média, para não contar duas vezes.
 - **Renda projetada:** as rendas fixas que caem naquele mês, se a pessoa tiver alguma; na falta delas, a média das rendas variáveis dos meses de referência. Mais as **rendas previstas pelas calculadoras** que caem no mês.
-- **Mês atual (até o fim):** o que já entrou e saiu, mais os fixos e as rendas previstas que ainda faltam no mês, mais o que falta da média de gastos variáveis: `max(0, média variável − gasto variável até agora)`. É a base do "Setembro vai bem" do painel.
+- **Mês atual (até o fim):** o que já entrou e saiu, mais os fixos e as rendas previstas que ainda faltam no mês, mais o que falta da média de gastos variáveis: `max(0, média variável − gasto variável até agora)`. É a base do "Setembro vai bem" do painel e da barra do mês atual no gráfico, onde a parte que falta aparece no estilo de projeção.
+- **Rendas previstas atrasadas** (a data passou e a pessoa ainda não tocou em "Recebi" nem em "Não recebi") continuam esperadas **no mês atual**, nunca num mês que já passou. "Recebi" troca a prevista por um lançamento real, sem contar duas vezes.
+- **Sem renda conhecida** (sem histórico e sem renda fixa), a projeção não diz que um mês "pode fechar no vermelho": o título pede "Anote sua renda para ver quanto deve sobrar."
 - **Arredondamento:** as contas guardam centavos; a tela mostra projeções arredondadas à centena de reais.
 - **Dupla contagem conhecida:** quem anotava um gasto à mão e depois cria um fixo para ele vê o gasto contado duas vezes até os 3 meses de referência passarem. A nota da projeção lembra disso quando há fixo criado há menos de 3 meses.
 
@@ -88,6 +90,7 @@ A explicação para a pessoa fica sempre ao lado do gráfico, em `caption`:
 - "Estimativa com base nos últimos 3 meses, nos fixos e nas rendas já previstas, como o 13º."
 - "Estimativa com base em agosto e setembro e nos fixos." (com menos de 3 meses)
 - "Como você tem renda fixa, a estimativa conta só ela; ganhos avulsos não entram." (quando há renda fixa e também rendas variáveis nos meses de referência)
+- "Estimativa com base nos fixos e nas rendas já previstas, como o 13º. Os gastos do dia a dia entram depois do primeiro mês com lançamentos." (sem mês de referência)
 
 Palavras: sobra projetada **"deve"** acontecer; falta projetada **"pode"** acontecer. Projeção nunca é chamada de previsão garantida.
 

@@ -115,15 +115,114 @@ describe("projeção", () => {
     expect(referenceMonths(totals, today, null)).toEqual([]);
   });
 
-  it("sem mês fechado não há projeção", () => {
+  it("sem mês fechado, a projeção conta só fixos e rendas previstas", () => {
     const p = buildProjection({
       today,
       entries: [e("2026-09-01", "expense", 100)],
       firstEntryDate: "2026-09-01",
+      recurrings: [
+        {
+          kind: "expense",
+          amountCents: 80_000,
+          dayOfMonth: 10,
+          startMonth: "2026-09",
+          endMonth: null,
+        },
+      ],
+      expected: [{ amountCents: 300_000, dueDate: "2026-10-15", categoryId: "ferias" }],
+    });
+    const oct = p.future("2026-10")!;
+    expect(oct.projected).toBe(true);
+    expect(oct.income).toEqual({ fixedCents: 300_000, variableCents: 0, pendingCents: 0 });
+    expect(oct.expense).toEqual({ fixedCents: 80_000, variableCents: 0, pendingCents: 0 });
+    expect(p.future("2026-09")).toBeNull();
+    expect(p.hasHistory).toBe(false);
+    // Sem renda fixa nem histórico, não avisa que vai faltar.
+    expect(p.canWarnNegative).toBe(false);
+  });
+
+  it("renda prevista deste mês entra como o que falta no mês atual", () => {
+    const p = buildProjection({
+      today,
+      entries: [e("2026-09-01", "income", 100_000)],
+      firstEntryDate: "2026-09-01",
+      recurrings: [],
+      expected: [{ amountCents: 250_000, dueDate: "2026-09-25", categoryId: "ferias" }],
+    });
+    const [sep] = monthPoints(p, ["2026-09"], today);
+    expect(sep!.current).toBe(true);
+    expect(sep!.income).toEqual({ fixedCents: 0, variableCents: 100_000, pendingCents: 250_000 });
+    expect(sep!.incomeCents).toBe(350_000);
+    expect(p.currentEstimate.incomeCents).toBe(350_000);
+  });
+
+  it("renda prevista atrasada conta no mês atual, nunca num mês passado", () => {
+    const p = buildProjection({
+      today,
+      entries: [e("2026-08-02", "expense", 1_000)],
+      firstEntryDate: "2026-08-02",
+      recurrings: [],
+      expected: [
+        { amountCents: 400_000, dueDate: "2026-08-30", categoryId: "rescisao" },
+        { amountCents: 50_000, dueDate: "2026-09-10", categoryId: "ferias" },
+      ],
+    });
+    const [aug, sep, oct] = monthPoints(p, ["2026-08", "2026-09", "2026-10"], today);
+    expect(aug!.incomeCents).toBe(0);
+    expect(sep!.income.pendingCents).toBe(450_000);
+    expect(oct!.income.fixedCents).toBe(0);
+  });
+
+  it("mês real: fixa = fixos e calculadoras; variável = o resto", () => {
+    const p = buildProjection({
+      today,
+      entries: [
+        e("2026-08-05", "income", 500_000, { fromRecurring: true }),
+        e("2026-08-06", "income", 30_000),
+        e("2026-08-07", "income", 90_000, { categoryId: "decimo-terceiro" }),
+        e("2026-08-10", "expense", 150_000, { fromRecurring: true, categoryId: "moradia" }),
+        e("2026-08-11", "expense", 20_000),
+      ],
+      firstEntryDate: "2026-08-01",
       recurrings: [],
       expected: [],
     });
-    expect(p.future("2026-10")).toBeNull();
+    const [aug] = monthPoints(p, ["2026-08"], today);
+    expect(aug!.income).toEqual({ fixedCents: 590_000, variableCents: 30_000, pendingCents: 0 });
+    expect(aug!.expense).toEqual({ fixedCents: 150_000, variableCents: 20_000, pendingCents: 0 });
+  });
+
+  it("total de cada barra é fixa + variável + o que falta, e o que falta nunca é negativo", () => {
+    const p = buildProjection({
+      today,
+      entries: [
+        e("2026-08-02", "expense", 100_000),
+        // Setembro já passou da média: o que falta da média é zero.
+        e("2026-09-02", "expense", 300_000),
+      ],
+      firstEntryDate: "2026-08-01",
+      recurrings: [
+        {
+          kind: "income",
+          amountCents: 500_000,
+          dayOfMonth: 25,
+          startMonth: "2026-09",
+          endMonth: null,
+        },
+      ],
+      expected: [],
+    });
+    const pts = monthPoints(p, ["2026-08", "2026-09", "2026-10", "2026-11"], today);
+    for (const pt of pts) {
+      for (const side of ["income", "expense"] as const) {
+        const l = pt[side];
+        expect(l.fixedCents + l.variableCents + l.pendingCents).toBe(pt[`${side}Cents`]);
+        expect(l.pendingCents).toBeGreaterThanOrEqual(0);
+      }
+    }
+    expect(pts[1]!.expense.pendingCents).toBe(0);
+    expect(pts[1]!.income.pendingCents).toBe(500_000);
+    expect(p.canWarnNegative).toBe(true);
   });
 
   it("gasto: média dos variáveis + fixos, sem contar o fixo duas vezes", () => {
@@ -249,6 +348,20 @@ describe("gráfico e frases", () => {
   it("marcas redondas a partir de zero", () => {
     expect(niceTicks(620_000)).toEqual([0, 200_000, 400_000, 600_000, 800_000]);
     expect(niceTicks(0)[0]).toBe(0);
+  });
+
+  it("título: sem renda conhecida, não avisa falta", () => {
+    expect(
+      chartTitle([{ month: "2026-10", incomeCents: 0, expenseCents: 80_000, projected: true }], {
+        canWarnNegative: false,
+      }),
+    ).toBe("Anote sua renda para ver quanto deve sobrar.");
+  });
+
+  it("nota da projeção sem histórico", () => {
+    expect(projectionNote([], { hasFixed: true, hasExpected: true, fixedIncomeOnly: false })).toBe(
+      "Estimativa com base nos fixos e nas rendas já previstas, como o 13º. Os gastos do dia a dia entram depois do primeiro mês com lançamentos.",
+    );
   });
 
   it("título: falta projetada vem primeiro, sem acento", () => {
