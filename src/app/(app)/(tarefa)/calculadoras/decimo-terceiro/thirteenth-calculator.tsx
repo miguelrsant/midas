@@ -9,6 +9,7 @@ import {
   moneyReview,
   NumberSelect,
 } from "@/components/midas/calculator/fields";
+import { extrasStep, extrasCents } from "@/components/midas/calculator/extras-step";
 import { CalculatorWizard, type WizardStep } from "@/components/midas/calculator/wizard";
 import { type DateOnly, formatShortDate, isDateOnly } from "@/lib/dates";
 import { calculateThirteenth } from "@/lib/labor/calculators";
@@ -18,6 +19,7 @@ type Answers = {
   gross: string;
   admission: string;
   extras: string;
+  hasExtras?: boolean;
   dependents: number;
   year: number;
 };
@@ -61,23 +63,7 @@ export function ThirteenthCalculator({ today }: { today: DateOnly }) {
           : { admission: "Escolha uma data até hoje." },
       review: (a) => shortDate(a.admission),
     },
-    {
-      id: "extras",
-      question: "Qual a média de horas extras e adicionais?",
-      help: "Opcional. Deixe em branco se não recebe.",
-      render: ({ answers, set, errors }) => (
-        <MoneyField
-          label="Média por mês"
-          value={answers.extras}
-          onChange={(extras) => set({ extras })}
-          error={errors.extras}
-          help="Deixe em branco se não recebe."
-        />
-      ),
-      validate: (a) =>
-        moneyError(a.extras, true) ? { extras: moneyError(a.extras, true)! } : null,
-      review: (a) => moneyReview(a.extras, true),
-    },
+    extrasStep<Answers>(),
     {
       id: "dependentes",
       question: "Quantos dependentes você declara no Imposto de Renda?",
@@ -97,7 +83,7 @@ export function ThirteenthCalculator({ today }: { today: DateOnly }) {
   ];
   const toInput = (a: Answers): ThirteenthInput => ({
     grossCents: cents(a.gross),
-    extrasCents: cents(a.extras, true),
+    extrasCents: extrasCents(a),
     admissionDate: a.admission,
     year: a.year,
     dependents: a.dependents,

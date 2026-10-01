@@ -338,8 +338,8 @@ Perguntas sugeridas:
 
 | Calculadora | Passos |
 | --- | --- |
-| Férias | Salário bruto · Média de horas extras e adicionais (opcional) · Quantos dias de férias e se vai vender 10 dias · Quando começam |
-| 13º salário | Salário bruto · Desde quando trabalha na empresa (para os meses do ano) · Média de horas extras e adicionais (opcional) · Número de dependentes (para o Imposto de Renda) |
+| Férias | Salário bruto · Recebe hora extra ou adicional? (Não recebo, já marcado; com "Recebo", quanto vem a mais por mês) · Quantos dias de férias e se vai vender 10 dias · Quando começam |
+| 13º salário | Salário bruto · Desde quando trabalha na empresa (para os meses do ano) · Recebe hora extra ou adicional? (Não recebo, já marcado; com "Recebo", quanto vem a mais por mês) · Número de dependentes (para o Imposto de Renda) |
 | Rescisão | Salário bruto · Data de entrada e último dia de trabalho · Como foi a saída · Aviso prévio (trabalhado, pago em dinheiro ou dispensado; não aparece em justa causa e fim de contrato) · Férias vencidas (nenhuma, 1 período ou 2) · FGTS: saldo para fins rescisórios (opcional) e adesão ao saque-aniversário · Número de dependentes |
 | Salário líquido | Salário bruto · Número de dependentes · Outros descontos do contracheque (opcional: vale-transporte, plano de saúde) · Que dia o salário cai (só para "Adicionar ao planejamento") |
 | Seguro-desemprego | Como foi a saída (só dispensa sem justa causa tem direito; as outras respostas explicam e encerram) · Último dia de trabalho · Salários dos 3 últimos meses (com "Foi o mesmo nos três") · Meses com carteira assinada nos últimos 3 anos · Quantas vezes já pediu o seguro e se faz mais de 16 meses desde o último |
